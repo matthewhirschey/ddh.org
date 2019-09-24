@@ -1,0 +1,528 @@
+---
+title: "Dep Map correlation analysis"
+output:
+  pdf_document:
+    toc: TRUE
+params:
+  release: "19Q3"
+---
+Overall goal of this project is to generate a correlation matrix from Broad Dependency Map data, to look at 'dependency signatures'. This will allow us to infer a functional relationship between genes, based on similar changes in cellular fitness. Chose to get data from Broad, as they have previous made available dependency correlation data on www.depmap.org. Will use Sanger to try to validate some of the findings; unfortunatley, Sanger lists only binary scores.
+
+##Load libraries
+```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(readxl)
+library(janitor)
+library(feather)
+library(corrr)
+library(purrr)
+library(viridis)
+library(enrichR)
+library(glue)
+library(moderndive)
+library(rmarkdown)
+library(gridExtra)
+library(knitr)
+library(pander)
+library(vroom)
+library(beepr) #long analysis; get some coffee, and comeback when ready
+
+#clear environment
+#rm(list=ls()) 
+```
+
+##import
+Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
+```{r import}
+##BROAD
+achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
+achilles_cor <- read_feather(here("data", paste0(params$release, "_achilles_cor.feather"))) 
+class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
+
+#achilles_cor_small <- achilles_cor %>% slice(1:1000) %>% select(1:1000) #to optimize code
+#achilles_long_small <- achilles_long %>% sample_n(1000)
+
+
+##SANGER
+#data from: https://score.depmap.sanger.ac.uk/downloads
+#sanger <- read_feather(here("raw", "sanger.feather"))
+#sanger_small <- sanger %>% slice(1:100) %>% select(1:100) #to optimize code
+#I downloaded the "Fitness/Non-fitness Binary Matrix", but this binary information was less rich than Dep Map. Perhaps try "Copy Number Bias Corrected Fold Change Values"? 
+
+#EXPRESSION(BROAD)
+expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
+expression_cor <- read_feather(here("data", paste0(params$release, "_expression_cor.feather"))) 
+class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+expression_cor_long <- read_feather(here::here("data", paste0(params$release, "_expression_cor_long.feather")))
+
+expression_id <- read_feather(here("data", paste0(params$release, "_expression_id.feather"))) 
+
+expression_join <- expression_id %>% 
+  rename(X1 = dep_map_id) %>% 
+  select(X1, stripped_cell_line_name, lineage)
+
+#expression_cor_small <- expression_cor %>% 
+#  select(1:10) %>%  #to optimize code
+#  sample_n(1000)
+```
+
+# Global Analysis
+##EDA
+```{r eda}
+achilles_cor_max <- achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) 
+
+#sanger_cor_max <- sanger_cor %>% 
+#  select(-rowname) %>% 
+#  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+#  gather("gene", "max") %>% 
+#  arrange(desc(max)) 
+
+expression_cor_max <- expression_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>%  #I think there are some NAs in there...messes up the fun(max)
+  gather("gene", "max") %>% 
+  arrange(desc(max)) 
+
+ggplot(achilles_cor_max, aes(max)) +
+  geom_histogram(binwidth = 0.05)
+#most genes have pretty low correlation
+#some with high corr, TSC1/2, are only high with eachother
+#others are clusters, NDUFB10
+#some show bona fide pathways; CAD
+
+#ggplot(sanger_cor_max, aes(max)) +
+#  geom_histogram(binwidth = 0.05)
+
+ggplot(expression_cor_max, aes(max)) +
+  geom_histogram(binwidth = 0.05)
+
+achilles_cor_min <- achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>% 
+  gather("gene", "min") %>% 
+  arrange(min) 
+
+sanger_cor_min <- achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>% 
+  gather("gene", "min") %>% 
+  arrange(min) 
+
+ggplot(achilles_cor_min, aes(min)) +
+  geom_histogram(binwidth = 0.05)
+#postive correlation 1: p53, p53bp1, check2, atm, usp28, etc.
+#postiive correlation 2: mdm2, mdm4, ppm1d, ppm1g
+#corr 1 and corr 2 are NEGATIVELY correlated with eachother; consistently.
+
+#ggplot(sanger_cor_min, aes(min)) +
+#  geom_histogram(binwidth = 0.05)
+```
+
+#Permutation tests
+A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses
+
+Can I do this for one gene, sampling from the entire correlation matrix, and getting a distribution of correlated means for a single gene 1000x?
+
+Consider: https://tidymodels.github.io/rsample/articles/Basics.html
+#moderndive package
+https://moderndive.com/8-sampling.html
+
+```{r permutation}
+  virtual_achilles <- achilles_cor_long %>% #achilles_cor_long already has all of the variables in a long format
+  filter(!is.na(r)) %>%   
+  rep_sample_n(size = 20000, reps = 1000) %>% #larger sample size, less error (but only 625 sets, and we're mimicking 1000?, but 310M combinations, so probably OK)
+  group_by(replicate) %>% 
+  summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r)) #how to handle + vs. - correlation?
+
+#instead of filtering, could:
+#summarize_all(list(max = max(r, na.rm = TRUE), 
+#                     min = min(r, na.rm = TRUE),
+#                     mean = mean(r, na.rm = TRUE),
+#                     sd = sd(r, na.rm = TRUE))) 
+#but threw and error
+
+#The mean may not be the best measure of centrality due to its sensitivity to outliers. The example data used here seems asymmetric and it that case the median is a better measure of centrality.
+#https://github.com/JoachimGoedhart/PlotsOfDifferences
+
+ggplot(virtual_achilles, aes(x = sd)) +
+  geom_histogram(color = "white") +
+  labs(x = "SD r^2 value from virtual achilles", 
+       title = "Distribution of mean r^2 values") 
+
+mean_virtual_achilles <- mean(virtual_achilles$mean)
+sd_virtual_achilles <- mean(virtual_achilles$sd)
+
+sd_threshold <- 3
+
+achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
+achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
+```
+
+#Correlation network for top and bottom genes
+```{r network}
+#top
+achilles_cor_top50 <- achilles_cor %>% 
+  select(-rowname) %>% #select(one_of(target_vec)) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>% 
+  top_n(50) 
+
+pander(achilles_cor_top50)
+  
+achilles_cor_bottom50 <- achilles_cor %>% 
+  select(-rowname) %>% #select(one_of(target_vec)) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>% 
+  gather("gene", "min") %>% 
+  arrange(min)  %>% 
+  top_n(-50)
+
+pander(achilles_cor_bottom50)
+
+focus_50 <- c(achilles_cor_top50, achilles_cor_bottom50)
+
+expression_cor_max %>% 
+  top_n(50)
+
+```
+
+#global summary
+```{r summary}
+#top mean, sd
+#achilles_cor %>% 
+#  select(-rowname) %>% 
+#  summarize_all(max) %>% 
+#  gather("gene", "max") %>% 
+#  arrange(desc(max)) %>%
+#  summarize_at("max", list(mean, sd))
+#-0.32 +/- 0.10
+#therefore, 2 SD from min mean is 0.5264
+#summarize(n()) = 918 genes
+  
+achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>%
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>%  
+  top_n(50) %>% #filter(max > achilles_upper) %>%
+  kable(format="html", digits = 3, caption = "Genes with large positively correlated gene dependency signatures", col.names = c("Gene", "r^2"))
+
+#bottom mean, sd
+#achilles_cor %>% 
+#  select(-rowname) %>% 
+#  summarize_all(min) %>% 
+#  gather("gene", "min") %>% 
+#  arrange(min)  %>% 
+#  summarize_at("min", list(mean, sd))
+#-0.23 +/- 0.03
+#therefore, 2 SD from min mean is -0.2983
+#summarize(n()) = 641 genes
+
+achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>%  
+  gather("gene", "min") %>% 
+  arrange(min) %>%  
+  top_n(-20) %>% #filter(min < achilles_lower) %>%
+  kable(format="html", digits = 3, caption = "Genes with large negatively correlated gene dependency signatures", col.names = c("Gene", "r^2"))
+
+
+```
+
+#Focused Analysis
+```{r import_targets}
+#write_feather(id, path = here("raw", "id.feather"))
+id <- read_feather(here("raw", "id.feather"))
+
+proteins <- id %>% 
+  select(gene, protein_name)
+
+nhr <- read_excel(here("raw", "table1.xlsx"), col_names = FALSE) %>% 
+  clean_names() %>% 
+  pull() %>% 
+  str_trim(side = c("both"))
+
+#nhr_short <- nhr[!nhr %in% c("NR2E3", "AR", "NR0B1")] #chokes if I have columns that are not in dataset; need better way to skip over missing values #done; fixed with if/esle
+#NHR_test <- NHR[NHR %in% c("THRA", "THRB")]
+#nhr_trim <- nhr[48:48]
+#str_which(nhr, "NR0B2")
+
+
+slc <- id %>% 
+  filter(str_detect(gene, "SLC")) %>% 
+  pull(gene)
+
+#slc <- str_subset(names(achilles_cor), "SLC")
+#slc_test <- slc[1:10]
+#str_which(slc, "SLC6A19")
+#slc_trim <- slc[339:363]
+
+SIRT <- c("SIRT1", "SIRT2", "SIRT3", "SIRT4", "SIRT5", "SIRT6", "SIRT7")
+target_vec <- c("CPT1A", "CPT1B", "CPT1C", "CPT2", "SLC25A20")
+hdac <- str_subset(names(achilles_cor), "HDAC")
+
+mitocarta_full <- read_feather(here("raw", "mitocarta.feather"))
+mitocarta <- mitocarta_full %>% pull(Symbol)
+
+transporter <- read_xlsx(here("raw", "Transporter_genes_list.xlsx"), col_names = TRUE) %>% 
+  clean_names() %>% 
+  pull(gene)
+
+#recursive; run after defining achilles_cor to create a vector of top/bottom genes for reports
+#top20 <- achilles_cor %>% 
+#  select(-1) %>% #select(one_of(SIRT)) %>% 
+#  summarize_all(max) %>% 
+#  gather("gene", "max") %>% 
+#  arrange(desc(max)) %>% 
+#  top_n(20) %>% 
+#  pull(gene)
+
+#bottom20 <- achilles_cor %>% 
+#  select(-1) %>% #select(one_of(SIRT)) %>% 
+#  summarize_all(min) %>% 
+#  gather("gene", "min") %>%  
+#  arrange(min) %>% 
+#  top_n(-20) %>% 
+#  pull(gene)
+
+#guest projects
+trub <- c("FASN", "HMGCR", "HMGCS1")
+transferase <- id %>% filter(str_detect(protein_name, "transferase")) %>% pull(gene)
+acyltransferase <- id %>% filter(str_detect(protein_name, "acyltransferase")) %>% pull(gene)
+deacylase <- id %>% filter(str_detect(protein_name, "deacetylase") | str_detect(protein_name, "deacylase")) %>% pull(gene)
+abraham <- c("KCNK3", "KCNK9", "KCNK2")
+angiotensin <- id %>% filter(str_detect(protein_name, "angiotensin")) %>% pull(gene)
+myc <- id %>% filter(str_detect(gene, "MYC")) %>% pull(gene)
+koves <- c("MLYCD")
+klhl <- id %>% filter(str_detect(gene, "KLHL")) %>% pull(gene)
+boyce <- c("GALE", "OGA", "OGT", "KEAP1", "GAN", "ENC1", klhl)
+keap <- c("GAN", "ENC1")
+bcaa <- c("ABAT", "ACAA1", "ACAA2", "ACAD8", "ACADM", "ACADS", "ACADSB", "ALDH1B1", "ALDH2", "ALDH3A2", "ALDH6A1", "ALDH7A1", "ALDH9A1", "AOX1", "AUH", "BCAT1", "BCAT2", "BCKDHA", "BCKDHB", "BCKDK", "DBT", "DLD", "ECHS1", "EHHADH", "HADH", "HADHA", "HADHB", "HIBADH", "HIBCH", "HMGCL", "HMGCL", "HMGCS2", "HSD17B10", "IVD", "MCCC1", "MCCC2", "MCEE", "MUT", "PCCA", "PCCB")
+bcaa_trim <- c("MUT", "PCCA", "PCCB")
+creatine <- c("GATM", "GAMT", "SLC6A8", "CKB", "CKM", "CKMT1B", "CKMT2")
+glycolysis <- c("ALDOA", "BPGM", "ENO1", "ENO2", "GAPDH", "GPI", "HK1", "HK2", "HKDC1", "PFKL", "PFKM", "PGAM1", "PGAM2", "PGAM4", "PGK1", "PKLR", "PKM", "TPI1")
+cardiolipin <- c("CKMT1A", "CKMT1B", "CYCS", "NME4", "TAZ", "TMEM256-PLSCR3", "CRLS1", "PGS1", "PTPMT1", "TAMM41")
+cholesterol <- c("ACAT2", "CYP51A1", "DHCR24", "DHCR7", "EBP", "FDFT1", "FDPS", "GGPS1", "HMGCR", "HMGCS1", "HSD17B7", "IDI1", "LBR", "LIPA", "LSS", "MSMO1", "MVD", "MVK", "NSDHL", "PMVK", "SC5D", "SOAT1", "SQLE", "TM7SF2")
+tca <- c("ACLY", "ACO1", "ACO2", "CS", "DLAT", "DLD", "DLST", "FH", "IDH1", "IDH2", "IDH3A", "IDH3B", "IDH3G", "MDH1", "MDH2", "MPC1", "OGDH", "OGDHL", "PC", "PCK1", "PCK2", "PDHA1", "PDHA2", "PDHB", "SDHA", "SDHB", "SDHC", "SDHD", "SUCLA2", "SUCLG1", "SUCLG2")
+purine <- c("ADSL", "ADSS1", "ADSS2", "AK1", "AK2", "AK3", "AK4", "AK5", "ATIC", "GART", "GMPS", "IMPDH1", "IMPDH2", "PAICS", "PFAS", "PPAT", "PRPS1", "PRPS1L1", "PRPS2", "TAF9")
+pyrimidine <- c("CAD", "CMPK1", "CMPK2", "CTPS1", "CTPS2", "DHODH", "NME1", "NME2", "NME3", "NME4", "NME6", "UMPS")
+ampk <- c("CAB39", "CALM1", "CALM2", "CALM3", "CAMKK1", "CAMKK2", "PPM1E", "PPM1F", "PPP1CA", "PPP1CB", "PPP1R3D", "PPP2CA", "PRKAA1", "PRKAA2", "PRKAB1", "PRKAB2", "PRKAG1", "PRKAG2", "PRKAG3", "STK11", "STRADA")
+ampk_trim <- c("PRKAA2", "PRKAB1", "PRKAB2", "PRKAG1", "PRKAG2", "PRKAG3", "STK11", "STRADA")
+fao <- c("ABCD1", "ABCD2", "ACAA2", "ACAD9", "ACADL", "ACADM", "ACADS", "ACADVL", "ACAT1", "ACSL1", "ACSL3", "ACSL4", "ACSL5", "ACSL6", "ACSM1", "ACSM2A", "ACSM2B", "ACSM3", "ACSM4", "ACSS1", "ACSS2", "ACSS3", "CPT1A", "CPT1B", "CPT2", "CRAT", "CROT", "ECHS1", "ETFA", "ETFB", "ETFDH", "HADH", "HADHA", "HADHB", "HSD17B10", "PEX11G", "PEX13", "PEX14", "SLC25A20")
+glycogen <- c("GBE1", "GCK", "GSK3A", "GSK3B", "GYG1", "GYS1", "GYS2", "PGM1", "PGM2", "PGM3", "PPP1CA", "PPP1CB", "PPP1CC", "PPP1R3A", "PPP1R3B", "PPP1R3C", "PPP1R3D", "PPP1R3E", "UGP2", "AGL", "CALM1", "CALM2", "CALM3", "G6PC", "PHKA1", "PHKA2", "PHKB", "PHKG1", "PHKG2", "PYGB", "PYGL")
+fas <- c("ACACA", "ACACB", "ACLY", "FASN", "MCAT", "OLAH", "OXSM", "ACAA2", "ECHS1", "HADHA", "HADHB", "HSD17B10", "MECR", "PPT1")
+urea <- c("ARG1", "ARG2", "ASL", "ASS1", "CPS1", "GLS2", "GLUD1", "GOT2", "GPT", "OTC", "SLC1A4", "SLC1A5", "SLC25A12", "SLC25A15")
+ashley <- c("NMNAT1", "NMNAT2", "NMNAT3", "PNP")
+```
+
+#EDA to get gene lists for focused targets
+```{r pull_genes}
+gene <- c("IDH3G")
+
+achilles_cor %>% 
+  focus(gene) %>% 
+  arrange(desc(.[[2]])) %>% #use column index
+  filter(rowname == "SIRT4")
+
+achilles_cor %>% 
+  focus(gene) %>% 
+  arrange(desc(.[[2]])) %>% #use column index
+  top_n(50)
+
+achilles_cor %>% 
+  focus(gene) %>% 
+  arrange(.[[2]]) %>% #use column index
+  top_n(-50)
+#this is to get neg correlators
+
+#sanger_cor %>% 
+#  focus(gene) %>% 
+#  arrange(desc(.[[2]])) %>% #use column index
+#  top_n(50)
+
+#sanger_cor %>% 
+#  focus(gene) %>% 
+#  arrange(.[[2]]) %>% #use column index
+#  top_n(-50)
+#this is to get neg correlators
+
+#expression
+expression_cor %>% 
+  focus(gene) %>% 
+  arrange(desc(.[[2]])) %>% #use column index
+  top_n(50)
+
+expression_cor %>% 
+  focus(gene) %>% 
+  arrange(.[[2]]) %>% #use column index
+  top_n(-50)
+```
+
+#Strongest Correlations from Targeted List
+```{r strongest, warning=FALSE}
+#top
+achilles_cor_top <- achilles_cor %>% 
+  select(one_of(SIRT)) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>% 
+  top_n(50) 
+
+pander(achilles_cor_top)
+  
+achilles_cor_bottom <- achilles_cor %>% 
+  select(one_of(SIRT)) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>% 
+  gather("gene", "min") %>% 
+  arrange(min)  %>% 
+  top_n(-50)
+
+pander(achilles_cor_bottom)
+
+```
+#pull tops and bottoms
+```{r eval=FALSE, warning=FALSE, include=FALSE}
+list <- achilles_cor %>% 
+  select(-1) %>% #select(one_of(SIRT)) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>% 
+  mutate_if(is.numeric, round, 3)
+
+write_csv(list, path = "output/full_top_list.csv")
+
+list2 <- achilles_cor %>% 
+  select(-1) %>% #select(one_of(SIRT)) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>% 
+  gather("gene", "min") %>%  
+  arrange(min) %>% 
+  mutate_if(is.numeric, round, 3)
+
+write_csv(list2, path = "output/full_bottom_list.csv")
+```
+
+```{r alec_diff, eval=FALSE}
+fav_gene <- c("HMGCR") #or HMGCS1
+
+ dep_top <- achilles_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select(gene, protein_name, fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    
+    dep_bottom <- achilles_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select("gene", "protein_name", fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    #this is to get neg correlators
+
+#make HMGCS1 vecs        
+dep_top_hmgcs1 <- dep_top %>% pull(gene) #or HMGCS1/R
+dep_bottom_hmgcs1 <- dep_bottom %>% pull(gene) #or HMGCS1/R
+
+#filter
+dep_top_diff <- dep_top %>%
+  filter(gene %in% dep_top_hmgcs1 == FALSE)
+
+dep_bottom_diff <- dep_bottom %>%
+  filter(gene %in% dep_bottom_hmgcs1 == FALSE)
+
+#enrichr
+dep_top <- dep_top_diff
+dep_bottom <- dep_bottom_diff
+```
+
+#integrate
+```{r eval=FALSE, include=FALSE}
+expression_cor_max <- expression_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>%  #I think there are some NAs in there...messes up the fun(max)
+  gather("gene", "max") %>% 
+  arrange(desc(max)) 
+
+achilles_cor_max <- achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) 
+
+joined_max_cor <- expression_cor_max %>% 
+  rename(expression_max = max) %>% 
+  left_join(achilles_cor_max, by = "gene") %>% 
+  rename(achilles_max = max) %>% 
+  mutate(rms = sqrt(((expression_max^2)+(achilles_max^2))/2))
+
+ggplot(joined_max_cor) +
+  geom_point(aes(x = expression_max, y = achilles_max, color = rms)) +
+  scale_color_viridis(direction = -1) +
+  theme_minimal()
+
+ggplot(joined_max_cor, aes(x = expression_max, y = achilles_max)) +
+  geom_hex(bins = 20, na.rm = TRUE, size = 0.2, color = "black") +
+  scale_fill_viridis_c(option = "C") +
+  coord_fixed()
+  
+achilles_squash <- achilles_long %>%
+  unite(X1, gene, col = "match", sep = "_", remove = TRUE)
+
+joined <- expression_long %>% 
+  unite(X1, gene, col = "match", sep = "_", remove = TRUE) %>% 
+  left_join(achilles_squash, by = "match") %>% 
+  separate(match, into = c("X1", "gene"), sep = "_")
+
+#plot pairs of raw cellline expression-depmap scores (expression is high and dep is high?)  
+joined %>% 
+  sample_n(1000) %>% 
+  ggplot(aes(x = dep_score, y = gene_expression)) + #data = joined, 
+  geom_point(alpha = 0.01) +
+  #stat_density_2d(geom = "raster", aes(fill = stat(density)), contour = FALSE)
+  geom_vline(xintercept = 0, color = "white")
+
+ggsave("output/expression_v_dep.png", plot = last_plot(), dpi = 600)
+
+ggplot(joined) +
+  geom_hex(aes(x = dep_score, y = gene_expression, fill = ..value..), 
+           bins = 100, na.rm = TRUE, size = 0.2, color = "black") +
+  scale_fill_viridis_c(option = "C") +
+  labs(x = "Dependency Score", y = "Gene Expression") +  
+  coord_fixed() +
+  theme_minimal()
+
+ggsave("output/expression_v_dep2.png", plot = last_plot(), dpi = 600)
+#prediction was v-shaped curve, with stronger dependencies as you move up in gene expression. 
+#expression has nothing to do with dep...?
+
+#if a gene is correlated with another gene (via dependency OR via expression), capture that.
+#plot correlation (abs?) of gene-gene cor long
+
+#difference between is high v. low
+#value (avg) is high v. low
+```
+
+
+#print Session information for provenance and reproducibility
+```{r}
+utils:::print.sessionInfo(sessionInfo()[-8]) 
+#You can remove an item from sessionInfo(), which is a list with a class attribute, by printing the resulting object omitting one of the list items (omitted list of packages installed, but not loaded)
+```
+
+#beep
+```{r}
+beep(sound = 8) #because mario is awesome
+```
+
+
+

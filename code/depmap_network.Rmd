@@ -1,0 +1,149 @@
+---
+title: "Dep Map correlation Network analysis"
+output:
+  pdf_document:
+    toc: TRUE
+params:
+  release: "19Q3"
+---
+Overall goal of this project is to generate a network from the Dep Map data. Two goals:
+1. Generate network of most connected/highest r2 values
+2. Make networks of specific gene groups (this will then highlight the clusters within the gene groups, and then identify unexpected genes in known biological processes?)
+
+##Load libraries
+```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(here)
+library(janitor)
+library(feather)
+library(corrr)
+library(purrr)
+library(igraph)
+library(ggraph)
+library(viridis)
+library(enrichR)
+library(glue)
+library(moderndive)
+library(rmarkdown)
+library(gridExtra)
+library(knitr)
+library(pander)
+library(vroom)
+library(beepr) #long analysis; get some coffee, and comeback when ready
+
+#clear environment
+#rm(list=ls()) 
+```
+
+##import
+Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
+```{r import}
+##BROAD
+achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
+achilles_cor <- read_feather(here("data", paste0(params$release, "_achilles_cor.feather"))) 
+class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
+
+#EXPRESSION(BROAD)
+expression_id <- read_feather(here("data", paste0(params$release, "_expression_id.feather"))) 
+expression_join <- expression_id %>% 
+  rename(X1 = dep_map_id) %>% 
+  select(X1, stripped_cell_line_name, lineage)
+
+```
+
+#make some small dfs for testing
+```{r}
+achilles_cor_small <- achilles_cor %>% slice(1:1000) %>% select(1:1000) #to optimize code
+achilles_long_small <- achilles_long %>% sample_n(1000)
+
+```
+
+#Correlation network for top and bottom genes
+```{r network}
+#top
+achilles_cor_top50 <- achilles_cor %>% 
+  select(-rowname) %>% #select(one_of(target_vec)) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>% 
+  top_n(50) 
+
+pander(achilles_cor_top50)
+  
+achilles_cor_bottom50 <- achilles_cor %>% 
+  select(-rowname) %>% #select(one_of(target_vec)) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>% 
+  gather("gene", "min") %>% 
+  arrange(min)  %>% 
+  top_n(-50)
+
+pander(achilles_cor_bottom50)
+
+focus_50 <- c(achilles_cor_top50, achilles_cor_bottom50)
+
+expression_cor_max %>% 
+  top_n(50)
+
+#several r2 = 1.0
+```
+
+#MAKE GRAPHS PRETTY
+https://drsimonj.svbtle.com/how-to-create-correlation-network-plots-with-corrr-and-ggraph
+Basic approach #
+
+Given a data frame d of numeric variables for which we want to plot the correlations in a network, here’s a basic approach:
+
+*Create a tidy data frame of correlations*
+tidy_cors <- d %>% 
+  correlate() %>% 
+  stretch()
+
+*Convert correlations stronger than some value to an undirected graph object*
+graph_cors <- tidy_cors %>% 
+  filter(abs(r) > `VALUE_BETWEEN_0_AND_1`) %>% 
+  graph_from_data_frame(directed = FALSE)
+
+*Plot*
+ggraph(graph_cors) +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_graph()
+  
+Check out: https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/
+WGCNA: an R package for weighted correlation network analysis
+
+https://www.data-imaginist.com/2017/announcing-ggraph/
+
+```{r graphs, eval=FALSE, warning=FALSE, include=FALSE}
+graph_cors <- achilles_cor_long %>% 
+  filter(abs(r) > .7) %>%
+  #filter(r  > achilles_upper | r < achilles_lower) %>% #+/- 3SD of mean distribution
+  graph_from_data_frame(directed = FALSE)
+
+ggraph(graph_cors, layout = "auto") +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name)) +
+  theme_graph()
+
+ggraph(graph_cors, layout = "auto") +
+  geom_edge_link(aes(edge_alpha = abs(r), edge_width = abs(r), color = r)) +
+  guides(edge_alpha = "none", edge_width = "none") +
+  scale_edge_colour_gradientn(limits = c(-1, 1), colors = c("blue", "red")) +
+  geom_node_point(color = "black", size = 2, alpha = 0.5) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_graph() +
+  labs(title = "Correlations between genetic dependencies")
+
+#need to make adj network? 
+#https://campus.datacamp.com/courses/network-science-in-r-a-tidy-approach/connection-patterns?ex=1
+
+#need to reduce number of networks, and/or highlight networks. how can you facet based on a sub-network? visualize with facet_node(subnetwork_id)
+#https://en.wikipedia.org/wiki/Adjacency_matrix
+#https://www.data-imaginist.com/2017/announcing-ggraph/
+
+```
+

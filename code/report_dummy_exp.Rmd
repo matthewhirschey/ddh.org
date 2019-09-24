@@ -1,0 +1,30 @@
+---
+output: pdf_document
+---
+
+```{r template_setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#libraries are already loaded
+```
+
+## Report for `r fav_gene`: `r id[match(fav_gene, id$gene), 3]`  
+### Confidential report  
+Author: Matthew Hirschey  
+Printed on `r Sys.Date()`  
+
+## Summary  
+**Gene**: `r fav_gene`  
+**Protein**: `r id[match(fav_gene, id$gene), 3]`  
+**Alt. Protein**: `r id[match(fav_gene, id$gene), 4]`  
+**Entrez ID**: `r as.integer(fav_gene_entrez)`
+  
+```{r summary_block, include=FALSE}
+if(length(summary$X1) > 0) {
+  summary <- str_remove(summary$X1, "summary: ")
+}   else {
+  summary <- paste0("No summary entry in Entrez as of ", Sys.Date())
+}
+```
+`r summary`  
+  
+## No expression data from CCLE

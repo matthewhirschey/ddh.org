@@ -1,0 +1,286 @@
+---
+title: "Dep Map correlation analysis"
+output:
+  pdf_document:
+    toc: TRUE
+params:
+  release: "19Q3"
+  achilles_url: "https://ndownloader.figshare.com/files/16757666"
+  ccle_url: "https://ndownloader.figshare.com/files/16757690"
+  cclemeta_url: "https://ndownloader.figshare.com/files/16757723"
+  na_cutoff: 400
+
+---
+Overall goal of this project is to generate a correlation matrix from Broad Dependency Map data, to look at 'dependency signatures'. This will allow us to infer a functional relationship between genes, based on similar changes in cellular fitness. Chose to get data from Broad, as they have previous made available dependency correlation data on www.depmap.org. Will use Sanger to try to validate some of the findings; unfortunatley, Sanger lists only binary scores.
+
+##Load libraries
+```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(here)
+library(janitor)
+library(feather)
+library(corrr)
+library(purrr)
+library(beepr) #long analysis; get some coffee, and comeback when ready
+
+#clear environment
+#rm(list=ls()) 
+
+#how long?
+start_time <- Sys.time()
+```
+
+##import
+Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
+```{r import}
+##BROAD
+achilles <- read_csv(params$achilles_url, col_names = TRUE) %>%
+  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+write_feather(achilles, path = here::here("data", paste0(params$release, "_achilles.feather")))
+
+achilles_long <- achilles %>% 
+  gather("gene", "dep_score", -X1)
+
+table(is.na(achilles))
+#This shows FALSE: 11427188; TRUE: 31562; 
+count(achilles_long %>% filter(is.na(dep_score)) %>% group_by(gene))
+#bizarre: 734 genes each have 43 NAs (0.2% missing); missing because previous dataset releases did or did not contain cell line dependency data with these genes; dataset does not contain gene-level dependency information for every cell line
+
+##SANGER
+#data from: https://score.depmap.sanger.ac.uk/downloads
+#sanger <- read_tsv(here("data", "binaryDepScores.tsv"), col_names = TRUE) %>% 
+#  clean_names() %>% 
+#  gather(cell, score, -gene) %>% 
+#  spread(gene, score)
+#write_feather(sanger, path = here("data", "sanger.feather"))
+#sanger <- read_feather(here("data", "sanger.feather"))
+#sanger_small <- sanger %>% slice(1:100) %>% select(1:100) #to optimize code
+#I downloaded the "Fitness/Non-fitness Binary Matrix", but this binary information was less rich than Dep Map. Perhaps try "Copy Number Bias Corrected Fold Change Values"? 
+
+#EXPRESSION(BROAD)
+expression <- read_csv(params$ccle_url, col_names = TRUE) %>% 
+  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+write_feather(expression, path = here("data", paste0(params$release, "_expression.feather")))
+
+expression_id <- read_csv(params$cclemeta_url, col_names = TRUE) %>% 
+  clean_names
+write_feather(expression_id, path = here("data", paste0(params$release, "_expression_id.feather")))
+
+expression_join <- expression_id %>% 
+  rename(X1 = dep_map_id) %>% 
+  select(X1, stripped_cell_line_name, lineage)
+```
+
+#remove data from correlations if expression of a gene is *too low
+```{r}
+sum(achilles$X1 %in% expression$X1)
+#621 cell lines match CCLE and DepMap
+
+#this measures range of DGE across cells
+#expression %>% 
+#  select(-X1) %>% 
+#  summarize_all(list(min = min, max = max, avg = mean))
+
+#this makes a long df for graphing expression data
+expression_long <- expression %>% 
+  filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
+  gather("gene", "gene_expression", -X1) %>% 
+  arrange(desc(gene_expression))
+
+#ggplot(expression_long) + 
+#  geom_line(aes(x = fct_reorder(gene, gene_expression), y = gene_expression, group = X1))
+#ggsave("output/expression_all.png", plot = last_plot(), dpi = 600)
+
+#this looked at averages, which was a completely inappropriate way to look at the small df
+#expression_small %>% 
+#  gather(key = "gene", value = "gene_expression", -X1) %>% 
+#  group_by(X1) %>% 
+#  summarize(avg = mean(gene_expression), sd = sd(gene_expression)) %>% 
+#  ggplot() +
+#  geom_point(aes(x = fct_reorder(X1, avg), y = avg)) +
+#  geom_point(aes(x = X1, y = avg + sd), color = "red") + 
+#  geom_point(aes(x = X1, y = avg - sd), color = "blue")
+
+#this looked at averages, which was a completely inappropriate way to look at the full df
+#expression_long %>% 
+#  group_by(X1) %>% 
+#  summarize(avg = mean(gene_expression), sd = sd(gene_expression)) %>% 
+#  ggplot() +
+#  geom_point(aes(x = fct_reorder(X1, avg), y = avg)) +
+#  geom_point(aes(x = X1, y = avg + sd), color = "red") + 
+#  geom_point(aes(x = X1, y = avg - sd), color = "blue") +
+#  labs(title = "Average gene expression value in CCLE", subtitle = "Plus(red) or minus (blue) one standard deviation", #x = "621 CCLE cell lines", y = "Normalized(?) gene expression")
+
+#ggsave("output/expression_avgs.png", plot = last_plot(), dpi = 600)
+
+#small df for graphing eg
+#expression_long_small <- expression_long %>% sample_n(100000)
+
+#subset df for graphing eg
+#expression_sirt4 <- expression_long %>% 
+#  filter(gene == "SIRT4")
+
+#this is the best way to look at the data!
+ggplot() +
+  geom_histogram(data = expression_long, aes(x = gene_expression), binwidth = 0.25) +
+  labs(title = paste("Binned gene expression values in ", length(expression$X1), " CCLE cell lines", sep = ""), subtitle = paste(
+    round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1), "% of all values are zero"), x = "Normalized gene expression (TPM)") +
+  NULL
+
+#several zeros to remove
+
+expression_long %>% 
+  filter(gene_expression == 0) %>% 
+  count()
+
+expression_long %>% 
+  filter(gene_expression != 0) %>% 
+  count()
+
+(expression_long %>% filter(gene_expression == 0) %>% count())/(expression_long %>% filter(gene_expression != 0) %>% count())
+#~15% of values are zero; start here.
+#approx. 2M
+
+#goal is 
+#if expression == 0 in expression datase, then replace zero values with NA; re-run correlation (corrected_cor)
+#overall strategy is to filter no_expression gene-cell pairs from gathered correlation pairs, and then spread back to df, which will populate NAs for missing (filtered out) values
+
+#expression == 0 list
+no_expression <- expression_long %>% 
+  filter(gene_expression == 0) %>% 
+  unite(X1, gene, col = "match", sep = "-", remove = TRUE) %>% 
+  pull(match)
+
+#make new match df
+achilles_no0 <- achilles_long %>% 
+  unite(X1, gene, col = "match", sep = "-", remove = FALSE) %>% 
+  filter(match %in% no_expression == FALSE) %>% 
+  select(-match) %>%
+  spread(gene, dep_score)
+```
+
+##clean too many NAs 
+```{r clean_nas}
+#11458750 values (625*18334)
+#original data set has not NA: 11427188; NA: 31562;
+table(is.na(achilles))
+#new data set has not NA: 9729016; NA: 1729734 
+table(is.na(achilles_no0))
+
+sum(table(is.na(achilles))) == sum(table(is.na(achilles_no0)))
+#TRUE, suggesting totals add up (no dropped variables or observations)
+
+#not NA original - not NA new
+11427188-9729016
+#NA new - NA original
+1729734-31562
+
+#diff is, and therefore 1.69M new NAs
+1698172
+
+#Expected to add 1953250 new NAs (number of no_expression values), which is slightly larger than number of new NAs (1698172), suggesting some NAs we intended to add were already present in dataset? (255078), but that's way more than NAs in data set.
+length(no_expression)
+#remaning 250K come from gene-cell line pairs that were not in the depmap dataset.
+
+#Many genes giving too high r2 value to be real
+#count NAs
+achilles %>% 
+  summarise_all(list(~sum(is.na(.)))) %>% 
+  gather(gene, NAs) %>% 
+  arrange(desc(NAs))  %>% 
+  ggplot() +
+  geom_histogram(aes(x = NAs))
+
+#count NAs in corrected dataframe
+achilles_no0 %>% 
+  summarise_all(list(~sum(is.na(.)))) %>% 
+  gather(gene, NAs) %>% 
+  arrange(desc(NAs)) %>% 
+  ggplot() +
+  geom_histogram(aes(x = NAs))
+
+#looks like we have genes with 'too many' NAs
+#therefore, need a cleaning step to remove genes
+
+na_cutoff <- params$na_cutoff
+
+toomanyNAs <- achilles_no0 %>% 
+  summarise_all(list(~sum(is.na(.)))) %>% 
+  gather(gene, NAs) %>% 
+  arrange(desc(NAs)) %>% 
+  filter(NAs > na_cutoff) %>% 
+  pull(gene)
+
+achilles_clean <- achilles_no0 %>% 
+  select(-one_of(toomanyNAs)) #4491 elements for NAs > 100; 1871 elements for NAs > 400
+```
+
+#correlation analysis for dependency
+*Consider doing the same analysis* for the RNAi combined (MDM2 shows similar crispr/RNAi signatures)
+https://depmap.org/portal/download/
+```{r}
+#ACHILLES CORRELATION MATRIX
+#Correlation method: 'pearson'
+#Missing treated using: 'pairwise.complete.obs'
+achilles_cor <- achilles_clean %>% #originally 'achilles'
+  select(-X1) %>% 
+  correlate() #(diagonal = 0) set to 0 so easy to summarize, but should be NA; so added na.rm = TRUE to fun() in EDA
+write_feather(achilles_cor, path = here("data", paste0(params$release, "_achilles_cor.feather")))
+
+
+#generate graph dataset here
+achilles_cor_long <- achilles_cor %>% 
+  stretch() #310M observations across 3 variables (x, y, r)
+write_feather(achilles_cor_long, path = here("data", paste0(params$release, "_achilles_cor_long.feather")))
+
+#SANGER CORRELATION MATRIX
+#sanger_cor <- sanger %>%
+#  select(-cell) %>% 
+#  correlate(diagonal = 0) #set to 0 to easy to summarize
+#sanger_cor[is.na(sanger_cor)] <- 0
+#write_feather(sanger_cor, path = here("data", "sanger_cor.feather"))
+#sanger_cor <- read_feather(here("data", "sanger_cor.feather"))
+#class(sanger_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+#sanger_cor_small <- sanger_cor %>% slice(1:1000) %>% select(1:1000) #to optimize code
+
+#EXPRESSION CORRELATION MATRIX
+expression_cor <- expression %>% 
+  select(-X1) %>% 
+  correlate(diagonal = 0) #set to 0 so easy to summarize
+write_feather(expression_cor, path = here("data", paste0(params$release, "_expression_cor.feather")))
+#expression_cor_small <- expression_cor %>% 
+#  select(1:10) %>%  #to optimize code
+#  sample_n(1000)
+
+expression_cor_long <- expression_cor %>% 
+  stretch() #310M observations across 3 variables (x, y, r)
+write_feather(expression_cor_long, path = here("data", paste0(params$release, "_expression_cor_long.feather")))
+
+```
+#how long?
+```{r}
+end_time <- Sys.time()
+time_taken <- round(as.duration(start_time %--% end_time)/dminutes(1), digits = 1)
+print(time_taken)
+```
+Approximate time to run was `r time_taken` minutes.
+
+#print Session information for provenance and reproducibility
+```{r}
+utils:::print.sessionInfo(sessionInfo()[-8]) 
+#You can remove an item from sessionInfo(), which is a list with a class attribute, by printing the resulting object omitting one of the list items (omitted list of packages installed, but not loaded)
+
+```
+#stamp
+```{r}
+stamp("Data updated December 31, 1979")(now())
+```
+
+#beep
+```{r}
+beep(sound = 8) #because mario is awesome
+```
+
+
+

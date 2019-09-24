@@ -1,0 +1,41 @@
+---
+output: pdf_document
+---
+
+```{r template_setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#libraries are already loaded
+```
+
+## Report
+Author: Matthew Hirschey  
+Printed on `r Sys.Date()`  
+  
+## `r str_to_title(str_replace_all(lib, "_", " "))`
+**Gene Coverage:** `r as.integer(db_all[match(lib, db_all$libraryName), 1])`  
+**Genes per Term:** `r as.integer(db_all[match(lib, db_all$libraryName), 2])`  
+**More information:** `r db_all[match(lib, db_all$libraryName), 4]`  
+  
+## Positive Correlated Gene Sets from `r lib` 
+Focusing on `r fav_gene`, `r length(dep_top$gene)` genes show a strong postive correlation for similar genetic dependencies  
+  
+```{r template_top, echo=FALSE}
+if(length(list_top$Term) > 0) {
+  pander(head(list_top, n = 10), justify = c("left", "right", "left"))
+} else {
+  pander("None")
+}
+```
+
+## Negative Correlated Gene Sets from `r lib` 
+Focusing on `r fav_gene`, `r length(dep_bottom$gene)` genes show a strong negative correlation for opposing genetic dependencies  
+  
+```{r template_bottom, echo=FALSE}
+if(length(list_bottom$Term) > 0) {
+  pander(head(list_bottom, n = 10), justify = c("left", "right", "left"))
+} else {
+  pander("None")
+}
+```
+
+

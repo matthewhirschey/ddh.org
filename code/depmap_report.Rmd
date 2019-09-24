@@ -1,0 +1,339 @@
+---
+title: "Dep Map correlation analysis report generator"
+output:
+  pdf_document:
+    toc: TRUE
+params:
+  release: "19Q3"
+---
+This is the report generator code.
+
+##Load libraries
+```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(here)
+library(readxl)
+library(janitor)
+library(feather)
+library(corrr)
+library(purrr)
+library(viridis)
+library(enrichR)
+library(glue)
+library(moderndive)
+library(rmarkdown)
+library(gridExtra)
+library(knitr)
+library(pander)
+library(vroom)
+library(beepr) #long analysis; get some coffee, and comeback when ready
+
+#clear environment
+#rm(list=ls()) 
+
+#how long?
+start_time <- Sys.time()
+```
+
+#define functions
+```{r}
+#pathway enrichment analysis loop function
+enrichr_loop <- function(gene_list, databases){
+  if(is_empty(gene_list)){
+    flat_complete <- NULL
+    return(flat_complete)
+  } else {
+    flat_complete <- as_tibble()
+    for(lib in databases){
+      enriched <- enrichr(gene_list, lib)
+      
+      flat <- flatten_dfc(enriched) %>% 
+        mutate(enrichr = lib)
+      
+      flat_complete <- flat_complete %>% 
+        bind_rows(flat)
+    }
+    flat_complete <- flat_complete %>% 
+      arrange(Adjusted.P.value) %>% 
+      select(enrichr, Term, Overlap) 
+    
+    flat_complete$enrichr <- str_replace_all(flat_complete$enrichr, "\\_", " ")
+    flat_complete$Term <- str_replace_all(flat_complete$Term, "\\_", " ")
+    return(flat_complete)
+  }
+}
+```
+
+##import
+Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
+```{r import}
+##BROAD
+achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
+achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
+class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
+
+#achilles_cor_small <- achilles_cor %>% slice(1:1000) %>% select(1:1000) #to optimize code
+#achilles_long_small <- achilles_long %>% sample_n(1000)
+
+
+##SANGER
+#data from: https://score.depmap.sanger.ac.uk/downloads
+#sanger <- read_feather(here("data", "sanger.feather"))
+#sanger_small <- sanger %>% slice(1:100) %>% select(1:100) #to optimize code
+#I downloaded the "Fitness/Non-fitness Binary Matrix", but this binary information was less rich than Dep Map. Perhaps try "Copy Number Bias Corrected Fold Change Values"? 
+
+#EXPRESSION(BROAD)
+expression_id <- read_feather(here("data", paste0(params$release, "_expression_id.feather"))) 
+
+expression_join <- expression_id %>% 
+  rename(X1 = dep_map_id) %>% 
+  select(X1, stripped_cell_line_name, lineage)
+```
+
+#Permutation tests
+A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses
+
+Can I do this for one gene, sampling from the entire correlation matrix, and getting a distribution of correlated means for a single gene 1000x?
+
+Consider: https://tidymodels.github.io/rsample/articles/Basics.html
+#moderndive package
+https://moderndive.com/8-sampling.html
+
+```{r permutation}
+  virtual_achilles <- achilles_cor_long %>% #achilles_cor_long already has all of the variables in a long format
+  filter(!is.na(r)) %>%   
+  rep_sample_n(size = 20000, reps = 1000) %>% #larger sample size, less error (but only 625 sets, and we're mimicking 1000?, but 310M combinations, so probably OK)
+  group_by(replicate) %>% 
+  summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r)) #how to handle + vs. - correlation?
+
+#instead of filtering, could:
+#summarize_all(list(max = max(r, na.rm = TRUE), 
+#                     min = min(r, na.rm = TRUE),
+#                     mean = mean(r, na.rm = TRUE),
+#                     sd = sd(r, na.rm = TRUE))) 
+#but threw and error
+
+#The mean may not be the best measure of centrality due to its sensitivity to outliers. The example data used here seems asymmetric and it that case the median is a better measure of centrality.
+#https://github.com/JoachimGoedhart/PlotsOfDifferences
+
+ggplot(virtual_achilles, aes(x = sd)) +
+  geom_histogram(color = "white") +
+  labs(x = "SD r^2 value from virtual achilles", 
+       title = "Distribution of mean r^2 values") 
+
+mean_virtual_achilles <- mean(virtual_achilles$mean)
+sd_virtual_achilles <- mean(virtual_achilles$sd)
+
+sd_threshold <- 3
+
+achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
+achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
+```
+
+#how long to set-up this code for searches?
+```{r}
+end_time <- Sys.time()
+time_taken <- round(as.duration(start_time %--% end_time)/dminutes(1), digits = 1)
+print(time_taken)
+```
+Approximate time to run was `r time_taken` minutes.
+
+#print Session information for provenance and reproducibility
+```{r}
+utils:::print.sessionInfo(sessionInfo()[-8]) 
+#You can remove an item from sessionInfo(), which is a list with a class attribute, by printing the resulting object omitting one of the list items (omitted list of packages installed, but not loaded)
+
+```
+
+#beep
+```{r}
+beep(sound = 8) #because mario is awesome
+```
+
+#gene groups
+```{r import_targets, eval=FALSE, include=FALSE}
+#write_feather(id, path = here("data", "id.feather"))
+id <- read_feather(here::here("data", "id.feather"))
+
+proteins <- id %>% 
+  select(gene, protein_name)
+
+nhr <- read_excel(here::here("data", "table1.xlsx"), col_names = FALSE) %>% 
+  clean_names() %>% 
+  pull() %>% 
+  str_trim(side = c("both"))
+
+#nhr_short <- nhr[!nhr %in% c("NR2E3", "AR", "NR0B1")] #chokes if I have columns that are not in dataset; need better way to skip over missing values #done; fixed with if/esle
+#NHR_test <- NHR[NHR %in% c("THRA", "THRB")]
+#nhr_trim <- nhr[48:48]
+#str_which(nhr, "NR0B2")
+
+slc <- id %>% 
+  filter(str_detect(gene, "SLC")) %>% 
+  pull(gene)
+
+#slc <- str_subset(names(achilles_cor), "SLC")
+#slc_test <- slc[1:10]
+#str_which(slc, "SLC6A19")
+#slc_trim <- slc[339:363]
+
+SIRT <- c("SIRT1", "SIRT2", "SIRT3", "SIRT4", "SIRT5", "SIRT6", "SIRT7")
+target_vec <- c("CPT1A", "CPT1B", "CPT1C", "CPT2", "SLC25A20")
+hdac <- str_subset(names(achilles_cor), "HDAC")
+
+mitocarta_full <- read_feather(here::here("data", "mitocarta.feather"))
+mitocarta <- mitocarta_full %>% pull(Symbol)
+
+transporter <- read_xlsx(here::here("data", "Transporter_genes_list.xlsx"), col_names = TRUE) %>% 
+  clean_names() %>% 
+  pull(gene)
+
+#guest projects
+trub <- c("FASN", "HMGCR", "HMGCS1")
+transferase <- id %>% filter(str_detect(protein_name, "transferase")) %>% pull(gene)
+acyltransferase <- id %>% filter(str_detect(protein_name, "acyltransferase")) %>% pull(gene)
+deacylase <- id %>% filter(str_detect(protein_name, "deacetylase") | str_detect(protein_name, "deacylase")) %>% pull(gene)
+abraham <- c("KCNK3", "KCNK9", "KCNK2")
+angiotensin <- id %>% filter(str_detect(protein_name, "angiotensin")) %>% pull(gene)
+myc <- id %>% filter(str_detect(gene, "MYC")) %>% pull(gene)
+koves <- c("MLYCD")
+klhl <- id %>% filter(str_detect(gene, "KLHL")) %>% pull(gene)
+boyce <- c("GALE", "OGA", "OGT", "KEAP1", "GAN", "ENC1", klhl)
+keap <- c("GAN", "ENC1")
+bcaa <- c("ABAT", "ACAA1", "ACAA2", "ACAD8", "ACADM", "ACADS", "ACADSB", "ALDH1B1", "ALDH2", "ALDH3A2", "ALDH6A1", "ALDH7A1", "ALDH9A1", "AOX1", "AUH", "BCAT1", "BCAT2", "BCKDHA", "BCKDHB", "BCKDK", "DBT", "DLD", "ECHS1", "EHHADH", "HADH", "HADHA", "HADHB", "HIBADH", "HIBCH", "HMGCL", "HMGCL", "HMGCS2", "HSD17B10", "IVD", "MCCC1", "MCCC2", "MCEE", "MUT", "PCCA", "PCCB")
+bcaa_trim <- c("MUT", "PCCA", "PCCB")
+creatine <- c("GATM", "GAMT", "SLC6A8", "CKB", "CKM", "CKMT1B", "CKMT2")
+glycolysis <- c("ALDOA", "BPGM", "ENO1", "ENO2", "GAPDH", "GPI", "HK1", "HK2", "HKDC1", "PFKL", "PFKM", "PGAM1", "PGAM2", "PGAM4", "PGK1", "PKLR", "PKM", "TPI1")
+cardiolipin <- c("CKMT1A", "CKMT1B", "CYCS", "NME4", "TAZ", "TMEM256-PLSCR3", "CRLS1", "PGS1", "PTPMT1", "TAMM41")
+cholesterol <- c("ACAT2", "CYP51A1", "DHCR24", "DHCR7", "EBP", "FDFT1", "FDPS", "GGPS1", "HMGCR", "HMGCS1", "HSD17B7", "IDI1", "LBR", "LIPA", "LSS", "MSMO1", "MVD", "MVK", "NSDHL", "PMVK", "SC5D", "SOAT1", "SQLE", "TM7SF2")
+tca <- c("ACLY", "ACO1", "ACO2", "CS", "DLAT", "DLD", "DLST", "FH", "IDH1", "IDH2", "IDH3A", "IDH3B", "IDH3G", "MDH1", "MDH2", "MPC1", "OGDH", "OGDHL", "PC", "PCK1", "PCK2", "PDHA1", "PDHA2", "PDHB", "SDHA", "SDHB", "SDHC", "SDHD", "SUCLA2", "SUCLG1", "SUCLG2")
+purine <- c("ADSL", "ADSS1", "ADSS2", "AK1", "AK2", "AK3", "AK4", "AK5", "ATIC", "GART", "GMPS", "IMPDH1", "IMPDH2", "PAICS", "PFAS", "PPAT", "PRPS1", "PRPS1L1", "PRPS2", "TAF9")
+pyrimidine <- c("CAD", "CMPK1", "CMPK2", "CTPS1", "CTPS2", "DHODH", "NME1", "NME2", "NME3", "NME4", "NME6", "UMPS")
+ampk <- c("CAB39", "CALM1", "CALM2", "CALM3", "CAMKK1", "CAMKK2", "PPM1E", "PPM1F", "PPP1CA", "PPP1CB", "PPP1R3D", "PPP2CA", "PRKAA1", "PRKAA2", "PRKAB1", "PRKAB2", "PRKAG1", "PRKAG2", "PRKAG3", "STK11", "STRADA")
+ampk_trim <- c("PRKAA2", "PRKAB1", "PRKAB2", "PRKAG1", "PRKAG2", "PRKAG3", "STK11", "STRADA")
+fao <- c("ABCD1", "ABCD2", "ACAA2", "ACAD9", "ACADL", "ACADM", "ACADS", "ACADVL", "ACAT1", "ACSL1", "ACSL3", "ACSL4", "ACSL5", "ACSL6", "ACSM1", "ACSM2A", "ACSM2B", "ACSM3", "ACSM4", "ACSS1", "ACSS2", "ACSS3", "CPT1A", "CPT1B", "CPT2", "CRAT", "CROT", "ECHS1", "ETFA", "ETFB", "ETFDH", "HADH", "HADHA", "HADHB", "HSD17B10", "PEX11G", "PEX13", "PEX14", "SLC25A20")
+glycogen <- c("GBE1", "GCK", "GSK3A", "GSK3B", "GYG1", "GYS1", "GYS2", "PGM1", "PGM2", "PGM3", "PPP1CA", "PPP1CB", "PPP1CC", "PPP1R3A", "PPP1R3B", "PPP1R3C", "PPP1R3D", "PPP1R3E", "UGP2", "AGL", "CALM1", "CALM2", "CALM3", "G6PC", "PHKA1", "PHKA2", "PHKB", "PHKG1", "PHKG2", "PYGB", "PYGL")
+fas <- c("ACACA", "ACACB", "ACLY", "FASN", "MCAT", "OLAH", "OXSM", "ACAA2", "ECHS1", "HADHA", "HADHB", "HSD17B10", "MECR", "PPT1")
+urea <- c("ARG1", "ARG2", "ASL", "ASS1", "CPS1", "GLS2", "GLUD1", "GOT2", "GPT", "OTC", "SLC1A4", "SLC1A5", "SLC25A12", "SLC25A15")
+ashley <- c("NMNAT1", "NMNAT2", "NMNAT3", "PNP")
+tong <- c("MBOAT4")
+herman <- c("MET", "HGF", "HGFAC", "REEP3", "PBX4", "KHK", "APOA5", "MLXIPL", "TM6SF2", "GALNT2", "MSL2", "TMEM184B")
+hypoxia <- c("HIF1A", "ARNT", "EPAS1", "ARNT2", "HIF3A", "ARNT3", "EGLN1", "EGLN2", "EGLN3", "VHL", "HIF1AN")
+counter <- c("RALA", "KRAS", "HRAS", "NRAS", "RAF1", "BRAF", "RRAS", "AURKA", "AURKB", "AURKC")
+```
+
+#loop to generate complete reports with enrichr_loop fun()
+```{r reports_complete, eval=FALSE, warning=FALSE, include=FALSE}
+gene_group <- c("MDH1")
+
+focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
+
+for (fav_gene in gene_group) {
+  if(fav_gene %in% names(achilles_cor) == 1){ #this code checks to see if the gene is in the analysis, and if not, skips
+    dep_top <- achilles_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select(gene, protein_name, fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    
+    dep_bottom <- achilles_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select("gene", "protein_name", fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    #this is to get neg correlators
+      
+    #pathway enrichment analyses
+    flat_top_complete <- dep_top %>%
+       pull("gene") %>% 
+       c(fav_gene, .) %>% 
+       enrichr_loop(., focused_lib)
+     
+     #bottom 
+     flat_bottom_complete <- dep_bottom %>%
+       pull("gene") %>% 
+       enrichr_loop(., focused_lib)
+
+    #plot setup
+    target_achilles <- achilles_long %>% 
+      filter(gene == fav_gene) %>% 
+      left_join(expression_join, by = "X1") %>% 
+      select(stripped_cell_line_name, lineage, dep_score)
+    
+    target_achilles_top <- target_achilles %>% 
+      top_frac(dep_score, n = 0.01)
+    
+    target_achilles_bottom <- target_achilles %>% 
+      top_frac(dep_score, n = -0.01) %>% 
+      arrange(dep_score)
+    
+    #plot1
+    dep_plot1 <- ggplot(target_achilles) +
+      geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
+      labs(x = "Dependency Score (binned)") + 
+      theme_light()
+    
+    #plot2
+    dep_plot2 <- ggplot(target_achilles) +
+      geom_point(aes(x = fct_rev(fct_reorder(target_achilles$stripped_cell_line_name, target_achilles$dep_score, .desc = TRUE)), y = dep_score)) +
+      labs(x = "Cell Lines", y = "Dependency Score") +
+      geom_hline(yintercept = mean_virtual_achilles) +
+      geom_hline(yintercept = achilles_upper, linetype="dashed") +
+      geom_hline(yintercept = achilles_lower, linetype="dashed") +
+      geom_hline(yintercept = 0) +
+      geom_point(data = target_achilles_top, aes(x = stripped_cell_line_name, y = dep_score), color = "red") +
+      geom_point(data = target_achilles_bottom, aes(x = stripped_cell_line_name, y = dep_score), color = "red") +
+      theme_light() +
+      theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
+      NULL
+    
+    #summary
+    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
+    if(is.na(fav_gene_entrez) == TRUE){
+      lookup <- c("NULL")
+      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
+    } else {
+      # paste into url
+      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
+      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
+    }
+    
+    #render output
+    render("report_depmap_complete.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
+  } else {
+    #summary
+    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
+    if(is.na(fav_gene_entrez) == TRUE){
+      lookup <- c("NULL")
+      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
+    } else {
+      # paste into url
+      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
+      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
+    }
+    
+    #render output
+    render("report_dummy_depmap.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
+    #return()
+  }
+}
+
+#beep(sound = 8) 
+#because mario is awesome
+```
+
+#cover page
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#render output
+render("report_cover.rmd", output_dir = here::here("results"), output_file = "cover.pdf")
+```
+
+

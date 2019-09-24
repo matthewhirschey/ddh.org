@@ -1,0 +1,630 @@
+---
+title: "CCLE correlation analysis"
+output:
+  pdf_document:
+    toc: TRUE
+---
+Overall goal of this project is to generate a correlation matrix from CCLE data, to look at 'expression signatures'. This will allow us to infer a functional relationship between genes.
+
+##Load libraries
+```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(readxl)
+library(janitor)
+library(feather)
+library(corrr)
+library(purrr)
+library(igraph)
+library(ggraph)
+library(glue)
+library(ggrepel)
+library(viridis)
+library(enrichR)
+library(moderndive)
+library(rmarkdown)
+library(gridExtra)
+library(knitr)
+library(pander)
+library(vroom)
+library(beepr) #long analysis; get some coffee, and comeback when ready
+
+#clear environment
+#rm(list=ls()) 
+
+#print Session information for provenance and reproducibility
+utils:::print.sessionInfo(sessionInfo()[-8]) 
+#You can remove an item from sessionInfo(), which is a list with a class attribute, by printing the resulting object omitting one of the list items (omitted list of packages installed, but not loaded)
+
+```
+#define functions
+```{r}
+#pathway enrichment analysis loop function
+enrichr_loop <- function(gene_list, databases){
+  if(is_empty(gene_list)){
+    flat_complete <- NULL
+    return(flat_complete)
+  } else {
+    flat_complete <- as_tibble()
+    for(lib in databases){
+      enriched <- enrichr(gene_list, lib)
+      
+      flat <- flatten_dfc(enriched) %>% 
+        mutate(enrichr = lib)
+      
+      flat_complete <- flat_complete %>% 
+        bind_rows(flat)
+    }
+    flat_complete <- flat_complete %>% 
+      arrange(Adjusted.P.value) %>% 
+      select(enrichr, Term, Overlap) 
+    
+    flat_complete$enrichr <- str_replace_all(flat_complete$enrichr, "\\_", " ")
+    flat_complete$Term <- str_replace_all(flat_complete$Term, "\\_", " ")
+    return(flat_complete)
+  }
+}
+```
+
+##import
+Import Broad cell line expression data
+```{r import}
+#EXPRESSION(BROAD)
+#expression <- read_csv(here("raw", "CCLE_expression.csv"), col_names = TRUE) %>% 
+#  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+#expression_small <- expression %>% slice(1:100) %>% select(1:100)
+#write_feather(expression, path = here("raw", "expression.feather"))
+expression <- read_feather(here("raw", "expression.feather"))
+
+#expression_id <- read_tsv(here("raw", "Cell_lines_annotations_20181226.txt"), col_names = TRUE) %>% 
+#  clean_names
+
+expression_id <- vroom(here("raw", "sample_info.csv"), col_names = TRUE) %>% 
+  clean_names
+
+id <- read_feather(here("raw", "id.feather"))
+proteins <- id %>% select(gene, protein_name) #make smaller/focused for left_join below
+```
+#EDA
+```{r}
+table(is.na(expression))
+#no NAs
+
+#sum(achilles$X1 %in% expression$X1)
+#621 cell lines match CCLE and DepMap
+
+#LONG
+expression_long_full <- expression %>% 
+  #filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
+  gather("gene", "gene_expression", -X1) %>% 
+  arrange(desc(gene_expression))
+
+#this is the best way to look at the data!
+ggplot() +
+  geom_histogram(data = expression_long_full, aes(x = gene_expression), binwidth = 0.25) +
+  labs(title = paste("Binned gene expression values in ", length(expression$X1), " CCLE cell lines", sep = ""), subtitle = paste(
+    round(((expression_long_full %>% filter(gene_expression == 0) %>% count())/(length(expression_long_full$gene_expression))*100), digits = 1), "% of all values are zero"), x = "Normalized gene expression (TPM)") +
+  NULL
+```
+#correct for skewness
+```{r}
+expression_long_full %>% 
+  filter(gene_expression > 1) %>% 
+  ggplot() +
+  geom_histogram(aes(x = gene_expression), binwidth = 0.25)
+
+expression_long_clip <- expression_long_full %>% 
+  filter(gene_expression > 1)
+
+#http://rstudio-pubs-static.s3.amazonaws.com/1563_1ae2544c0e324b9bb7f6e63cf8f9e098.html
+library(e1071)
+skewness(expression_long_clip$gene_expression)
+skew.score <- function(c, x) (skewness(log(x + c)))^2
+
+cval <- seq(0, 20, l = 101)
+skew <- cval * 0
+for (i in 1:length(cval)) skew[i] <- skewness(log(cval[i] + expression_long_clip$gene_expression))
+plot(cval, skew, type = "l", ylab = expression(b[3](c)), xlab = expression(c))
+abline(h = 0, lty = 3)
+
+best.c <- optimise(skew.score, c(0, 20), x = expression_long_clip$gene_expression)$minimum
+best.c
+
+expression_long_clip <- expression_long_clip %>% 
+  mutate(gene_expression_log = log(gene_expression + best.c)) %>% 
+  select(-gene_expression)
+
+ggplot() +
+  geom_histogram(data = expression_long_clip, aes(x = gene_expression_log), binwidth = 0.25) 
+
+skewness(expression_long_clip$gene_expression_log)
+
+qqnorm(expression_long_clip$gene_expression_log)
+qqline(expression_long_clip$gene_expression_log)
+```
+#correction take 2
+```{r}
+expression_long_full <- expression_long_full %>% 
+  mutate(gene_expression_log = log2((gene_expression + 1))) 
+
+ggplot(expression_long_full) +
+  geom_histogram(aes(x = gene_expression_log), binwidth = 0.25)
+```
+
+
+#Permutation tests
+```{r permutation}
+virtual_expression <- expression_long_clip %>% #already has all of the variables in a long format
+  rep_sample_n(size = 20000, reps = 1000) %>%
+  group_by(replicate) %>% 
+  summarize(mean = mean(gene_expression_log), max = max(gene_expression_log), min = min(gene_expression_log), sd = sd(gene_expression_log))
+
+ggplot(virtual_expression, aes(x = mean)) +
+  geom_histogram(color = "white") +
+  labs(x = "Mean", 
+       title = "Distribution of means from virtual CCLE") 
+
+mean_virtual_expression <- exp(1)^(mean(virtual_expression$mean))
+sd_virtual_expression <- exp(1)^(mean(virtual_expression$sd))
+
+expression_upper <- mean_virtual_expression + 2*sd_virtual_expression
+expression_lower <- mean_virtual_expression - 2*sd_virtual_expression
+```
+
+#targeted gene high/low
+```{r}
+gene1 <- c("H2AFZ")
+name <- paste(gene1, "_expression", sep = "")
+
+expression_join <- expression_id %>% 
+  rename(X1 = dep_map_id) %>% 
+  select(X1, stripped_cell_line_name, lineage)
+
+target_expression <- expression_long_full %>% 
+  filter(gene == gene1) %>% 
+  left_join(expression_join, by = "X1") %>% 
+  select(-X1) %>% 
+  #rename(!!name := gene_expression)  %>% #solution from here: https://github.com/tidyverse/dplyr/issues/1600
+  mutate(decile = ntile(gene_expression, 10))
+  
+target_expression_label_top <- expression_long_full %>% 
+  filter(gene == gene1) %>% 
+  left_join(expression_join, by = "X1") %>% 
+  select(-X1) %>% 
+  top_frac(gene_expression, n = 0.01)
+
+target_expression_label_bottom <- expression_long_full %>% 
+  filter(gene == gene1) %>% 
+  left_join(expression_join, by = "X1") %>% 
+  select(-X1) %>% 
+  top_frac(gene_expression, n = -0.01)
+
+target_expression$ccle_name <- as.factor(target_expression$stripped_cell_line_name)
+
+ggplot(target_expression) +
+  geom_histogram(aes(x = gene_expression), binwidth = 0.25) +
+  geom_vline(xintercept = mean_virtual_expression) +
+  annotate("text", x = mean_virtual_expression + 0.02*mean_virtual_expression, Inf, family = "", size = 2.7, color = "gray20",
+           label = glue::glue("Mean of sampled\ngene expression:\n{round(mean_virtual_expression, 1)}"), hjust = 0, vjust = 1) +
+  geom_vline(xintercept = expression_upper, linetype="dashed") +
+  labs(x = "Gene Expression (binned)", y = "Distribution [scaled]",title = glue::glue("Distribution of ", gene1, " Expression"), subtitle = glue::glue("In ", length(expression$X1)," CCLE cell lines"))
+
+ggplot(target_expression) +
+  geom_density(aes(x = gene_expression, y = ..scaled..), fill = "gray") +
+  geom_vline(xintercept = mean_virtual_expression) +
+  annotate("text", x = mean_virtual_expression + 0.02*mean_virtual_expression, y = 1.1, family = "", size = 2.7, color = "gray20",
+           label = glue::glue("Mean of Sampled Gene Expression:\n{round(mean_virtual_expression, 1)}"), hjust = 0) +
+  geom_vline(xintercept = expression_upper, linetype="dashed") +
+  #geom_vline(xintercept = expression_lower, linetype="dashed") +
+  annotate("text", x = expression_upper - 0.02*expression_upper, y = 1.1, family = "", size = 2.7, color = "gray20",
+           label = glue::glue("+ 2 Standard Deviations:\n{round(expression_upper, 1)}"), hjust = 1) +
+  scale_y_continuous(breaks = c(0, 0.5, 1.0)) +
+  labs(x = "Gene Expression",title = glue::glue("Distribution of ", gene1, " Expression"), subtitle = glue::glue("In ", length(expression$X1)," CCLE cell lines"))
+
+
+ ggplot(target_expression) +
+  #geom_point(aes(x = fct_reorder(target_expression$ccle_name, target_expression$gene_expression, .desc = TRUE), y = gene_expression)) +
+  geom_boxplot(aes(x = fct_reorder(target_expression$ccle_name, target_expression$gene_expression, .desc = TRUE), y = gene_expression, group = decile)) +
+  labs(x = "", y = "expression", title = name, subtitle = "In CCLE cell lines") +
+  geom_hline(yintercept = mean_virtual_expression) +
+  geom_hline(yintercept = expression_upper, linetype="dashed") +
+  geom_hline(yintercept = expression_lower, linetype="dashed") +
+  geom_hline(yintercept = 0) +
+  #geom_point(data = target_expression_label_top, aes(x = ccle_name, y = gene_expression), color = "red") +
+  #geom_point(data = target_expression_label_bottom, aes(x = ccle_name, y = gene_expression), color = "red") +
+  #geom_text_repel(data = target_expression_label_top, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+  #geom_text_repel(data = target_expression_label_bottom, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + #axis.ticks.x=element_blank()
+  NULL
+ 
+ ggplot(target_expression) +
+  geom_point(aes(x = fct_reorder(target_expression$stripped_cell_line_name, target_expression$gene_expression, .desc = TRUE), y = gene_expression)) +
+  labs(x = "", y = "expression", title = name, subtitle = "In CCLE cell lines") +
+  geom_hline(yintercept = mean_virtual_expression) +
+  geom_hline(yintercept = expression_upper, linetype="dashed") +
+  geom_hline(yintercept = expression_lower, linetype="dashed") +
+  geom_hline(yintercept = 0) +
+  geom_point(data = target_expression_label_top, aes(x = stripped_cell_line_name, y = gene_expression), color = "red") +
+  geom_point(data = target_expression_label_bottom, aes(x = stripped_cell_line_name, y = gene_expression), color = "red") +
+  #geom_text_repel(data = target_expression_label_top, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+  #geom_text_repel(data = target_expression_label_bottom, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+  theme(axis.title.x=element_blank(), axis.text.x=element_blank()) + #axis.ticks.x=element_blank()
+  NULL
+```
+
+#EXPRESSION CORRELATION MATRIX
+```{r}
+#expression_cor <- expression %>% 
+#  select(-X1) %>% 
+#  correlate() #(diagonal = 0) #set to 0 so easy to summarize
+
+#write_feather(expression_cor, path = here("raw", "expression_cor.feather"))
+expression_cor <- read_feather(here("raw", "expression_cor.feather"))
+class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+#expression_cor_small <- expression_cor %>% 
+#  select(1:10) %>%  #to optimize code
+#  sample_n(1000)
+
+expression_cor_long <- expression_cor %>% 
+  gather("gene", "r", -rowname) %>% 
+  arrange(desc(r))
+  
+```
+
+#expression cor permutation
+```{r exp_cor_permutation}
+  virtual_expression_cor <- expression_cor_long %>% #achilles_cor_graph already has all of the variables in a long format
+  filter(!is.na(r)) %>%   
+  rep_sample_n(size = 20000, reps = 1000) %>% #larger sample size, less error
+  group_by(replicate) %>% 
+  summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r)) #how to handle + vs. - correlation?
+
+ggplot(virtual_expression_cor, aes(x = mean)) +
+  geom_histogram(color = "white") +
+  labs(x = "Mean r^2 value from virtual expression correlation", 
+       title = "Distribution of mean r^2 values") 
+
+mean_virtual_expression_cor <- mean(virtual_expression_cor$mean)
+sd_virtual_expression_cor <- mean(virtual_expression_cor$sd)
+
+sd_threshold_exp <- 2
+
+expression_cor_upper <- mean_virtual_expression_cor + sd_threshold_exp*sd_virtual_expression_cor
+expression_cor_lower <- mean_virtual_expression_cor - sd_threshold_exp*sd_virtual_expression_cor
+```
+
+#expression correlation analyses
+```{r}
+#expression_cor_small
+
+expression_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>%
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>%  
+  top_n(25) #%>% #filter(max > achilles_upper) %>%
+  #kable(format="html", digits = 3, caption = "Genes with large positively correlated expression patterns", col.names = c("Gene", "r^2"))
+
+expression_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~min(., na.rm = TRUE))) %>%  
+  gather("gene", "min") %>% 
+  arrange(min) %>%  
+  top_n(-25) #%>% #filter(min < achilles_lower) %>%
+  #kable(format="html", digits = 3, caption = "Genes with large negatively correlated expression patterns", col.names = c("Gene", "r^2"))
+
+```
+
+#EDA to get gene lists for focused targets
+```{r pull_genes}
+gene <- c("SIRT5")
+
+expression_cor %>% 
+  focus(gene) %>% 
+  arrange(desc(.[[2]])) %>% #use column index
+  top_n(50)
+
+expression_cor %>% 
+  focus(gene) %>% 
+  arrange(.[[2]]) %>% #use column index
+  top_n(-50)
+#this is to get neg correlators
+
+```
+#define groups
+```{r}
+SIRT <- c("SIRT1", "SIRT2", "SIRT3", "SIRT4", "SIRT5", "SIRT6", "SIRT7")
+target_vec <- c("CPT1A", "CPT1B", "CPT1C", "CPT2", "SLC25A20")
+hdac <- str_subset(names(expression_cor), "HDAC")
+trub <- c("FASN", "HMGCR", "HMGCS1")
+transferase <- id %>% filter(str_detect(protein_name, "transferase")) %>% pull(gene)
+acyltransferase <- id %>% filter(str_detect(protein_name, "acyltransferase")) %>% pull(gene)
+deacylase <- id %>% filter(str_detect(protein_name, "deacetylase") | str_detect(protein_name, "deacylase")) %>% pull(gene)
+nhr <- read_excel(here("raw", "table1.xlsx"), col_names = FALSE) %>% 
+  clean_names() %>% 
+  pull() %>% 
+  str_trim(side = c("both"))
+
+#nhr_trim <- nhr[27:48]
+#str_which(nhr, "NR2C2")
+
+#guest projects
+abraham <- c("KCNK3", "KCNK9", "KCNK2")
+angiotensin <- id %>% filter(str_detect(protein_name, "angiotensin")) %>% pull(gene)
+myc <- id %>% filter(str_detect(gene, "MYC")) %>% pull(gene)
+koves <- c("MLYCD")
+boyce <- c("GALE", "OGA", "OGT")
+```
+
+
+#loop to complete generate reports
+```{r reports_complete, eval=FALSE, warning=FALSE, include=FALSE}
+gene_group <- nhr_trim
+
+db_all <- listEnrichrDbs()
+focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
+
+library_name <- db_all %>% 
+  filter(libraryName %in% focused_lib) %>%  #errors with these dbs, and remove redundancy
+  pull(libraryName)
+
+for (fav_gene in gene_group) {
+  if(fav_gene %in% names(expression_cor) == 1){ #this code checks to see if the gene is in the analysis, and if not, skips
+    #still errors out if fav_gene is in achilles_cor, but no genes meet threshold of 2SD; error in EnrichR (list !== NULL) 
+    exp_top <- expression_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > expression_cor_upper) %>%
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select(gene, protein_name, fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    
+    exp_bottom <- expression_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < expression_cor_lower) %>%
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select("gene", "protein_name", fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    #this is to get neg correlators
+ 
+  #empty tibbles before filling
+  flat_top_complete <- as_tibble()
+  flat_bottom_complete <- as_tibble()
+      
+    #pathway enrichment analyses
+   for(lib in library_name){
+     #top  
+     enriched_top <- exp_top %>%
+       pull("gene") %>% 
+       c(fav_gene, .) %>% 
+       enrichr(., lib)
+     
+     flat_top <- flatten_dfc(enriched_top) %>% 
+       mutate(enrichr = lib)
+     
+     flat_top_complete <- flat_top_complete %>% 
+       bind_rows(flat_top)
+     
+     #bottom 
+     enriched_bottom <- exp_bottom %>%
+       pull("gene") %>% 
+       enrichr(., lib)
+     
+     flat_bottom <- flatten_dfc(enriched_bottom) %>% 
+       mutate(enrichr = lib)
+     
+     flat_bottom_complete <- flat_bottom_complete %>% 
+       bind_rows(flat_bottom)
+   }
+   
+  flat_top_complete <- flat_top_complete %>% 
+    arrange(Adjusted.P.value) %>% 
+    select(enrichr, Term, Overlap) 
+  
+  flat_top_complete$enrichr <- str_replace_all(flat_top_complete$enrichr, "\\_", " ")
+  flat_top_complete$Term <- str_replace_all(flat_top_complete$Term, "\\_", " ")
+  
+  flat_bottom_complete <- flat_bottom_complete %>% 
+    arrange(Adjusted.P.value) %>% 
+    select(enrichr, Term, Overlap)
+  
+  flat_bottom_complete$enrichr <- str_replace_all(flat_bottom_complete$enrichr, "\\_", " ")
+  flat_bottom_complete$Term <- str_replace_all(flat_bottom_complete$Term, "\\_", " ")
+  
+#plot setup
+target_expression <- expression_long_full %>% 
+  filter(gene == fav_gene) %>% 
+  left_join(expression_join, by = "X1") %>% 
+  select(stripped_cell_line_name, lineage, gene_expression)
+
+target_expression_top <- target_expression %>% 
+  top_frac(gene_expression, n = 0.01)
+
+target_expression_bottom <- target_expression %>% 
+  top_frac(gene_expression, n = -0.01) %>% 
+  arrange(gene_expression)
+
+#plot1
+exp_plot1 <- ggplot(target_expression) +
+  geom_histogram(aes(x = gene_expression), binwidth = 0.25, color = "lightgray") +
+  geom_vline(xintercept = mean_virtual_expression) +
+  annotate("text", x = mean_virtual_expression - 0.02*mean_virtual_expression, Inf, family = "", size = 2.7, color = "gray20",
+           label = glue::glue("Mean of sampled\ngene expression:\n{round(mean_virtual_expression, 1)}"), hjust = 1, vjust = 1) +
+  geom_vline(xintercept = expression_upper, linetype="dashed") +
+  labs(x = "Gene Expression (binned)") + 
+  theme_light()
+
+#plot2
+exp_plot2 <- ggplot(target_expression) +
+  geom_point(aes(x = fct_reorder(target_expression$stripped_cell_line_name, target_expression$gene_expression, .desc = TRUE), y = gene_expression)) +
+  labs(x = "Cell Lines", y = "Gene Expression") +
+  geom_hline(yintercept = mean_virtual_expression) +
+  geom_hline(yintercept = expression_upper, linetype="dashed") +
+  geom_hline(yintercept = expression_lower, linetype="dashed") +
+  geom_hline(yintercept = 0) +
+  geom_point(data = target_expression_top, aes(x = stripped_cell_line_name, y = gene_expression), color = "red") +
+  geom_point(data = target_expression_bottom, aes(x = stripped_cell_line_name, y = gene_expression), color = "red") +
+  #geom_text_repel(data = target_expression_label_top, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+  #geom_text_repel(data = target_expression_label_bottom, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+  theme_light() +
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
+  NULL
+ 
+    #summary
+    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
+    if(is.na(fav_gene_entrez) == TRUE){
+      lookup <- c("NULL")
+      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
+    } else {
+      # paste into url
+      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
+      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
+    }
+    
+    #render output
+    render("report_depmap_expression.rmd", output_dir = paste0('/Users/matthewhirschey/Dropbox/DUKE/PROJECTS/REPORTS/', fav_gene), output_file = paste0(fav_gene, '_ccle.pdf'))
+  } else {
+    #summary
+    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
+    if(is.na(fav_gene_entrez) == TRUE){
+      lookup <- c("NULL")
+      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
+    } else {
+      # paste into url
+      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
+      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
+    }
+    
+    #render output
+    render("report_dummy_exp.rmd", output_dir = paste0('/Users/matthewhirschey/Dropbox/DUKE/PROJECTS/REPORTS/', fav_gene), output_file = paste0(fav_gene, '_ccle.pdf'))
+    #return()
+  }
+}
+
+```
+
+#loop2
+```{r reports_complete, eval=FALSE, warning=FALSE, include=FALSE}
+gene_group <- bcaa
+
+focused_lib <- c("Achilles_fitness_increase", "Achilles_fitness_decrease", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
+
+for (fav_gene in gene_group) {
+  if(fav_gene %in% names(expression_cor) == 1){ #this code checks to see if the gene is in the analysis, and if not, skips
+    #still errors out if fav_gene is in achilles_cor, but no genes meet threshold of 2SD; error in EnrichR (list !== NULL) 
+    exp_top <- expression_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > expression_cor_upper) %>%
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select(gene, protein_name, fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    
+    exp_bottom <- expression_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < expression_cor_lower) %>%
+      rename(gene = rowname) %>% 
+      left_join(proteins, by = "gene") %>% 
+      select("gene", "protein_name", fav_gene) %>% 
+      rename(protein = protein_name, r2 = fav_gene)
+    #this is to get neg correlators
+    
+    #pathway enrichment analyses
+    #top
+    flat_top_complete <- exp_top %>%
+      pull("gene") %>% 
+      c(fav_gene, .) %>% 
+      enrichr_loop(., focused_lib)
+    
+    #bottom 
+    flat_bottom_complete <- exp_bottom %>%
+      pull("gene") %>% 
+      enrichr_loop(., focused_lib)
+    
+    #plot setup
+    target_expression <- expression_long_full %>% 
+      filter(gene == fav_gene) %>% 
+      left_join(expression_join, by = "X1") %>% 
+      select(stripped_cell_line_name, lineage, gene_expression)
+    
+    target_expression_top <- target_expression %>% 
+      top_frac(gene_expression, n = 0.01)
+    
+    target_expression_bottom <- target_expression %>% 
+      top_frac(gene_expression, n = -0.01) %>% 
+      arrange(gene_expression)
+    
+    #plot1
+    exp_plot1 <- ggplot(target_expression) +
+      geom_histogram(aes(x = gene_expression), binwidth = 0.25, color = "lightgray") +
+      geom_vline(xintercept = mean_virtual_expression) +
+      annotate("text", x = mean_virtual_expression - 0.02*mean_virtual_expression, Inf, family = "", size = 2.7, color = "gray20",
+               label = glue::glue("Mean of sampled\ngene expression:\n{round(mean_virtual_expression, 1)}"), hjust = 1, vjust = 1) +
+      geom_vline(xintercept = expression_upper, linetype="dashed") +
+      labs(x = "Gene Expression (binned)") + 
+      theme_light()
+    
+    #plot2
+    exp_plot2 <- ggplot(target_expression) +
+      geom_point(aes(x = fct_reorder(target_expression$stripped_cell_line_name, target_expression$gene_expression, .desc = TRUE), y = gene_expression)) +
+      labs(x = "Cell Lines", y = "Gene Expression") +
+      geom_hline(yintercept = mean_virtual_expression) +
+      geom_hline(yintercept = expression_upper, linetype="dashed") +
+      geom_hline(yintercept = expression_lower, linetype="dashed") +
+      geom_hline(yintercept = 0) +
+      geom_point(data = target_expression_top, aes(x = stripped_cell_line_name, y = gene_expression), color = "red") +
+      geom_point(data = target_expression_bottom, aes(x = stripped_cell_line_name, y = gene_expression), color = "red") +
+      #geom_text_repel(data = target_expression_label_top, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+      #geom_text_repel(data = target_expression_label_bottom, aes(x = ccle_name, y = gene_expression, label = ccle_name), force = 3) + 
+      theme_light() +
+      theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
+      NULL
+    
+    #summary
+    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
+    if(is.na(fav_gene_entrez) == TRUE){
+      lookup <- c("NULL")
+      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
+    } else {
+      # paste into url
+      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
+      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
+    }
+    
+    #render output
+    render("report_depmap_expression.rmd", output_dir = "output/", output_file = paste0(fav_gene, '_ccle.pdf'))
+  } else {
+    #summary
+    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
+    if(is.na(fav_gene_entrez) == TRUE){
+      lookup <- c("NULL")
+      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
+    } else {
+      # paste into url
+      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
+      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
+    }
+    
+    #render output
+    render("report_dummy_exp.rmd", output_dir = "output/", output_file = paste0(fav_gene, '_ccle.pdf'))
+    #return()
+  }
+}
+
+```
+
+#cover page
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#render output
+render("report_cover.rmd", output_dir = "output/report/", output_file = "cover.pdf")
+```
+
+#beep
+```{r}
+beep(sound = 8) #because mario is awesome
+```

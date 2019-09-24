@@ -1,0 +1,39 @@
+---
+output: pdf_document
+---
+
+```{r template_setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#libraries are already loaded
+```
+
+## Confidential report generated for Flagship VL54  
+Author: Matthew Hirschey  
+Printed on `r Sys.Date()`  
+
+## Summary  
+The goal of the Broad Institute's Cancer Dependency Map Project is to systematically catalog and identify biomarkers of genetic vulnerabilities and drug sensitivities in hundreds of cancer models and tumors, to accelerate the development of precision treatments. As of this analysis on `r Sys.Date()`, `r length(achilles$X1)` cell lines were profiled for gene essentiality. By performing a correlation analysis of every gene's dependences across cell lines, genetic pathways can be inferred.
+  
+By identifying genes that have similar dependencies, genes can be functionally grouped.    
+  
+### The following genes are ranked based on the strongest postiviely correlated dependency scores:  
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#top
+pander(list, justify = c("left", "right"))
+  
+```
+  
+### The following genes are ranked based on the strongest negatively correlated dependency scores:  
+  
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#bottom
+pander(list2, justify = c("left", "right"))
+```
+  
+### Session information for provenance and reproducibility  
+Full code is appended at the end of this report.  
+  
+```{r echo=FALSE, warning=FALSE}
+utils:::print.sessionInfo(sessionInfo()[-8]) 
+```
+
