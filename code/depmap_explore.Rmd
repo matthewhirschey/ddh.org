@@ -37,6 +37,7 @@ Import Broad Insititute and Sanger Depedencay data; added Broad cell line expres
 ```{r import}
 ##BROAD
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
+achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
 achilles_cor <- read_feather(here("data", paste0(params$release, "_achilles_cor.feather"))) 
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
 achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
@@ -238,58 +239,14 @@ achilles_cor %>%
 #Focused Analysis
 ```{r import_targets}
 #write_feather(id, path = here("raw", "id.feather"))
-id <- read_feather(here("raw", "id.feather"))
+id <- read_feather(here("data", "id.feather"))
 
 proteins <- id %>% 
   select(gene, protein_name)
 
-nhr <- read_excel(here("raw", "table1.xlsx"), col_names = FALSE) %>% 
-  clean_names() %>% 
-  pull() %>% 
-  str_trim(side = c("both"))
-
-#nhr_short <- nhr[!nhr %in% c("NR2E3", "AR", "NR0B1")] #chokes if I have columns that are not in dataset; need better way to skip over missing values #done; fixed with if/esle
-#NHR_test <- NHR[NHR %in% c("THRA", "THRB")]
-#nhr_trim <- nhr[48:48]
-#str_which(nhr, "NR0B2")
-
-
-slc <- id %>% 
-  filter(str_detect(gene, "SLC")) %>% 
-  pull(gene)
-
-#slc <- str_subset(names(achilles_cor), "SLC")
-#slc_test <- slc[1:10]
-#str_which(slc, "SLC6A19")
-#slc_trim <- slc[339:363]
-
 SIRT <- c("SIRT1", "SIRT2", "SIRT3", "SIRT4", "SIRT5", "SIRT6", "SIRT7")
 target_vec <- c("CPT1A", "CPT1B", "CPT1C", "CPT2", "SLC25A20")
 hdac <- str_subset(names(achilles_cor), "HDAC")
-
-mitocarta_full <- read_feather(here("raw", "mitocarta.feather"))
-mitocarta <- mitocarta_full %>% pull(Symbol)
-
-transporter <- read_xlsx(here("raw", "Transporter_genes_list.xlsx"), col_names = TRUE) %>% 
-  clean_names() %>% 
-  pull(gene)
-
-#recursive; run after defining achilles_cor to create a vector of top/bottom genes for reports
-#top20 <- achilles_cor %>% 
-#  select(-1) %>% #select(one_of(SIRT)) %>% 
-#  summarize_all(max) %>% 
-#  gather("gene", "max") %>% 
-#  arrange(desc(max)) %>% 
-#  top_n(20) %>% 
-#  pull(gene)
-
-#bottom20 <- achilles_cor %>% 
-#  select(-1) %>% #select(one_of(SIRT)) %>% 
-#  summarize_all(min) %>% 
-#  gather("gene", "min") %>%  
-#  arrange(min) %>% 
-#  top_n(-20) %>% 
-#  pull(gene)
 
 #guest projects
 trub <- c("FASN", "HMGCR", "HMGCS1")
@@ -494,7 +451,7 @@ joined %>%
 ggsave("output/expression_v_dep.png", plot = last_plot(), dpi = 600)
 
 ggplot(joined) +
-  geom_hex(aes(x = dep_score, y = gene_expression, fill = ..value..), 
+  geom_hex(aes(x = dep_score, y = gene_expression), 
            bins = 100, na.rm = TRUE, size = 0.2, color = "black") +
   scale_fill_viridis_c(option = "C") +
   labs(x = "Dependency Score", y = "Gene Expression") +  
