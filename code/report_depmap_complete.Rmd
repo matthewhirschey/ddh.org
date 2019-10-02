@@ -6,15 +6,18 @@ output:
 
 ```{r template_setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#libraries are already loaded
+library(tidyverse)
+library(lubridate)
+library(here)
+library(pander)
+library(gridExtra)
 ```
 
 ## Report for `r fav_gene`: `r id[match(fav_gene, id$gene), 3]`  
 ### Confidential report  
 Author: Matthew Hirschey  
 `r stamp("Report generated December 31, 1979")(now())`  
-```
-
+  
 ## Summary  
 **Gene**: `r fav_gene`  
 **Protein**: `r id[match(fav_gene, id$gene), 3]`  
@@ -37,7 +40,7 @@ if(length(summary$X1) > 0) {
 grid.arrange(dep_plot1, dep_plot2, ncol = 2)
 ```
   
-### Cells with strong`r fav_gene` genetic dependencies  
+### Cells with strong `r fav_gene` genetic dependencies  
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 pander(target_achilles_bottom, justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
 ```

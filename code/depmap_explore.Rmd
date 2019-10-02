@@ -54,6 +54,7 @@ achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_ac
 
 #EXPRESSION(BROAD)
 expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
+expression_long <- expression %>% gather("gene", "gene_expression", -X1) %>% arrange(desc(gene_expression))
 expression_cor <- read_feather(here("data", paste0(params$release, "_expression_cor.feather"))) 
 class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
 expression_cor_long <- read_feather(here::here("data", paste0(params$release, "_expression_cor_long.feather")))
@@ -442,23 +443,30 @@ joined <- expression_long %>%
 
 #plot pairs of raw cellline expression-depmap scores (expression is high and dep is high?)  
 joined %>% 
-  sample_n(1000) %>% 
+  #sample_n(1000) %>% 
   ggplot(aes(x = dep_score, y = gene_expression)) + #data = joined, 
   geom_point(alpha = 0.01) +
   #stat_density_2d(geom = "raster", aes(fill = stat(density)), contour = FALSE)
   geom_vline(xintercept = 0, color = "white")
 
-ggsave("output/expression_v_dep.png", plot = last_plot(), dpi = 600)
+ggsave(here::here("results", "expression_v_dep.png"), plot = last_plot(), dpi = 600)
 
-ggplot(joined) +
+log_breaks <- c(0, 1, 10, 100, 1000, 10000, 100000, 1000000)
+joined %>% 
+  #sample_n(10000) %>% 
+  ggplot() +
   geom_hex(aes(x = dep_score, y = gene_expression), 
-           bins = 100, na.rm = TRUE, size = 0.2, color = "black") +
-  scale_fill_viridis_c(option = "C") +
+           bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
+  scale_fill_viridis_c(option = "C", name = "Count", trans = "log10", breaks = log_breaks, labels = log_breaks) +
   labs(x = "Dependency Score", y = "Gene Expression") +  
-  coord_fixed() +
+  #coord_fixed() +
   theme_minimal()
 
-ggsave("output/expression_v_dep2.png", plot = last_plot(), dpi = 600)
+#solution to log transform scale here:
+#https://stackoverflow.com/questions/8069837/is-there-a-built-in-way-to-do-a-logarithmic-color-scale-in-ggplot2
+#https://unconj.ca/blog/custom-hexbin-functions-with-ggplot.html
+
+ggsave(here::here("results", "expression_v_dep2.png"), plot = last_plot(), dpi = 600)
 #prediction was v-shaped curve, with stronger dependencies as you move up in gene expression. 
 #expression has nothing to do with dep...?
 
