@@ -258,8 +258,8 @@ expression_cor_long <- expression_cor %>%
   stretch() #310M observations across 3 variables (x, y, r)
 write_feather(expression_cor_long, path = here::here("data", paste0(params$release, "_expression_cor_long.feather")))
 
-id <- read_feather(here::here("data", "id.feather"))
-proteins <- id %>% select(gene, protein_name)
+#id <- read_feather(here::here("data", "id.feather"))
+#proteins <- id %>% select(gene, protein_name)
 #write_feather(id, path = here("data", "id.feather"))
 ```
 #how long?

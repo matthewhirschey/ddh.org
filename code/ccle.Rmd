@@ -3,6 +3,8 @@ title: "CCLE correlation analysis"
 output:
   pdf_document:
     toc: TRUE
+params:
+  release: "19Q3"
 ---
 Overall goal of this project is to generate a correlation matrix from CCLE data, to look at 'expression signatures'. This will allow us to infer a functional relationship between genes.
 
@@ -74,15 +76,15 @@ Import Broad cell line expression data
 #  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 #expression_small <- expression %>% slice(1:100) %>% select(1:100)
 #write_feather(expression, path = here("raw", "expression.feather"))
-expression <- read_feather(here("raw", "expression.feather"))
+expression <- read_feather(here("data",  paste0(params$release, "_expression.feather")))
 
 #expression_id <- read_tsv(here("raw", "Cell_lines_annotations_20181226.txt"), col_names = TRUE) %>% 
 #  clean_names
 
-expression_id <- vroom(here("raw", "sample_info.csv"), col_names = TRUE) %>% 
+expression_id <- vroom(here("data", "sample_info.csv"), col_names = TRUE) %>% 
   clean_names
 
-id <- read_feather(here("raw", "id.feather"))
+id <- read_feather(here("data", "id.feather"))
 proteins <- id %>% select(gene, protein_name) #make smaller/focused for left_join below
 ```
 #EDA
@@ -173,7 +175,7 @@ expression_lower <- mean_virtual_expression - 2*sd_virtual_expression
 
 #targeted gene high/low
 ```{r}
-gene1 <- c("H2AFZ")
+gene1 <- c("SLC22A5")
 name <- paste(gene1, "_expression", sep = "")
 
 expression_join <- expression_id %>% 
@@ -259,7 +261,7 @@ ggplot(target_expression) +
 #  correlate() #(diagonal = 0) #set to 0 so easy to summarize
 
 #write_feather(expression_cor, path = here("raw", "expression_cor.feather"))
-expression_cor <- read_feather(here("raw", "expression_cor.feather"))
+expression_cor <- read_feather(here("data", paste0(params$release, "_expression_cor.feather")))
 class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
 #expression_cor_small <- expression_cor %>% 
 #  select(1:10) %>%  #to optimize code
