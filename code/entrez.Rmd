@@ -32,7 +32,7 @@ hugo <- vroom(here::here("data", "hugo.txt"), delim = "\t", col_names = TRUE) %>
 Using: https://github.com/tidyverse/rvest
 From: https://www.ncbi.nlm.nih.gov/gene/
 
-```{r}
+```{r scrape, eval=FALSE}
 entrez <- tibble(
   i = numeric(), 
   entrez_symbol = character(), 
@@ -75,20 +75,45 @@ entrez <- entrez %>%
 #The rvest code scrapes by position in the <div>, but depenidng on which information is available, the summary position might provide other information. So I get all the summary, as well as the junk, and then filter out the junk with the last line of code
 
 beep(sound = 8) #because mario is awesome
-```
 
 #how long to scrape?
-```{r}
 end_time <- Sys.time()
 time_taken <- round(as.duration(start_time %--% end_time)/dminutes(1), digits = 1)
-print(time_taken)
-```
-Approximate time to run was `r time_taken` minutes.
+print(time_taken) #4days
 
 #save
-```{r}
 write_feather(entrez, path = here::here("entrez.feather"))
 write_csv(entrez, path = here::here("entrez.csv"))
+```
+
+
+```{r reimport}
+entrez <- vroom(here::here("data", "entrez.csv"), delim = ",", col_names = TRUE) %>% 
+  rename(ncbi_gene_id_supplied_by_ncbi = i) %>% 
+  filter(entrez_category == "Summary") %>% 
+  select(-entrez_category, -entrez_symbol)
+
+#join and clean
+gene_summary <- hugo %>% 
+  left_join(entrez) %>% 
+  rename(ncbi_gene_id = ncbi_gene_id_supplied_by_ncbi)
+
+gene_summary$entrez_summary <- replace_na(gene_summary$entrez_summary, "No NCBI summary")
+gene_summary$locus_type <- str_to_sentence(gene_summary$locus_type)
+gene_summary$locus_type <- str_replace(gene_summary$locus_type, "Rna", "RNA")
+gene_summary$approved_name <- str_to_sentence(gene_summary$approved_name)
+
+gene_summary <- gene_summary %>% 
+  unite("aka", previous_symbols:synonyms, sep = ", ", na.rm = TRUE)
+```
+
+
+```{r output}
+write_feather(gene_summary, path = here::here("data", "gene_summary.feather"))
+
+#test input
+#gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
+
 ```
 
 #print Session information for provenance and reproducibility

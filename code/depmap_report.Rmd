@@ -73,39 +73,22 @@ achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.fe
 achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
 achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
-#achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
+
 achilles_cor_long <- achilles_cor %>% 
-  stretch() #observations across 3 variables (x, y, r)
+  stretch() #observations across 3 variables (x, y, r); longest step, but cannot get cor_long.feather to load properly
 
-#achilles_cor_small <- achilles_cor %>% slice(1:1000) %>% select(1:1000) #to optimize code
-#achilles_long_small <- achilles_long %>% sample_n(1000)
-
-
-##SANGER
-#data from: https://score.depmap.sanger.ac.uk/downloads
-#sanger <- read_feather(here("data", "sanger.feather"))
-#sanger_small <- sanger %>% slice(1:100) %>% select(1:100) #to optimize code
-#I downloaded the "Fitness/Non-fitness Binary Matrix", but this binary information was less rich than Dep Map. Perhaps try "Copy Number Bias Corrected Fold Change Values"? 
-
-#EXPRESSION(BROAD)
+#EXPRESSION(BROAD), not sure I need this here.
 expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
 
 expression_join <- expression_id %>% 
   rename(X1 = dep_map_id) %>% 
   select(X1, stripped_cell_line_name, lineage)
 
-id <- read_feather(here::here("data", "id.feather"))
-proteins <- id %>% select(gene, protein_name)
+gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
 ```
 
 #Permutation tests
-A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses
-
-Can I do this for one gene, sampling from the entire correlation matrix, and getting a distribution of correlated means for a single gene 1000x?
-
-Consider: https://tidymodels.github.io/rsample/articles/Basics.html
-#moderndive package
-https://moderndive.com/8-sampling.html
+A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses. Recalculate here for statistical threshold cutoffs.
 
 ```{r permutation}
   virtual_achilles <- achilles_cor_long %>% #achilles_cor_long already has all of the variables in a long format
@@ -226,11 +209,13 @@ didier <- c("NPAS4", "ETV2", "EGFL7", "EMILIN3")
 eoin <- c("EP300", "BRD4", "BRD2", "ACHY")
 macalpine <- c("ORC1", "ORC2", "ORC3", "ORC4", "ORC5", "ORC6", "INO80", "SMARCE1", "SMARCD3", "SMARCA2", "SMARCA4", "SMARCB1", "SMARCA2", "SMARCD1", "SMARCC1", "SMARCC2" ,"CDC6")
 alvarez <- c("TXN1", "TXN2", "PPAT", "PGD", "TXNRD1")
+derek <- c("TAZ", "NOTCH1", "GATA1")
+ferroptosis <- c("GPX4", "SLC7A11", "SLC3A2", "IREB2", "PHKG2", "HSPB1", "APP")
 ```
 
 #loop to generate complete reports with enrichr_loop fun()
 ```{r reports_complete, eval=FALSE, warning=FALSE, include=FALSE}
-gene_group <- alvarez
+gene_group <- ferroptosis
 
 focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
 
@@ -300,33 +285,17 @@ for (fav_gene in gene_group) {
       NULL
     
     #summary
-    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
-    if(is.na(fav_gene_entrez) == TRUE){
-      lookup <- c("NULL")
-      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
-    } else {
-      # paste into url
-      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
-      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
-    }
+    fav_gene_summary <- gene_summary %>% 
+      filter(approved_symbol == fav_gene)
     
     #render output
     render("report_depmap_complete.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
   } else {
-    #summary
-    fav_gene_entrez <- pull(id[match(fav_gene, id$gene), 7])
-    if(is.na(fav_gene_entrez) == TRUE){
-      lookup <- c("NULL")
-      summary <- as_tibble(colnames("X1")) #make tibble to avoid atomic vector error in report
-    } else {
-      # paste into url
-      lookup <- paste0("http://mygene.info/v3/gene/", fav_gene_entrez, "?fields=summary") #My gene info lookup; https://docs.mygene.info/en/latest/doc/annotation_service.html
-      summary <- vroom(lookup, col_names = FALSE) %>% filter(str_detect(X1, "summary")) 
-    }
+    fav_gene_summary <- gene_summary %>% 
+      filter(approved_symbol == fav_gene)
     
     #render output
     render("report_dummy_depmap.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
-    #return()
   }
 }
 

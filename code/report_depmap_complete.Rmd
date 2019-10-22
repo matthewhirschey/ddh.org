@@ -13,25 +13,18 @@ library(pander)
 library(gridExtra)
 ```
 
-## Report for `r fav_gene`: `r id[match(fav_gene, id$gene), 3]`  
+## Report for `r fav_gene_summary$approved_symbol`: `r fav_gene_summary$approved_name`  
 ### Confidential report  
 Author: Matthew Hirschey  
 `r stamp("Report generated December 31, 1979")(now())`  
   
 ## Summary  
-**Gene**: `r fav_gene`  
-**Protein**: `r id[match(fav_gene, id$gene), 3]`  
-**Alt. Protein**: `r id[match(fav_gene, id$gene), 4]`  
-**Entrez ID**: `r as.integer(fav_gene_entrez)`
+**Gene**: `r fav_gene_summary$approved_symbol`  
+**Protein**: `r fav_gene_summary$approved_name`  
+**aka**: `r fav_gene_summary$aka`  
+**Entrez ID**: `r as.integer(fav_gene_summary$ncbi_gene_id)`
   
-```{r summary_block, include=FALSE}
-if(length(summary$X1) > 0) {
-  summary <- str_remove(summary$X1, "summary: ")
-}   else {
-  summary <- paste0("No summary entry in Entrez as of ", Sys.Date())
-}
-```
-`r summary`  
+`r fav_gene_summary$entrez_summary`  
   
 \newpage 
 ## Distribution of `r fav_gene` dependency scores across `r length(achilles$X1)` cell lines  
