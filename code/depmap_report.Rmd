@@ -77,7 +77,7 @@ class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class 
 achilles_cor_long <- achilles_cor %>% 
   stretch() #observations across 3 variables (x, y, r); longest step, but cannot get cor_long.feather to load properly
 
-#EXPRESSION(BROAD), not sure I need this here.
+#EXPRESSION(BROAD), need this to get cell line names
 expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
 
 expression_join <- expression_id %>% 
@@ -221,23 +221,28 @@ focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Agin
 
 for (fav_gene in gene_group) {
   if(fav_gene %in% names(achilles_cor) == 1){ #this code checks to see if the gene is in the analysis, and if not, skips
+    #summary
+    fav_gene_summary <- gene_summary %>% 
+      filter(approved_symbol == fav_gene)
+    
+    #dep tables
     dep_top <- achilles_cor %>% 
       focus(fav_gene) %>% 
       arrange(desc(.[[2]])) %>% #use column index
       filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(gene = rowname) %>% 
-      left_join(proteins, by = "gene") %>% 
-      select(gene, protein_name, fav_gene) %>% 
-      rename(protein = protein_name, r2 = fav_gene)
+      rename(approved_symbol = rowname) %>% 
+      left_join(gene_summary, by = "approved_symbol") %>% 
+      select(approved_symbol, approved_name, fav_gene) %>% 
+      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene)
     
     dep_bottom <- achilles_cor %>% 
       focus(fav_gene) %>% 
       arrange(.[[2]]) %>% #use column index
       filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(gene = rowname) %>% 
-      left_join(proteins, by = "gene") %>% 
-      select("gene", "protein_name", fav_gene) %>% 
-      rename(protein = protein_name, r2 = fav_gene)
+      rename(approved_symbol = rowname) %>% 
+      left_join(gene_summary, by = "approved_symbol") %>% 
+      select(approved_symbol, approved_name, fav_gene) %>% 
+      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene)
     #this is to get neg correlators
       
     #pathway enrichment analyses
@@ -283,10 +288,6 @@ for (fav_gene in gene_group) {
       theme_light() +
       theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
       NULL
-    
-    #summary
-    fav_gene_summary <- gene_summary %>% 
-      filter(approved_symbol == fav_gene)
     
     #render output
     render("report_depmap_complete.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
