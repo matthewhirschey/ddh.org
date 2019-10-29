@@ -28,7 +28,10 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
   fetched_cnt <- 0
   for (ncbi_gene_id_supplied_by_ncbi in ids) {
     gene_summary <- entrez_summary(db="gene", id=ncbi_gene_id_supplied_by_ncbi)
-    entrez_summary <- gene_summary$summary
+    entrez_summary <- NA
+    if (gene_summary$summary != "") {
+      entrez_summary <- gene_summary$summary
+    }
     tmp <- tibble(ncbi_gene_id_supplied_by_ncbi, entrez_summary)
     entrez <- entrez %>%
       bind_rows(tmp)
