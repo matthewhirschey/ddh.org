@@ -26,7 +26,6 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
     drop_na(ncbi_gene_id_supplied_by_ncbi) %>%
     pull(ncbi_gene_id_supplied_by_ncbi)
 
-  # fetch sum
   fetched_cnt <- 0
   for (ncbi_gene_id_supplied_by_ncbi in ids) {
     gene_summary <- entrez_summary(db="gene", id=ncbi_gene_id_supplied_by_ncbi)
