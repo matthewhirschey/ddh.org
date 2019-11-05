@@ -10,7 +10,7 @@ library(tidyverse)
 library(lubridate)
 library(here)
 library(pander)
-library(gridExtra)
+#library(gridExtra)
 ```
 
 ## Report for `r fav_gene_summary$approved_symbol`: `r fav_gene_summary$approved_name`  
@@ -30,7 +30,8 @@ Author: Matthew Hirschey
 ## Distribution of `r fav_gene` dependency scores across `r length(achilles$X1)` cell lines  
   
 ```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
-grid.arrange(dep_plot1, dep_plot2, ncol = 2)
+dep_plot1
+dep_plot2
 ```
   
 ### Cells with strong `r fav_gene` genetic dependencies  
@@ -58,7 +59,9 @@ if(length(dep_top$gene) > 0) {
   
 ```{r template_top_complete, echo=FALSE}
 if(length(dep_top$gene) > 0) {
-  pander(head(flat_top_complete, n = 50), justify = c("left", "left", "right"), split.table = Inf)
+  flat_top_complete %>% 
+    select(enrichr, Term, Overlap) %>% 
+    pander(justify = c("left", "left", "right"), split.table = Inf)
 } else {
   pander("None")
 }
@@ -80,7 +83,9 @@ if(length(dep_bottom$gene) > 0) {
    
 ```{r template_bottom_complete, echo=FALSE}
 if(length(dep_bottom$gene) > 0) {
-  pander(head(flat_bottom_complete, n = 50), justify = c("left", "left", "right"), split.table = Inf)
+  flat_bottom_complete %>% 
+    select(enrichr, Term, Overlap) %>% 
+    pander(justify = c("left", "left", "right"), split.table = Inf)
 } else {
   pander("None")
 }

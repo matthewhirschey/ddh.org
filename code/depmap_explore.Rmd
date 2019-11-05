@@ -31,6 +31,9 @@ library(beepr) #long analysis; get some coffee, and comeback when ready
 #clear environment
 #rm(list=ls()) 
 ```
+##define functions
+```{r}
+```
 
 ##import
 Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).

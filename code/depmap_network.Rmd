@@ -23,6 +23,7 @@ library(tidygraph)
 library(igraph)
 library(ggraph)
 library(ggforce)
+library(networkD3)
 library(viridis)
 library(enrichR)
 library(glue)
@@ -117,7 +118,7 @@ dep_network <- dep_top %>%
 ```
 
 #single gene and related genes
-This builds on the code above, and creates a for-loop to generate a network graph of a single gene. It takes a gene, finds the top and bottom correlated genes, and then builds a df of the correlations with those genes. 
+This builds on the code above, and creates a for-loop to generate a network graph of a single gene. It takes a gene, finds the n top and bottom correlated genes (called related genes), and then pulls the correlations of the related genes to builds up a df. 
 ```{r}
 fav_gene <- c("SIRT4")
 n <- 25
@@ -147,7 +148,6 @@ dep_network <- dep_top %>%
 
 #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
 related_genes <- dep_network %>% dplyr::pull(y) #uncomment this
-#i <- c("TP53BP1")
 
 #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
 for (i in related_genes){
@@ -178,31 +178,49 @@ for (i in related_genes){
     bind_rows(dep_related)
 }
 
-#minimum connections
-m <- 1
+#minimum degree
+m <- 3
 
-graph_network <- as_tbl_graph(dep_network)
-#graph_network
-
-graph_network <- graph_network %>%
-  activate(nodes) %>%
-  mutate(degree = centrality_degree(), 
-         label = str_to_upper(name), 
-         query = (name %in% related_genes)) %>% 
+#https://www.r-bloggers.com/another-game-of-thrones-network-analysis-this-time-with-tidygraph-and-ggraph/
+graph_network <- as_tbl_graph(dep_network) %>% 
+  activate(nodes) %>% #active by default, add centrality measures to nodes
+  mutate(degree = degree(graph_network), #The degree of a node is the number of its adjacent edges.
+         strength = strength(graph_network), #Summing up the edge weights of the adjacent edges for each vertex (same as degree, if not weighted)
+         betweenness = betweenness(graph_network), #quantifies how often a node lies on the shortest path between other nodes (measure of ties)
+         closeness = closeness(graph_network),
+         neighbors = centrality_degree(), 
+         center = node_is_center(),
+         keyplayer = node_is_keyplayer(k = 10),
+         query = (name %in% related_genes), 
+         n_rank_trv = node_rank_traveller()) %>%  #how close a node is to all other nodes in the network in terms of shortest path distance
+  arrange(desc(degree)) %>% 
+  #arrange(n_rank_trv) %>% 
   activate(edges) %>% 
-  mutate(r2_bin = if_else(r2 > 0, "positive", "negative"))
+  filter(!edge_is_multiple()) %>%  # remove multiple edges
+  mutate(r2_bin = if_else(r2 > 0, "positive", "negative"), 
+         centrality_e = centrality_edge_betweenness(directed = FALSE))
 
+nodes <- graph_network %>% 
+  activate(nodes) %>% # %N>%
+  as_tibble()
+
+edges <- graph_network %>% 
+  activate(edges) %>% # %E>%
+  as_tibble()
+ #graph_network
+  
 graph_network %>% 
-  activate(nodes) %>% 
-  filter(degree > m) %>% #not quite right, needs to look at number of edges, and filter from there. 
   ggraph(layout = 'kk', weights = abs(r2)) +
-  geom_edge_link(aes(color = r2_bin), alpha = 0.5) +
+  geom_edge_link(aes(filter = centrality_e > 100, color = r2_bin), alpha = 0.5) +
   #scale_edge_color_viridis(discrete = TRUE, option = "magma") +
   scale_edge_colour_brewer(palette = "Set1", direction = -1) +
-  geom_node_point(aes(color = query), size = 6) +
+  geom_node_point(aes(filter = betweenness > 1, color = query), size = 6) +
   scale_color_manual(values = c("yellow", "gray")) +
-  geom_node_text (aes(label = label), size = 3) +
+  geom_node_text (aes(filter = betweenness > 1, label = name), size = 3, repel = FALSE) +
   theme_graph()
+
+#https://www.r-graph-gallery.com/network-interactive.html
+simpleNetwork(dep_network, height="100px", width="100px")
 ```
 
 #gene lists
@@ -218,8 +236,8 @@ pyrimidine <- c("CAD", "CMPK1", "CMPK2", "CTPS1", "CTPS2", "DHODH", "NME1", "NME
 #gene list
 This builds further, and creates a df from a list of genes. Importantly, it omits the step above to find related genes, because presumably the gene list is related (also, it'd generate a BIG recursive loop)
 ```{r}
-n <- 20
-gene_list <- tca
+n <- 25
+gene_list <- pyrimidine
 dep_network <- tibble()
 for (fav_gene in gene_list) {
   message("Getting correlations for ", fav_gene)
@@ -257,30 +275,44 @@ for (fav_gene in gene_list) {
 #graph
 Thinking about graph_netwrok as two tibbles inside a larger table graph, it became evident that dplyr needs a way to know which of the two tables (nodes or edges) to perform the transformations on. In tidygraph, this is done using the activate() function. To showcase this, the nodes table will be “activated” in order to add two new string variables derived from name.
 ```{r}
-#minimum connections
-m <- 1
+#minimum degree
+m <- 3
 
-graph_network <- as_tbl_graph(dep_network)
-#graph_network
-
-graph_network <- graph_network %>%
-  activate(nodes) %>%
-  mutate(degree = centrality_degree(), 
-         label = str_to_upper(name), 
-         query = (name %in% gene_list)) %>% 
+graph_network <- as_tbl_graph(dep_network) %>% 
+  activate(nodes) %>% #active by default, add centrality measures to nodes
+  mutate(degree = degree(graph_network), #The degree of a node is the number of its adjacent edges.
+         strength = strength(graph_network), #Summing up the edge weights of the adjacent edges for each vertex (same as degree, if not weighted)
+         betweenness = betweenness(graph_network), #quantifies how often a node lies on the shortest path between other nodes (measure of ties)
+         closeness = closeness(graph_network),
+         neighbors = centrality_degree(), 
+         center = node_is_center(),
+         keyplayer = node_is_keyplayer(k = 10),
+         query = (name %in% related_genes), 
+         n_rank_trv = node_rank_traveller()) %>%  #how close a node is to all other nodes in the network in terms of shortest path distance
+  arrange(desc(degree)) %>% 
+  #arrange(n_rank_trv) %>% 
   activate(edges) %>% 
-  mutate(r2_bin = if_else(r2 > 0, "positive", "negative"))
+  filter(!edge_is_multiple()) %>%  # remove multiple edges
+  mutate(r2_bin = if_else(r2 > 0, "positive", "negative"), 
+         centrality_e = centrality_edge_betweenness(directed = FALSE))
 
+nodes <- graph_network %>% 
+  activate(nodes) %>% # %N>%
+  as_tibble()
+
+edges <- graph_network %>% 
+  activate(edges) %>% # %E>%
+  as_tibble()
+ #graph_network
+  
 graph_network %>% 
-  activate(nodes) %>% 
-  filter(degree > m) %>% #not quite right, needs to look at number of edges, and filter from there. 
-  ggraph(layout = 'kk') +
-  geom_edge_link(aes(color = r2_bin), alpha = 0.5) +
+  ggraph(layout = 'kk', weights = abs(r2)) +
+  geom_edge_link(aes(filter = centrality_e > 100, color = r2_bin), alpha = 0.5) +
   #scale_edge_color_viridis(discrete = TRUE, option = "magma") +
   scale_edge_colour_brewer(palette = "Set1", direction = -1) +
-  geom_node_point(aes(color = query), size = 6) +
+  geom_node_point(aes(filter = betweenness > 1, color = query), size = 6) +
   scale_color_manual(values = c("yellow", "gray")) +
-  geom_node_text (aes(label = label), size = 3) +
+  geom_node_text (aes(filter = betweenness > 1, label = name), size = 3, repel = FALSE) +
   theme_graph()
 
 ```
