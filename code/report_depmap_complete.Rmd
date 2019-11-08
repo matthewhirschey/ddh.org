@@ -30,8 +30,8 @@ Author: Matthew Hirschey
 ## Distribution of `r fav_gene` dependency scores across `r length(achilles$X1)` cell lines  
   
 ```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
-dep_plot1
 dep_plot2
+dep_plot1
 ```
   
 ### Cells with strong `r fav_gene` genetic dependencies  
@@ -61,6 +61,7 @@ if(length(dep_top$gene) > 0) {
 if(length(dep_top$gene) > 0) {
   flat_top_complete %>% 
     select(enrichr, Term, Overlap) %>% 
+    slice(1:50) %>% 
     pander(justify = c("left", "left", "right"), split.table = Inf)
 } else {
   pander("None")
@@ -85,6 +86,7 @@ if(length(dep_bottom$gene) > 0) {
 if(length(dep_bottom$gene) > 0) {
   flat_bottom_complete %>% 
     select(enrichr, Term, Overlap) %>% 
+    slice(1:50) %>% 
     pander(justify = c("left", "left", "right"), split.table = Inf)
 } else {
   pander("None")
