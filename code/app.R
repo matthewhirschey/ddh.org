@@ -20,7 +20,8 @@ gene_summary_details <- function(gene_summary) {
       tags$dt("Gene"), tags$dd(gene_summary$approved_symbol),
       tags$dt("Name"), tags$dd(gene_summary$approved_name),
       tags$dt("aka"), tags$dd(gene_summary$aka),
-      tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id)
+      tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id), 
+      tags$dt("Gene Summary"), tags$dd(gene_summary$entrez_summary)
     ),
     downloadButton("report", "Generate report")
   )
@@ -59,10 +60,10 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
 }
 
 ui <- fluidPage(
-  titlePanel("Depmap"),
+  titlePanel("Data-Driven Hypothesis"),
   sidebarLayout(
     sidebarPanel(
-      textInput(inputId = "gene_symbol", "Enter gene symbol", "", placeholder='BRCA1'), 
+      textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='BRCA1'), 
       actionButton(inputId = "go", label = "Generate")
     ),
     mainPanel(
