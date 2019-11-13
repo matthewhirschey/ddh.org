@@ -20,9 +20,9 @@ gene_summary_details <- function(gene_summary) {
       tags$dt("Gene"), tags$dd(gene_summary$approved_symbol),
       tags$dt("Name"), tags$dd(gene_summary$approved_name),
       tags$dt("aka"), tags$dd(gene_summary$aka),
-      tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id),
+      tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id)
     ),
-    downloadButton("report", "Generate report"),
+    downloadButton("report", "Generate report")
   )
 }
 
@@ -59,29 +59,31 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
 }
 
 ui <- fluidPage(
-    titlePanel("Depmap"),
-    sidebarLayout(
-        sidebarPanel(
-            textInput("gene_symbol", "Enter gene symbol", "", placeholder='BRCA1')
-        ),
-        mainPanel(
-            uiOutput("gene_summary")
-        )
+  titlePanel("Depmap"),
+  sidebarLayout(
+    sidebarPanel(
+      textInput(inputId = "gene_symbol", "Enter gene symbol", "", placeholder='BRCA1'), 
+      actionButton(inputId = "go", label = "Generate")
+    ),
+    mainPanel(
+      uiOutput("gene_summary")
     )
+  )
 )
 
 server <- function(input, output, session) {
-    output$gene_summary <- renderUI({
-        # render details about the gene symbol user entered
-        gene_summary_ui(input$gene_symbol)
-    })
-    output$report <- downloadHandler(
-        # create pdf depmap report
-        filename = paste0(input$gene_symbol, "_depmap.pdf"),
-        content = function(file) {
-          render_depmap_report_to_file(file, input$gene_symbol)
-        }
-    )
+  data <- eventReactive(input$go, {input$gene_symbol})
+  output$gene_summary <- renderUI({
+    # render details about the gene symbol user entered
+    gene_summary_ui(data())
+  })
+  output$report <- downloadHandler(
+    # create pdf depmap report
+    filename = paste0(data(), "_depmap.pdf"),
+    content = function(file) {
+      render_depmap_report_to_file(file, data())
+    }
+  )
 }
 
 shinyApp(ui, server)
