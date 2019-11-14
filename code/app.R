@@ -116,18 +116,10 @@ server <- function(input, output, session) {
     filter(.[[2]] > 0.1963) %>% #formerly top_n(20), but changed to mean +/- 3sd
     rename(approved_symbol = rowname) %>% 
     left_join(gene_summary, by = "approved_symbol") %>% 
-    select(approved_symbol, approved_name, data()) %>% 
+    select(approved_symbol, approved_name, !!data()) %>% 
     rename(gene = approved_symbol, name = approved_name, r2 = data())
   )
-  output$dep_bottom <- renderDataTable(
-    achilles_cor %>% 
-      focus(data()) %>% 
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < -0.1899) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(approved_symbol = rowname) %>% 
-      left_join(gene_summary, by = "approved_symbol") %>% 
-      select(approved_symbol, approved_name, data()) %>% 
-      rename(gene = approved_symbol, name = approved_name, r2 = data())
+  output$dep_bottom <- (NULL
   )
   output$plot1 <- renderPlot(
     achilles_long %>% 
