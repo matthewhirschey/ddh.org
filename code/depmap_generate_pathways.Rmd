@@ -181,7 +181,7 @@ purine <- c("ADSL", "ADSS1", "ADSS2", "AK1", "AK2", "AK3", "AK4", "AK5", "ATIC",
 pyrimidine <- c("CAD", "CMPK1", "CMPK2", "CTPS1", "CTPS2", "DHODH", "NME1", "NME2", "NME3", "NME4", "NME6", "UMPS")
 
 set.seed(2019)
-sample <- sample(names(achilles), size = 10)
+sample <- sample(names(achilles), size = 4)
 ```
 
 #put data into lists
@@ -236,7 +236,8 @@ for (fav_gene in gene_group) {
       pull("gene") %>% 
       c(fav_gene, .) %>% 
       enrichr_loop(., focused_lib) %>%  #added small here
-      top_n(100)
+      arrange(Adjusted.P.value) %>% 
+      slice(1:100)
     
     positive <- flat_top_complete  %>% 
       mutate(fav_gene = fav_gene) %>% 
@@ -250,7 +251,8 @@ for (fav_gene in gene_group) {
     flat_bottom_complete <- dep_bottom %>%
       pull("gene") %>% 
       enrichr_loop(., focused_lib) %>%  #added small here
-      top_n(100) 
+      arrange(Adjusted.P.value) %>% 
+      slice(1:100)
     
     negative <- flat_bottom_complete %>% 
       mutate(fav_gene = fav_gene) %>% 
@@ -333,7 +335,7 @@ master_negative <- load(file=here::here("data", "master_negative.RData"))
 #test retreival to set objects
 ```{r}
 #wrap this in if_else for if it's found v. not
-fav_gene <- c("MFSD8")
+fav_gene <- c("SETD1B")
 
 fav_gene_summary <- gene_summary %>% 
       filter(approved_symbol == fav_gene)
@@ -350,7 +352,7 @@ dep_bottom <- master_bottom_table %>%
   select(-fav_gene) %>% 
   arrange(r2)
 
-flat_top_complete <- master_postive %>% 
+flat_top_complete <- master_positive %>% 
   filter(fav_gene == !!fav_gene) %>% 
   unnest(data) %>% 
   select(-fav_gene) %>% 
@@ -374,52 +376,52 @@ dep_plot2 <- master_plots %>%
 
 # test generation of report
 ```{r}
-for (fav_gene in gene_group) {
-  if(fav_gene %in% names(achilles_cor) == 1){ #this code checks to see if the gene is in the analysis, and if not, skips
-    fav_gene_summary <- gene_summary %>% 
-      filter(approved_symbol == fav_gene)
-    
-    dep_top <- master_top_table %>% 
-      filter(fav_gene == !!fav_gene) %>% 
-      unnest(data) %>% 
-      select(-fav_gene) %>% 
-      arrange(desc(r2))
-    
-    dep_bottom <- master_bottom_table %>% 
-      filter(fav_gene == !!fav_gene) %>% 
-      unnest(data) %>% 
-      select(-fav_gene) %>% 
-      arrange(r2)
-    
-    flat_top_complete <- master_postive %>% 
-      filter(fav_gene == !!fav_gene) %>% 
-      unnest(data) %>% 
-      select(-fav_gene) %>% 
-      arrange(Adjusted.P.value)
-    
-    flat_bottom_complete <- master_negative %>% 
-      filter(fav_gene == !!fav_gene) %>% 
-      unnest(data) %>% 
-      select(-fav_gene) %>% 
-      arrange(Adjusted.P.value)
-    
-    dep_plot1 <- master_plots %>% 
-      filter(fav_gene == !!fav_gene) %>% 
-      pluck("plot1")
-    
-    dep_plot2 <- master_plots %>% 
-      filter(fav_gene == !!fav_gene) %>% 
-      pluck("plot2")
-    
-    #render output
-    render("report_depmap_complete.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
-  } else {
-    fav_gene_summary <- gene_summary %>% 
-      filter(approved_symbol == fav_gene)
-    
-    #render output
-    render("report_dummy_depmap.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
-  }
+fav_gene <- c("SETD1B")
+
+if(fav_gene %in% names(achilles_cor) == 1){ #this code checks to see if the gene is in the analysis, and if not, skips
+  fav_gene_summary <- gene_summary %>% 
+    filter(approved_symbol == fav_gene)
+  
+  dep_top <- master_top_table %>% 
+    filter(fav_gene == !!fav_gene) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(desc(r2))
+  
+  dep_bottom <- master_bottom_table %>% 
+    filter(fav_gene == !!fav_gene) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(r2)
+  
+  flat_top_complete <- master_positive %>% 
+    filter(fav_gene == !!fav_gene) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(Adjusted.P.value)
+  
+  flat_bottom_complete <- master_negative %>% 
+    filter(fav_gene == !!fav_gene) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(Adjusted.P.value)
+  
+  dep_plot1 <- master_plots %>% 
+    filter(fav_gene == !!fav_gene) %>% 
+    pluck("plot1")
+  
+  dep_plot2 <- master_plots %>% 
+    filter(fav_gene == !!fav_gene) %>% 
+    pluck("plot2")
+  
+  #render output
+  render("report_depmap_complete.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
+} else {
+  fav_gene_summary <- gene_summary %>% 
+    filter(approved_symbol == fav_gene)
+  
+  #render output
+  render("report_dummy_depmap.rmd", output_dir = here::here("results"), output_file = paste0(fav_gene, '_depmap.pdf'))
 }
 
 #beep(sound = 8) 
