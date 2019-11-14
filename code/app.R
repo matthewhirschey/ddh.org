@@ -6,24 +6,18 @@ library(lubridate)
 library(feather)
 library(rmarkdown)
 
-#LOAD DATA-----~20sec
+#LOAD DATA-----
 read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
 }
 
-# Read achilles saved as RData using: save(achilles, file=here::here("data", "achilles.RData"))
-achilles <- load(here::here("data", "achilles.RData"))
-#achilles_long <- achilles %>% pivot_longer(-X1, names_to = "gene", values_to = "dep_score")
-
-# Read achilles_cor saved as RData using: save(achilles_cor, file=here::here("data", "achilles_cor.RData"))
-achilles_cor <- load(here::here("data", "achilles_cor.RData"))
-
-# Read expression_id saved as RData using: save(expression_id, file=here::here("data", "expression_id.RData")), need this to get cell line names
-#expression_id <- load(here::here("data", "expression_id.Rdata"))
-#expression_join <- expression_id %>% 
-#  rename(X1 = dep_map_id) %>% 
-#  select(X1, stripped_cell_line_name, lineage)
+#read in datasets saved from depmap_generate_pathways.Rmd
+master_bottom_table <- load(file=here::here("data", "master_bottom_table.RData"))
+master_top_table <- load(file=here::here("data", "master_top_table.RData"))
+master_plots <- load(file=here::here("data", "master_plots.RData"))
+master_positive <- load(file=here::here("data", "master_positive.RData"))
+master_negative <- load(file=here::here("data", "master_negative.RData"))
 
 
 #FUNCTIONS-----
@@ -62,6 +56,14 @@ gene_summary_ui <- function(gene_symbol) {
   result
 }
 
+make_top_table <- function(gene_symbol) {
+  master_top_table %>% 
+    filter(fav_gene == gene_symbol) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(desc(r2))
+}
+
 render_depmap_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
   read_gene_summary_into_environment(tmp.env)
@@ -74,12 +76,13 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
   rmarkdown::render("report_dummy_depmap.rmd", output_file = file)
 }
 
+
 #UI------
 ui <- fluidPage(
   navbarPage(
     title = "Data-Driven Hypothesis", 
     tabPanel("Home", 
-             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='BRCA1'), 
+             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='SETD1B'), 
              actionButton(inputId = "go", label = "Generate"), 
              hr(), 
              uiOutput("gene_summary")),
@@ -109,44 +112,31 @@ server <- function(input, output, session) {
     # render details about the gene symbol user entered
     gene_summary_ui(data())
   })
+  #function is above
   output$dep_top <- renderDataTable(
-    achilles_cor %>% 
-    focus(data()) %>% 
-    arrange(desc(.[[2]])) %>% #use column index
-    filter(.[[2]] > 0.1963) %>% #formerly top_n(20), but changed to mean +/- 3sd
-    rename(approved_symbol = rowname) %>% 
-    left_join(gene_summary, by = "approved_symbol") %>% 
-    select(approved_symbol, approved_name, !!data()) %>% 
-    rename(gene = approved_symbol, name = approved_name, r2 = data())
+    make_top_table(data())
   )
-  output$dep_bottom <- (NULL
+  #function is here
+  output$dep_bottom <- renderDataTable(
+    master_bottom_table %>% 
+      filter(fav_gene == data()) %>% 
+      unnest(data) %>% 
+      select(-data()) %>% 
+      arrange(r2)
   )
+  #function is here
   output$plot1 <- renderPlot(
-    achilles_long %>% 
-      filter(gene == data()) %>% 
-      left_join(expression_join, by = "X1") %>% 
-      select(stripped_cell_line_name, lineage, dep_score) %>% 
-      ggplot() +
-      geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
-      labs(x = "Dependency Score (binned)") + 
-      theme_light()
+    master_plots %>% 
+      filter(fav_gene == data()) %>% 
+      pluck("plot1")
   )
+  #function is here
   output$plot2 <- renderPlot(
-    achilles_long %>% 
-      filter(gene == data()) %>% 
-      left_join(expression_join, by = "X1") %>% 
-      select(stripped_cell_line_name, lineage, dep_score) %>% 
-      ggplot() +
-      geom_point(aes(x = fct_rev(fct_reorder(target_achilles$stripped_cell_line_name, target_achilles$dep_score, .desc = TRUE)), y = dep_score)) +
-      labs(x = "Cell Lines", y = "Dependency Score") +
-      geom_hline(yintercept = mean_virtual_achilles) +
-      geom_hline(yintercept = achilles_upper, linetype="dashed") +
-      geom_hline(yintercept = achilles_lower, linetype="dashed") +
-      geom_hline(yintercept = 0) +
-      theme_light() +
-      theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
-      NULL
+    master_plots %>% 
+      filter(fav_gene == data()) %>% 
+      pluck("plot2")
   )
+  #function is above
   output$report <- downloadHandler(
     # create pdf depmap report
     filename = paste0(data(), "_depmap.pdf"),
