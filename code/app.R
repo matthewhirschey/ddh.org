@@ -71,6 +71,13 @@ make_bottom_table <- function(gene_symbol) {
     select(-fav_gene) %>% 
     arrange(r2)
 }
+make_enrichment_table <- function(table, gene_symbol) {
+  table %>% 
+    filter(fav_gene == gene_symbol) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(Adjusted.P.value)
+}
 
 make_plot1 <- function(gene_symbol) {
   master_plots %>% 
@@ -100,19 +107,26 @@ ui <- fluidPage(
   navbarPage(
     title = "Data-Driven Hypothesis", 
     tabPanel("Home", 
+             "text",
+             hr(),
              textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='SETD1B'), 
              actionButton(inputId = "go", label = "Generate"), 
              hr(), 
              uiOutput("gene_summary")),
     tabPanel("Cell Dependencies", 
-             splitLayout(
-             plotOutput(outputId = "plot2"), 
-             plotOutput(outputId = "plot1"))),
-    tabPanel("Similar", 
-             column(12, 
-                    dataTableOutput(outputId = "dep_top"))),
+             fluidRow(splitLayout(cellWidths = c("50%", "50%"),
+              plotOutput(outputId = "plot2"), 
+              plotOutput(outputId = "plot1"))),
+             fluidRow(splitLayout(cellWidths = c("50%", "50%"),
+              "text", 
+              "text"))),
+    tabPanel("Similar",
+             fluidRow("text"),
+             fluidRow(dataTableOutput(outputId = "dep_top")), 
+             fluidRow(dataTableOutput(outputId = "pos_enrich"))),
     tabPanel("Dissimilar", 
-             dataTableOutput(outputId = "dep_bottom")),
+             fluidRow(dataTableOutput(outputId = "dep_bottom")), 
+             fluidRow(dataTableOutput(outputId = "neg_enrich"))),
     tabPanel("Methods", 
              h3("Methods"), 
              "description"),
@@ -131,23 +145,24 @@ server <- function(input, output, session) {
     # render details about the gene symbol user entered
     gene_summary_ui(data())
   })
-  #function is above 
   output$dep_top <- renderDataTable(
     make_top_table(data())
   )
-  #function is above
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  #function is above
   output$plot1 <- renderPlot(
     make_plot1(data())
   )
-  #function is above
   output$plot2 <- renderPlot(
     make_plot2(data())
   )
-  #function is above
+  output$pos_enrich <- renderDataTable(
+    make_enrichment_table(master_positive, data())
+  )
+  output$neg_enrich <- renderDataTable(
+    make_enrichment_table(master_negative, data())
+  )
   output$report <- downloadHandler(
     # create pdf depmap report
     filename = paste0(data(), "_depmap.pdf"),
