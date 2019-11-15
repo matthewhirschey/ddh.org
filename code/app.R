@@ -13,11 +13,11 @@ read_gene_summary_into_environment <- function(tmp.env) {
 }
 
 #read in datasets saved from depmap_generate_pathways.Rmd
-master_bottom_table <- load(file=here::here("data", "master_bottom_table.RData"))
-master_top_table <- load(file=here::here("data", "master_top_table.RData"))
-master_plots <- load(file=here::here("data", "master_plots.RData"))
-master_positive <- load(file=here::here("data", "master_positive.RData"))
-master_negative <- load(file=here::here("data", "master_negative.RData"))
+load(file=here::here("data", "master_bottom_table.RData"))
+load(file=here::here("data", "master_top_table.RData"))
+load(file=here::here("data", "master_plots.RData"))
+load(file=here::here("data", "master_positive.RData"))
+load(file=here::here("data", "master_negative.RData"))
 
 
 #FUNCTIONS-----
