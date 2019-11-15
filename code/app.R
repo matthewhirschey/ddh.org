@@ -64,6 +64,14 @@ make_top_table <- function(gene_symbol) {
     arrange(desc(r2))
 }
 
+make_bottom_table <- function(gene_symbol) {
+  master_bottom_table %>% 
+    filter(fav_gene == gene_symbol) %>% 
+    unnest(data) %>% 
+    select(-fav_gene) %>% 
+    arrange(r2)
+}
+
 render_depmap_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
   read_gene_summary_into_environment(tmp.env)
@@ -116,21 +124,17 @@ server <- function(input, output, session) {
   output$dep_top <- renderDataTable(
     make_top_table(data())
   )
-  #function is here
+  #function is above
   output$dep_bottom <- renderDataTable(
-    master_bottom_table %>% 
-      filter(fav_gene == data()) %>% 
-      unnest(data) %>% 
-      select(-data()) %>% 
-      arrange(r2)
+    make_bottom_table(data())
   )
-  #function is here
+  #function is here; will move above
   output$plot1 <- renderPlot(
     master_plots %>% 
       filter(fav_gene == data()) %>% 
       pluck("plot1")
   )
-  #function is here
+  #function is here; will move above
   output$plot2 <- renderPlot(
     master_plots %>% 
       filter(fav_gene == data()) %>% 
