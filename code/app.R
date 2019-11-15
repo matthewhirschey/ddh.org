@@ -36,7 +36,7 @@ gene_summary_details <- function(gene_summary) {
   )
 }
 
-# renders 'not found' or details about gene and download button
+# renders 'not found' or details about gene
 gene_summary_ui <- function(gene_symbol) {
   result <- tagList()
   if (gene_symbol != '') {
@@ -46,7 +46,7 @@ gene_summary_ui <- function(gene_symbol) {
       filter(approved_symbol == gene_symbol)
     if (dim(gene_summary_row)[1] == 0) {
       result <- tagList(
-        h4(paste0("Gene symbol \"", gene_symbol, "\" not found."))
+        h4(paste0("Gene symbol \"", gene_symbol, "\" not found. Please make sure this is the 'Official' gene symbol and not an alias."))
       )
     } else {
       title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
@@ -99,7 +99,8 @@ ui <- fluidPage(
              plotOutput(outputId = "plot2"), 
              plotOutput(outputId = "plot1"))),
     tabPanel("Similar", 
-             dataTableOutput(outputId = "dep_top")),
+             column(12, 
+                    dataTableOutput(outputId = "dep_top"))),
     tabPanel("Dissimilar", 
              dataTableOutput(outputId = "dep_bottom")),
     tabPanel("Methods", 
