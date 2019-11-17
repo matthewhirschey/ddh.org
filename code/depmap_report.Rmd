@@ -87,38 +87,14 @@ expression_join <- expression_id %>%
 gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
 ```
 
-#Permutation tests
-A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses. Recalculate here for statistical threshold cutoffs.
-
+#stats; import saved files generated in depmap_generate_stats.Rmd
+Expecting mean ~0, and upper/lower ~+/- 0.2
 ```{r permutation}
-  virtual_achilles <- achilles_cor_long %>% #achilles_cor_long already has all of the variables in a long format
-  filter(!is.na(r)) %>%   
-  rep_sample_n(size = 20000, reps = 1000) %>% #larger sample size, less error (but only 625 sets, and we're mimicking 1000?, but 310M combinations, so probably OK)
-  group_by(replicate) %>% 
-  summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r)) #how to handle + vs. - correlation?
-
-#instead of filtering, could:
-#summarize_all(list(max = max(r, na.rm = TRUE), 
-#                     min = min(r, na.rm = TRUE),
-#                     mean = mean(r, na.rm = TRUE),
-#                     sd = sd(r, na.rm = TRUE))) 
-#but threw and error
-
-#The mean may not be the best measure of centrality due to its sensitivity to outliers. The example data used here seems asymmetric and it that case the median is a better measure of centrality.
-#https://github.com/JoachimGoedhart/PlotsOfDifferences
-
-ggplot(virtual_achilles, aes(x = sd)) +
-  geom_histogram(color = "white") +
-  labs(x = "SD r^2 value from virtual achilles", 
-       title = "Distribution of mean r^2 values") 
-
-mean_virtual_achilles <- mean(virtual_achilles$mean)
-sd_virtual_achilles <- mean(virtual_achilles$sd)
-
-sd_threshold <- 3
-
-achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
-achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
 ```
 
 #how long to set-up this code for searches?

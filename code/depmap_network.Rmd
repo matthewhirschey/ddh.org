@@ -63,26 +63,16 @@ achilles_long_small <- achilles_long %>% sample_n(1000)
 
 ```
 
+#stats; import saved files generated in depmap_generate_stats.Rmd
+Expecting mean ~0, and upper/lower ~+/- 0.2
 ```{r permutation}
-  virtual_achilles <- achilles_cor_long %>% #achilles_cor_long already has all of the variables in a long format
-  filter(!is.na(r)) %>%   
-  rep_sample_n(size = 20000, reps = 1000) %>% #larger sample size, less error (but only 625 sets, and we're mimicking 1000?, but 310M combinations, so probably OK)
-  group_by(replicate) %>% 
-  summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r)) #how to handle + vs. - correlation?
-
-ggplot(virtual_achilles, aes(x = sd)) +
-  geom_histogram(color = "white") +
-  labs(x = "SD r^2 value from virtual achilles", 
-       title = "Distribution of mean r^2 values") 
-
-mean_virtual_achilles <- mean(virtual_achilles$mean)
-sd_virtual_achilles <- mean(virtual_achilles$sd)
-
-sd_threshold <- 3
-
-achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
-achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
 ```
+
 ```{r}
 #hold some gene lists
 
