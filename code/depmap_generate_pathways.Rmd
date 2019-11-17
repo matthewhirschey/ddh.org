@@ -131,9 +131,6 @@ master_bottom_table <- tibble(
 ```{r}
 purine <- c("ADSL", "ADSS1", "ADSS2", "AK1", "AK2", "AK3", "AK4", "AK5", "ATIC", "GART", "GMPS", "IMPDH1", "IMPDH2", "PAICS", "PFAS", "PPAT", "PRPS1", "PRPS1L1", "PRPS2", "TAF9")
 pyrimidine <- c("CAD", "CMPK1", "CMPK2", "CTPS1", "CTPS2", "DHODH", "NME1", "NME2", "NME3", "NME4", "NME6", "UMPS")
-
-set.seed(2019)
-sample <- sample(names(achilles), size = 100)
 ```
 
 #put data into lists
@@ -265,11 +262,15 @@ beep(sound = 8) #because mario is awesome
 
 
 Split to parallelize
+#small sample
+```{r}
+sample <- sample(names(achilles_cor), size = 10)
+gene_group <- sample
+```
+
+
 #master_table_top
 ```{r}
-sample <- sample(names(achilles_cor), size = 100)
-gene_group <- sample
-
 for (fav_gene in gene_group) {
   message("Top dep tables for ", fav_gene)
     dep_top <- achilles_cor %>% 
@@ -373,16 +374,20 @@ beep(sound = 8) #because mario is awesome
 ```
 
 #master_positive
-FIX MASTER LISTS
-They are pulling gene lists from dep_top, but there's only one there. 
-So in this chunk, I repeated the same gene list look-up 100x
-*need* to generate list (either pull from master top, or generate on the fly), and then pipe into it. Probably generate on the fly, so it can be parallel, and not rely on one of the other chunks.
+Generate list on the fly (redundant with above), so it can be parallel, and not rely on one of the other chunks.
 ```{r}
 gene_group <- sample #defined in first block (line 318)
 
 for (fav_gene in gene_group) {
  message("Top pathway enrichment analyses for ", fav_gene)
-    flat_top_complete <- dep_top %>%
+    flat_top_complete <- achilles_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      rename(approved_symbol = rowname) %>% 
+      left_join(gene_summary, by = "approved_symbol") %>% 
+      select(approved_symbol, approved_name, fav_gene) %>% 
+      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
       pull("gene") %>% 
       c(fav_gene, .) %>% 
       enrichr_loop(., focused_lib) %>%  #added small here
@@ -409,7 +414,14 @@ gene_group <- sample #defined in first block (line 318)
 
 for (fav_gene in gene_group) {
 message("Bottom pathway enrichment analyses for ", fav_gene)
-    flat_bottom_complete <- dep_bottom %>%
+    flat_bottom_complete <- achilles_cor %>% 
+      focus(fav_gene) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      rename(approved_symbol = rowname) %>% 
+      left_join(gene_summary, by = "approved_symbol") %>% 
+      select(approved_symbol, approved_name, fav_gene) %>% 
+      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
       pull("gene") %>% 
       enrichr_loop(., focused_lib) %>%  #added small here
       arrange(Adjusted.P.value) %>% 
