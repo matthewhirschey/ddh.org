@@ -200,7 +200,7 @@ hsp <- c("HSPD1")
 pfk <- c("PFKFB1", "PFKFB2", "PFKFB3", "PFKFB4")
 ben <- c("TMEM208", "CELSR1", "C10orf105")
 jens <- c("GCGR", "GIPR")
-mette <- c("GPR125", "GPR183")
+mette <- c("ADGRA3", "GPR183") #GPR125
 ```
 
 #loop to generate complete reports with enrichr_loop fun()
