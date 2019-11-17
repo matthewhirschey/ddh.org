@@ -1,0 +1,107 @@
+---
+title: "Dep Map analysis stats generator"
+output:
+  pdf_document:
+    toc: TRUE
+params:
+  release: "19Q3"
+---
+This document loads the data generated in depmap_generate, and then generates and stores stats for other RMDs to load
+
+##Load libraries
+```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
+#not sure which exactly of these I need
+library(tidyverse)
+library(lubridate)
+library(here)
+#library(readxl)
+#library(janitor)
+library(feather)
+library(corrr)
+library(purrr)
+#library(viridis)
+#library(enrichR)
+#library(glue)
+library(moderndive)
+#library(rmarkdown)
+#library(gridExtra)
+#library(knitr)
+#library(pander)
+#library(vroom)
+library(beepr) #long analysis; get some coffee, and comeback when ready
+
+#clear environment
+#rm(list=ls()) 
+
+#how long?
+start_time <- Sys.time()
+```
+
+##import
+```{r import}
+##BROAD
+achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
+achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
+achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
+class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+
+achilles_cor_long <- achilles_cor %>% 
+  stretch() #observations across 3 variables (x, y, r); longest step, but cannot get cor_long.feather to load properly
+
+#EXPRESSION(BROAD), need this to get cell line names
+expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
+
+expression_join <- expression_id %>% 
+  rename(X1 = dep_map_id) %>% 
+  select(X1, stripped_cell_line_name, lineage)
+
+gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
+```
+
+#Permutation tests
+A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses. Recalculate here for statistical threshold cutoffs.
+
+```{r permutation}
+  virtual_achilles <- achilles_cor_long %>% #achilles_cor_long already has all of the variables in a long format
+  filter(!is.na(r)) %>%   
+  rep_sample_n(size = 20000, reps = 1000) %>% #larger sample size, less error (but only 625 sets, and we're mimicking 1000?, but 310M combinations, so probably OK)
+  group_by(replicate) %>% 
+  summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r)) #how to handle + vs. - correlation?
+
+#The mean may not be the best measure of centrality due to its sensitivity to outliers. The example data used here seems asymmetric and in that case the median is a better measure of centrality.
+#https://github.com/JoachimGoedhart/PlotsOfDifferences
+
+ggplot(virtual_achilles, aes(x = sd)) +
+  geom_histogram(color = "white") +
+  labs(x = "SD r^2 value from virtual achilles", 
+       title = "Distribution of mean r^2 values") 
+
+mean_virtual_achilles <- mean(virtual_achilles$mean)
+sd_virtual_achilles <- mean(virtual_achilles$sd)
+
+sd_threshold <- 3
+
+achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
+achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
+```
+
+#save
+```{r}
+saveRDS(sd_threshold, file = here::here("data", "sd_threshold.rds"))
+saveRDS(achilles_lower, file = here::here("data", "achilles_lower.rds"))
+saveRDS(achilles_upper, file = here::here("data", "achilles_upper.rds"))
+saveRDS(mean_virtual_achilles, file = here::here("data", "mean_virtual_achilles.rds"))
+saveRDS(sd_virtual_achilles, file = here::here("data", "sd_virtual_achilles.rds"))
+```
+
+#remove and reload
+```{r}
+rm(mean_virtual_achilles, sd_virtual_achilles, sd_threshold, achilles_lower, achilles_upper)
+
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
+```
+
