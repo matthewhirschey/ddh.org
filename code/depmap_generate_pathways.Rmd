@@ -139,7 +139,6 @@ sample <- sample(names(achilles_cor), size = 10)
 gene_group <- sample
 ```
 
-
 #master_table_top
 ```{r}
 for (fav_gene in gene_group) {
@@ -168,7 +167,7 @@ beep(sound = 8) #because mario is awesome
 
 #master_table_bottom
 ```{r}
-gene_group <- sample #defined in first block (line 318)
+gene_group <- sample #defined in first block (line 136)
 
 for (fav_gene in gene_group) {
   message("Bottom dep tables for ", fav_gene)
@@ -196,7 +195,7 @@ beep(sound = 8) #because mario is awesome
 
 #master_plots
 ```{r}
-gene_group <- sample #defined in first block (line 318)
+gene_group <- sample #defined in first block (line 136)
 
 for (fav_gene in gene_group) {
   #plot setup
@@ -247,7 +246,7 @@ beep(sound = 8) #because mario is awesome
 #master_positive
 Generate list on the fly (redundant with above), so it can be parallel, and not rely on one of the other chunks.
 ```{r}
-gene_group <- sample #defined in first block (line 318)
+gene_group <- sample #defined in first block (line 136)
 
 for (fav_gene in gene_group) {
  message("Top pathway enrichment analyses for ", fav_gene)
@@ -281,7 +280,7 @@ beep(sound = 8) #because mario is awesome
 
 #master_negative
 ```{r}
-gene_group <- sample #defined in first block (line 318)
+gene_group <- sample #defined in first block (line 136)
 
 for (fav_gene in gene_group) {
 message("Bottom pathway enrichment analyses for ", fav_gene)
