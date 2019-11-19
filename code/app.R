@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(plotly)
 library(corrr)
 library(here)
 library(lubridate)
@@ -75,7 +76,7 @@ make_enrichment_table <- function(table, gene_symbol) {
   table %>% 
     filter(fav_gene == gene_symbol) %>% 
     unnest(data) %>% 
-    select(-fav_gene) %>% 
+    select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>% 
     arrange(Adjusted.P.value)
 }
 
@@ -137,11 +138,11 @@ ui <- fluidPage(
     tabPanel("Methods", 
              h3("Methods"), 
              "description"),
-    tabPanel("Generate Report",
+    tabPanel("Download Report",
              h2("Report Generator"), 
              "To generate a report, click on the button below",
              br(),
-             downloadButton("report", "Generate report"))
+             downloadButton("report", "Download report"))
   )
 )
 
