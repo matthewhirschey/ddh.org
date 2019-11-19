@@ -80,15 +80,10 @@ make_enrichment_table <- function(table, gene_symbol) {
     arrange(Adjusted.P.value)
 }
 
-make_plot1 <- function(gene_symbol) {
+make_plot <- function(gene_symbol, plot) {
   master_plots %>% 
     filter(fav_gene == gene_symbol) %>% 
-    pluck("plot1")
-}
-make_plot2 <- function(gene_symbol) {
-  master_plots %>% 
-    filter(fav_gene == gene_symbol) %>% 
-    pluck("plot2")
+    pluck(plot)
 }
 render_depmap_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
@@ -110,14 +105,14 @@ ui <- fluidPage(
     tabPanel("Home", 
              "text",
              hr(),
-             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='SETD1B'), 
+             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='HOXC9'), 
              actionButton(inputId = "go", label = "Generate"), 
              hr(), 
              uiOutput("gene_summary")),
     tabPanel("Cell Dependencies", 
              fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-              plotOutput(outputId = "plot2"), 
-              plotOutput(outputId = "plot1"))),
+              plotOutput(outputId = "plotdeps"), 
+              plotOutput(outputId = "plotbins"))),
              fluidRow(splitLayout(cellWidths = c("50%", "50%"),
               "text", 
               "text"))),
@@ -159,11 +154,11 @@ server <- function(input, output, session) {
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  output$plot1 <- renderPlot(
-    make_plot1(data())
+  output$plotdeps <- renderPlot(
+    make_plot(data(), "cell_deps")
   )
-  output$plot2 <- renderPlot(
-    make_plot2(data())
+  output$plotbins <- renderPlot(
+    make_plot(data(), "cell_bins")
   )
   output$pos_enrich <- renderDataTable(
     make_enrichment_table(master_positive, data())

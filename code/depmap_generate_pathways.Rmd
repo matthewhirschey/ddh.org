@@ -172,8 +172,8 @@ for (fav_gene in gene_group) {
 save(master_top_table, file=here::here("data", "master_top_table.RData"))
 
 end_time <- Sys.time()
-time_taken <- round(as.duration(start_time %--% end_time)/dminutes(1), digits = 1)
-print(time_taken)
+#time_taken <- round(lubridate::as.duration(start_time %--% end_time)/lubridate::dminutes(1), digits = 1)
+#print(time_taken)
 
 beep(sound = 8) #because mario is awesome
 ```
@@ -227,8 +227,8 @@ for (fav_gene in gene_group) {
     top_frac(dep_score, n = -0.01) %>% 
     arrange(dep_score)
   
-    #plot1
-    dep_plot1 <- ggplot(target_achilles) +
+    #plot1:cell_bins
+    cell_bins_plot <- ggplot(target_achilles) +
       geom_vline(xintercept = 1) +
       geom_vline(xintercept = -1) +
       geom_vline(xintercept = 0) +
@@ -236,8 +236,8 @@ for (fav_gene in gene_group) {
       labs(x = "Dependency Score (binned)") + 
       theme_light()
     
-    #plot2
-    dep_plot2 <- ggplot(target_achilles) +
+    #plot2:cell_deps
+    cell_deps_plot <- ggplot(target_achilles) +
       geom_point(aes(x = cell_line, y = dep_score)) +
       labs(x = "Cell Lines", y = "Dependency Score") +
       geom_hline(yintercept = mean_virtual_achilles) +
@@ -253,9 +253,9 @@ for (fav_gene in gene_group) {
       NULL
     
     #place objects into list columns
-    plot1 <- list(dep_plot1)
-    plot2 <- list(dep_plot2)
-    plots <- tibble(fav_gene, plot1, plot2)
+    cell_bins <- list(cell_bins_plot)
+    cell_deps <- list(cell_deps_plot)
+    plots <- tibble(fav_gene, cell_bins, cell_deps)
     
     master_plots <- master_plots %>% 
       bind_rows(plots)
