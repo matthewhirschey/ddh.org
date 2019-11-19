@@ -74,7 +74,6 @@ enrichr_loop <- function(gene_list, databases){
 ```{r import}
 ##BROAD
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
-achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
 achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
 
@@ -84,9 +83,14 @@ achilles_cor_long <- achilles_cor %>%
 #EXPRESSION(BROAD), need this to get cell line names
 expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
 
+expression_id$stripped_cell_line_name <- as_factor(expression_id$stripped_cell_line_name) #make factor here for plotting simplification below
+
+expression_id <- expression_id %>% 
+  rename(cell_line = stripped_cell_line_name)
+
 expression_join <- expression_id %>% 
   rename(X1 = dep_map_id) %>% 
-  select(X1, stripped_cell_line_name, lineage)
+  select(X1, cell_line, lineage)
 
 gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
 ```
@@ -136,11 +140,15 @@ pyrimidine <- c("CAD", "CMPK1", "CMPK2", "CTPS1", "CTPS2", "DHODH", "NME1", "NME
 #small sample
 ```{r}
 sample <- sample(names(achilles_cor), size = 10)
+r <- "rowname" #need to drop "rowname"
+full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 gene_group <- sample
 ```
 
 #master_table_top
 ```{r}
+start_time <- Sys.time() #how long?
+
 for (fav_gene in gene_group) {
   message("Top dep tables for ", fav_gene)
     dep_top <- achilles_cor %>% 
@@ -162,6 +170,11 @@ for (fav_gene in gene_group) {
 }
 
 save(master_top_table, file=here::here("data", "master_top_table.RData"))
+
+end_time <- Sys.time()
+time_taken <- round(as.duration(start_time %--% end_time)/dminutes(1), digits = 1)
+print(time_taken)
+
 beep(sound = 8) #because mario is awesome
 ```
 
@@ -199,35 +212,43 @@ gene_group <- sample #defined in first block (line 136)
 
 for (fav_gene in gene_group) {
   #plot setup
-    target_achilles <- achilles_long %>% 
-      filter(gene == fav_gene) %>% 
-      left_join(expression_join, by = "X1") %>% 
-      select(stripped_cell_line_name, lineage, dep_score)
-    
-    target_achilles_top <- target_achilles %>% 
-      top_frac(dep_score, n = 0.01)
-    
-    target_achilles_bottom <- target_achilles %>% 
-      top_frac(dep_score, n = -0.01) %>% 
-      arrange(dep_score)
-    
+  target_achilles <- achilles %>% 
+    select(X1, fav_gene) %>% 
+    left_join(expression_join, by = "X1") %>% 
+    rename(dep_score = fav_gene) %>% 
+    select(cell_line, lineage, dep_score) 
+  
+  target_achilles$cell_line <- fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE)
+  
+  target_achilles_top <- target_achilles %>% 
+    top_frac(dep_score, n = 0.01)
+  
+  target_achilles_bottom <- target_achilles %>% 
+    top_frac(dep_score, n = -0.01) %>% 
+    arrange(dep_score)
+  
     #plot1
     dep_plot1 <- ggplot(target_achilles) +
+      geom_vline(xintercept = 1) +
+      geom_vline(xintercept = -1) +
+      geom_vline(xintercept = 0) +
       geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
       labs(x = "Dependency Score (binned)") + 
       theme_light()
     
     #plot2
     dep_plot2 <- ggplot(target_achilles) +
-      geom_point(aes(x = fct_rev(fct_reorder(target_achilles$stripped_cell_line_name,  target_achilles$dep_score, .desc = TRUE)), y = dep_score)) + #is target achilles in here?
+      geom_point(aes(x = cell_line, y = dep_score)) +
       labs(x = "Cell Lines", y = "Dependency Score") +
       geom_hline(yintercept = mean_virtual_achilles) +
       geom_hline(yintercept = achilles_upper, linetype="dashed") +
       geom_hline(yintercept = achilles_lower, linetype="dashed") +
+      geom_hline(yintercept = 1) +
+      geom_hline(yintercept = -1) +
       geom_hline(yintercept = 0) +
-      geom_point(data = target_achilles_top, aes(x = stripped_cell_line_name, y = dep_score), color = "red") +
-      geom_point(data = target_achilles_bottom, aes(x = stripped_cell_line_name, y = dep_score), color = "red") +
-      theme_light() +
+      geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
+      geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
+      #theme_light() +
       theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
       NULL
     
