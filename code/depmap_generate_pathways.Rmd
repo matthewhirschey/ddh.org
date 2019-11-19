@@ -118,8 +118,8 @@ master_negative <- tibble(
 )
 master_plots <- tibble(
   fav_gene = character(), 
-  plot1 = list(), 
-  plot2 = list()
+  cell_bins = list(), 
+  cell_deps = list()
 )
 master_top_table <- tibble(
   fav_gene = character(), 
@@ -229,8 +229,8 @@ for (fav_gene in gene_group) {
   
     #plot1:cell_bins
     cell_bins_plot <- ggplot(target_achilles) +
-      geom_vline(xintercept = 1) +
-      geom_vline(xintercept = -1) +
+      geom_vline(xintercept = 1, color = "lightgray") +
+      geom_vline(xintercept = -1, color = "lightgray") +
       geom_vline(xintercept = 0) +
       geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
       labs(x = "Dependency Score (binned)") + 
@@ -238,17 +238,14 @@ for (fav_gene in gene_group) {
     
     #plot2:cell_deps
     cell_deps_plot <- ggplot(target_achilles) +
-      geom_point(aes(x = cell_line, y = dep_score)) +
+      geom_point(aes(x = cell_line, y = dep_score), alpha = 0.2) +
       labs(x = "Cell Lines", y = "Dependency Score") +
       geom_hline(yintercept = mean_virtual_achilles) +
-      geom_hline(yintercept = achilles_upper, linetype="dashed") +
-      geom_hline(yintercept = achilles_lower, linetype="dashed") +
-      geom_hline(yintercept = 1) +
-      geom_hline(yintercept = -1) +
+      geom_hline(yintercept = 1, color = "lightgray") +
+      geom_hline(yintercept = -1, color = "lightgray") +
       geom_hline(yintercept = 0) +
       geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
       geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
-      #theme_light() +
       theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
       NULL
     

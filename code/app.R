@@ -80,7 +80,7 @@ make_enrichment_table <- function(table, gene_symbol) {
     arrange(Adjusted.P.value)
 }
 
-make_plot <- function(gene_symbol, plot) {
+make_plot <- function(gene_symbol, plot) { #cell_bins, cell_deps
   master_plots %>% 
     filter(fav_gene == gene_symbol) %>% 
     pluck(plot)
@@ -111,8 +111,8 @@ ui <- fluidPage(
              uiOutput("gene_summary")),
     tabPanel("Cell Dependencies", 
              fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-              plotOutput(outputId = "plotdeps"), 
-              plotOutput(outputId = "plotbins"))),
+              plotlyOutput(outputId = "plotdeps"), 
+              plotlyOutput(outputId = "plotbins"))),
              fluidRow(splitLayout(cellWidths = c("50%", "50%"),
               "text", 
               "text"))),
@@ -144,6 +144,7 @@ ui <- fluidPage(
 #SERVER-----
 server <- function(input, output, session) {
   data <- eventReactive(input$go, {input$gene_symbol})
+  
   output$gene_summary <- renderUI({
     # render details about the gene symbol user entered
     gene_summary_ui(data())
@@ -154,10 +155,10 @@ server <- function(input, output, session) {
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  output$plotdeps <- renderPlot(
+  output$plotdeps <- renderPlotly(
     make_plot(data(), "cell_deps")
   )
-  output$plotbins <- renderPlot(
+  output$plotbins <- renderPlotly(
     make_plot(data(), "cell_bins")
   )
   output$pos_enrich <- renderDataTable(
