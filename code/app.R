@@ -1,6 +1,7 @@
 library(shiny)
 library(tidyverse)
 library(plotly)
+library(networkD3)
 library(corrr)
 library(here)
 library(lubridate)
@@ -72,6 +73,7 @@ make_bottom_table <- function(gene_symbol) {
     select(-fav_gene) %>% 
     arrange(r2)
 }
+
 make_enrichment_table <- function(table, gene_symbol) {
   table %>% 
     filter(fav_gene == gene_symbol) %>% 
@@ -80,11 +82,46 @@ make_enrichment_table <- function(table, gene_symbol) {
     arrange(Adjusted.P.value)
 }
 
-make_plot <- function(gene_symbol, plot) { #cell_bins, cell_deps
+make_plot <- function(gene_symbol, plot) { #plot = cell_bins, cell_deps
   master_plots %>% 
     filter(fav_gene == gene_symbol) %>% 
     pluck(plot)
 }
+
+make_graph <- function(gene_symbol, threshold = 10) {
+ #find top and bottom correlations for fav_gene
+  dep_top <- make_top_table(gene_symbol) %>% 
+    slice(1:threshold)
+  
+  dep_bottom <- make_bottom_table(gene_symbol) %>% 
+    slice(1:threshold) #limit for visualization?
+  
+  #last steps of above pipes are providing x, y, and r2 for graphing; this binds them together
+  dep_network <- dep_top %>% 
+    bind_rows(dep_bottom)
+  
+  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
+  related_genes <- dep_network %>% dplyr::pull(gene) #uncomment this
+  
+  #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
+  for (i in related_genes){
+    dep_top_related <- make_top_table(i) %>% 
+      slice(1:threshold) #limit for visualization?
+    
+    dep_bottom_related <- make_bottom_table(i)%>% 
+      slice(1:threshold) #limit for visualization?
+    
+    #each temp object is bound together, and then bound to the final df for graphing
+    dep_related <- dep_top_related #%>% 
+    bind_rows(dep_bottom_related)
+    
+    dep_network <- dep_network %>% 
+      bind_rows(dep_related)
+  }
+  
+  simpleNetwork(dep_network, height="500px", width="500px")
+}
+
 render_depmap_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
   read_gene_summary_into_environment(tmp.env)
@@ -111,8 +148,8 @@ ui <- fluidPage(
              uiOutput("gene_summary")),
     tabPanel("Cell Dependencies", 
              fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-              plotlyOutput(outputId = "plotdeps"), 
-              plotlyOutput(outputId = "plotbins"))),
+              plotOutput(outputId = "plotdeps"), 
+              plotOutput(outputId = "plotbins"))),
              fluidRow(splitLayout(cellWidths = c("50%", "50%"),
               "text", 
               "text"))),
@@ -130,6 +167,8 @@ ui <- fluidPage(
                tabPanel("Pathways",
                         fluidRow("text"),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
+    tabPanel("Graph", 
+             simpleNetworkOutput(outputId = "graph")),
     tabPanel("Methods", 
              h3("Methods"), 
              "description"),
@@ -155,10 +194,10 @@ server <- function(input, output, session) {
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  output$plotdeps <- renderPlotly(
+  output$plotdeps <- renderPlot(
     make_plot(data(), "cell_deps")
   )
-  output$plotbins <- renderPlotly(
+  output$plotbins <- renderPlot(
     make_plot(data(), "cell_bins")
   )
   output$pos_enrich <- renderDataTable(
@@ -167,6 +206,10 @@ server <- function(input, output, session) {
   output$neg_enrich <- renderDataTable(
     make_enrichment_table(master_negative, data())
   )
+  output$graph <- renderSimpleNetwork(
+    make_graph(data())
+  )
+  
   output$report <- downloadHandler(
     # create pdf depmap report
     filename = paste0(data(), "_depmap.pdf"),
