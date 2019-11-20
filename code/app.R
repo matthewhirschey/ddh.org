@@ -89,6 +89,12 @@ make_plot <- function(gene_symbol, plot) { #plot = cell_bins, cell_deps
 }
 
 make_graph <- function(gene_symbol, threshold = 10) {
+  dep_network <- tibble(
+    x = character(), 
+    y = character(),
+    r2 = numeric()
+  )
+  
  #find top and bottom correlations for fav_gene
   dep_top <- make_top_table(gene_symbol) %>% 
     slice(1:threshold)
@@ -101,19 +107,32 @@ make_graph <- function(gene_symbol, threshold = 10) {
     bind_rows(dep_bottom)
   
   #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_network %>% dplyr::pull(gene) #uncomment this
+  related_genes <- dep_network %>% dplyr::pull(gene)
   
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
-    dep_top_related <- make_top_table(i) %>% 
-      slice(1:threshold) #limit for visualization?
+    message("Getting correlations related to ", fav_gene, ", including ", i)
+    dep_top_related <- achilles_cor %>% 
+      focus(i) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      mutate(x = i) %>% 
+      rename(y = rowname, r2 = i) %>% 
+      select(x, y, r2) %>% 
+      slice(1:n) #limit for visualization?
     
-    dep_bottom_related <- make_bottom_table(i)%>% 
-      slice(1:threshold) #limit for visualization?
+    dep_bottom_related <- achilles_cor %>% 
+      focus(i) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      mutate(x = i) %>% 
+      rename(y = rowname, r2 = i) %>% 
+      select(x, y, r2) %>% 
+      slice(1:n) #limit for visualization?
     
     #each temp object is bound together, and then bound to the final df for graphing
-    dep_related <- dep_top_related #%>% 
-    bind_rows(dep_bottom_related)
+    dep_related <- dep_top_related %>% 
+      bind_rows(dep_bottom_related)
     
     dep_network <- dep_network %>% 
       bind_rows(dep_related)
