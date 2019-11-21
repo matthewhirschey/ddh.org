@@ -89,11 +89,7 @@ make_plot <- function(gene_symbol, plot) { #plot = cell_bins, cell_deps
 }
 
 make_graph <- function(gene_symbol, threshold = 10) {
-  dep_network <- tibble(
-    x = character(), 
-    y = character(),
-    r2 = numeric()
-  )
+  dep_network <- tibble()
   
  #find top and bottom correlations for fav_gene
   dep_top <- make_top_table(gene_symbol) %>% 
@@ -102,16 +98,14 @@ make_graph <- function(gene_symbol, threshold = 10) {
   dep_bottom <- make_bottom_table(gene_symbol) %>% 
     slice(1:threshold) #limit for visualization?
   
-  #last steps of above pipes are providing x, y, and r2 for graphing; this binds them together
-  dep_network <- dep_top %>% 
-    bind_rows(dep_bottom)
-  
   #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_network %>% dplyr::pull(gene)
+  related_genes <- dep_top %>% 
+    bind_rows(dep_bottom) %>% 
+    dplyr::pull(gene)
   
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
-    message("Getting correlations related to ", fav_gene, ", including ", i)
+    message("Getting correlations related to ", gene_symbol, ", including ", i)
     dep_top_related <- achilles_cor %>% 
       focus(i) %>% 
       arrange(desc(.[[2]])) %>% #use column index

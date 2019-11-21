@@ -43,7 +43,6 @@ library(beepr) #long analysis; get some coffee, and comeback when ready
 Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
 ```{r import}
 ##BROAD
-##BROAD
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
 achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
 achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
@@ -110,8 +109,13 @@ dep_network <- dep_top %>%
 #single gene and related genes
 This builds on the code above, and creates a for-loop to generate a network graph of a single gene. It takes a gene, finds the n top and bottom correlated genes (called related genes), and then pulls the correlations of the related genes to builds up a df. 
 ```{r}
-fav_gene <- c("SIRT4")
-n <- 25
+fav_gene <- c("HOXC9")
+n <- 10
+dep_network <- tibble(
+  x = character(), 
+  y = character(),
+  r2 = numeric()
+)
 
 #find top and bottom correlations for fav_gene
 dep_top <- achilles_cor %>% 
@@ -132,12 +136,10 @@ dep_bottom <- achilles_cor %>%
   select(x, y, r2) %>% 
   slice(1:n) #limit for visualization?
 
-#last steps of above pipes are providing x, y, and r2 for graphing; this binds them together
-dep_network <- dep_top %>% 
-  bind_rows(dep_bottom)
-
 #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-related_genes <- dep_network %>% dplyr::pull(y) #uncomment this
+related_genes <- dep_top %>% 
+  bind_rows(dep_bottom) %>% 
+  dplyr::pull(y) #uncomment this
 
 #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
 for (i in related_genes){
@@ -161,7 +163,7 @@ for (i in related_genes){
     slice(1:n) #limit for visualization?
   
   #each temp object is bound together, and then bound to the final df for graphing
-  dep_related <- dep_top_related #%>% 
+  dep_related <- dep_top_related %>% 
     bind_rows(dep_bottom_related)
   
   dep_network <- dep_network %>% 
@@ -172,7 +174,8 @@ for (i in related_genes){
 m <- 3
 
 #https://www.r-bloggers.com/another-game-of-thrones-network-analysis-this-time-with-tidygraph-and-ggraph/
-graph_network <- as_tbl_graph(dep_network) %>% 
+graph_network <- as_tbl_graph(dep_network)
+graph_network <- graph_network %>% 
   activate(nodes) %>% #active by default, add centrality measures to nodes
   mutate(degree = degree(graph_network), #The degree of a node is the number of its adjacent edges.
          strength = strength(graph_network), #Summing up the edge weights of the adjacent edges for each vertex (same as degree, if not weighted)
@@ -201,7 +204,17 @@ edges <- graph_network %>%
   
 graph_network %>% 
   ggraph(layout = 'kk', weights = abs(r2)) +
-  geom_edge_link(aes(filter = centrality_e > 100, color = r2_bin), alpha = 0.5) +
+  geom_edge_link(aes(filter = centrality_e > 1000, color = r2_bin), alpha = 0.5) +
+  #scale_edge_color_viridis(discrete = TRUE, option = "magma") +
+  scale_edge_colour_brewer(palette = "Set1", direction = -1) +
+  geom_node_point(aes(color = query), size = 6) +
+  scale_color_manual(values = c("yellow", "gray")) +
+  geom_node_text (aes(label = name), size = 3, repel = FALSE) +
+  theme_graph()
+
+graph_network %>% 
+  ggraph(layout = 'kk', weights = abs(r2)) +
+  geom_edge_link(aes(filter = centrality_e > 1000, color = r2_bin), alpha = 0.5) +
   #scale_edge_color_viridis(discrete = TRUE, option = "magma") +
   scale_edge_colour_brewer(palette = "Set1", direction = -1) +
   geom_node_point(aes(filter = betweenness > 1, color = query), size = 6) +
@@ -210,7 +223,9 @@ graph_network %>%
   theme_graph()
 
 #https://www.r-graph-gallery.com/network-interactive.html
-simpleNetwork(dep_network, height="100px", width="100px")
+simpleNetwork(dep_network, height="500px", width="500px")
+
+
 ```
 
 #gene lists
