@@ -39,6 +39,56 @@ library(beepr) #long analysis; get some coffee, and comeback when ready
 #rm(list=ls()) 
 ```
 
+##define functions
+```{r}
+make_graph <- function(gene_symbol, threshold = 10) {
+  dep_network <- tibble()
+  
+ #find top and bottom correlations for fav_gene
+  dep_top <- make_top_table(gene_symbol) %>% 
+    slice(1:threshold)
+  
+  dep_bottom <- make_bottom_table(gene_symbol) %>% 
+    slice(1:threshold) #limit for visualization?
+  
+  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
+  related_genes <- dep_top %>% 
+    bind_rows(dep_bottom) %>% 
+    dplyr::pull(gene)
+  
+  #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
+  for (i in related_genes){
+    message("Getting correlations related to ", gene_symbol, ", including ", i)
+    dep_top_related <- achilles_cor %>% 
+      focus(i) %>% 
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      mutate(x = i) %>% 
+      rename(y = rowname, r2 = i) %>% 
+      select(x, y, r2) %>% 
+      slice(1:threshold) #limit for visualization?
+    
+    dep_bottom_related <- achilles_cor %>% 
+      focus(i) %>% 
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      mutate(x = i) %>% 
+      rename(y = rowname, r2 = i) %>% 
+      select(x, y, r2) %>% 
+      slice(1:threshold) #limit for visualization?
+    
+    #each temp object is bound together, and then bound to the final df for graphing
+    dep_related <- dep_top_related %>% 
+      bind_rows(dep_bottom_related)
+    
+    dep_network <- dep_network %>% 
+      bind_rows(dep_related)
+  }
+  
+  simpleNetwork(dep_network, width="100%")
+}
+```
+
 ##import
 Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
 ```{r import}
@@ -70,11 +120,6 @@ achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
 achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
 mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
 sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
-```
-
-```{r}
-#hold some gene lists
-
 ```
 
 #single gene
@@ -109,7 +154,7 @@ dep_network <- dep_top %>%
 #single gene and related genes
 This builds on the code above, and creates a for-loop to generate a network graph of a single gene. It takes a gene, finds the n top and bottom correlated genes (called related genes), and then pulls the correlations of the related genes to builds up a df. 
 ```{r}
-fav_gene <- c("HOXC9")
+fav_gene <- c("TP53")
 n <- 10
 dep_network <- tibble(
   x = character(), 
@@ -169,7 +214,10 @@ for (i in related_genes){
   dep_network <- dep_network %>% 
     bind_rows(dep_related)
 }
+```
 
+#build graph from gene + related genes
+```{r}
 #minimum degree
 m <- 3
 
@@ -224,9 +272,26 @@ graph_network %>%
 
 #https://www.r-graph-gallery.com/network-interactive.html
 simpleNetwork(dep_network, height="500px", width="500px")
-
-
 ```
+
+#build forceNetwork
+```{r}
+graph_network <- as_tbl_graph(dep_network)
+nodes <-  as_tibble(graph_network) %>% 
+    rowid_to_column("id") %>% 
+    mutate(id = id -1, #req'd for d3
+           group = 1) %>% 
+    as.data.frame
+
+links <- graph_network %>% 
+  activate(edges) %>% # %E>%
+  as_tibble() %>% 
+  mutate(from = from - 1, to = to - 1) %>% #req'd for d3
+  as.data.frame
+
+forceNetwork(Links = links, Nodes = nodes, Source = "from", Target ="to", NodeID = "name", Group = "group")
+```
+
 
 #gene lists
 ```{r}
