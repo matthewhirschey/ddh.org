@@ -113,7 +113,7 @@ make_graph <- function(gene_symbol, threshold = 10) {
       mutate(x = i) %>% 
       rename(y = rowname, r2 = i) %>% 
       select(x, y, r2) %>% 
-      slice(1:n) #limit for visualization?
+      slice(1:threshold) #limit for visualization?
     
     dep_bottom_related <- achilles_cor %>% 
       focus(i) %>% 
@@ -122,7 +122,7 @@ make_graph <- function(gene_symbol, threshold = 10) {
       mutate(x = i) %>% 
       rename(y = rowname, r2 = i) %>% 
       select(x, y, r2) %>% 
-      slice(1:n) #limit for visualization?
+      slice(1:threshold) #limit for visualization?
     
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>% 
@@ -132,7 +132,7 @@ make_graph <- function(gene_symbol, threshold = 10) {
       bind_rows(dep_related)
   }
   
-  simpleNetwork(dep_network, height="500px", width="500px")
+  simpleNetwork(dep_network, width="100%")
 }
 
 render_depmap_report_to_file <- function(file, gene_symbol) {
