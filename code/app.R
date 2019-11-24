@@ -155,7 +155,7 @@ ui <- fluidPage(
     tabPanel("Home", 
              "text",
              hr(),
-             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='HOXC9'), 
+             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'), 
              actionButton(inputId = "go", label = "Generate"), 
              hr(), 
              uiOutput("gene_summary")),
