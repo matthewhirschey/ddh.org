@@ -118,11 +118,6 @@ master_negative <- tibble(
   fav_gene = character(), 
   data = list()
 )
-master_plots <- tibble(
-  fav_gene = character(), 
-  cell_bins = list(), 
-  cell_deps = list()
-)
 master_top_table <- tibble(
   fav_gene = character(), 
   data = list()
@@ -212,7 +207,7 @@ beep(sound = 8) #because mario is awesome
 ```
 
 #master_plots
-Removed to generate on the fly
+Removed to generate on the fly; Stored file was 500 MB, achilles is <100MB
 
 #master_positive
 Generate list on the fly (redundant with above code), but it can be parallel, and not rely on one of the other chunks.
