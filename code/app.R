@@ -247,7 +247,7 @@ ui <- fluidPage(
                         fluidRow("text"),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph", 
-             simpleNetworkOutput(outputId = "graph")),
+             forceNetworkOutput(outputId = "graph")),
     tabPanel("Methods", 
              h3("Methods"), 
              "description"),
@@ -285,7 +285,7 @@ server <- function(input, output, session) {
   output$neg_enrich <- renderDataTable(
     make_enrichment_table(master_negative, data())
   )
-  output$graph <- renderSimpleNetwork(
+  output$graph <- renderForceNetwork(
     make_graph(data())
   )
   
