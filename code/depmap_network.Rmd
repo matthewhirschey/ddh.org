@@ -275,21 +275,71 @@ simpleNetwork(dep_network, height="500px", width="500px")
 ```
 
 #build forceNetwork
+kaggle; https://www.kaggle.com/paulc91/visualise-flows-with-r-d3
 ```{r}
+#setup graph 
+deg <- 3
 graph_network <- as_tbl_graph(dep_network)
 nodes <-  as_tibble(graph_network) %>% 
-    rowid_to_column("id") %>% 
-    mutate(id = id -1, #req'd for d3
-           group = 1) %>% 
-    as.data.frame
+  rowid_to_column("id") %>% 
+  mutate(degree = degree(graph_network), 
+         group = 1) %>% 
+  arrange(desc(degree))
+  
+links <- graph_network %>% 
+  activate(edges) %>% # %E>%
+  as_tibble()
+
+# determine the nodes that have at least the minimum degree
+nodes_filtered <- nodes %>%
+  filter(degree >= deg) %>%  #input$degree
+  as.data.frame
+
+# filter the edge list to contain only links to or from the nodes that have the minimum or more degree
+links_filtered <- links %>% 
+  filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>% 
+  as.data.frame
+
+# re-adjust the from and to values to reflect the new positions of nodes in the filtered nodes list
+links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
+links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
+
+forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100)
+
+
+
+
+
+onedegree_nodes <- graph_network %>% 
+  activate(nodes) %>% #active by default, add centrality measures to nodes
+  mutate(degree = degree(graph_network)) %>% 
+  arrange(desc(degree)) %>% 
+   as_tibble() %>% 
+  filter(degree == 1) %>% 
+  pull(name)
+
+onedegree_nodes_id <-  as_tibble(graph_network) %>% 
+  rowid_to_column("id") %>% 
+  mutate(id = id -1, #req'd for d3
+         group = 1) %>% 
+  filter(name %in% graph_degree_1) %>% 
+  pull(id)
+         
+nodes <-  as_tibble(graph_network) %>% 
+  rowid_to_column("id") %>% 
+  mutate(id = id -1, #req'd for d3
+         group = 1) %>% 
+  filter(!name %in% onedegree_nodes) %>% 
+  as.data.frame
 
 links <- graph_network %>% 
   activate(edges) %>% # %E>%
   as_tibble() %>% 
   mutate(from = from - 1, to = to - 1) %>% #req'd for d3
+  filter(!from %in% onedegree_nodes_id | !to %in% onedegree_nodes_id ) %>% 
   as.data.frame
 
-forceNetwork(Links = links, Nodes = nodes, Source = "from", Target ="to", NodeID = "name", Group = "group")
+forceNetwork(Links = links, Nodes = nodes, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100)
 ```
 
 
