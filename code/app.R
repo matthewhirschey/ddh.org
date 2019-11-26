@@ -13,11 +13,12 @@ read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
 }
+load(file=here::here("data", "achilles.RData"))
+load(file=here::here("data", "expression_join.RData"))
 
 #read in datasets saved from depmap_generate_pathways.Rmd
 load(file=here::here("data", "master_bottom_table.RData"))
 load(file=here::here("data", "master_top_table.RData"))
-load(file=here::here("data", "master_plots.RData"))
 load(file=here::here("data", "master_positive.RData"))
 load(file=here::here("data", "master_negative.RData"))
 
@@ -82,10 +83,45 @@ make_enrichment_table <- function(table, gene_symbol) {
     arrange(Adjusted.P.value)
 }
 
-make_plot <- function(gene_symbol, plot) { #plot = cell_bins, cell_deps
-  master_plots %>% 
-    filter(fav_gene == gene_symbol) %>% 
-    pluck(plot)
+make_plot <- function(gene_symbol, op) { #op = cell_bins, cell_deps
+  #plot setup
+  target_achilles <- achilles %>% 
+    select(X1, gene_symbol) %>% 
+    left_join(expression_join, by = "X1") %>% 
+    rename(dep_score = gene_symbol) %>% 
+    select(cell_line, lineage, dep_score) 
+  
+  target_achilles$cell_line <- fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE)
+  
+  target_achilles_top <- target_achilles %>% 
+    top_frac(dep_score, n = 0.01)
+  
+  target_achilles_bottom <- target_achilles %>% 
+    top_frac(dep_score, n = -0.01) %>% 
+    arrange(dep_score)
+  switch(op, 
+  #plot1:cell_bins
+  cell_bins = ggplot(target_achilles) +
+    geom_vline(xintercept = 1, color = "lightgray") +
+    geom_vline(xintercept = -1, color = "lightgray") +
+    geom_vline(xintercept = 0) +
+    geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
+    labs(x = "Dependency Score (binned)") + 
+    theme_light(),
+    #plot2:cell_deps
+  cell_deps = ggplot(target_achilles) +
+    geom_point(aes(x = cell_line, y = dep_score), alpha = 0.2) +
+    labs(x = "Cell Lines", y = "Dependency Score") +
+    geom_hline(yintercept = mean_virtual_achilles) +
+    geom_hline(yintercept = 1, color = "lightgray") +
+    geom_hline(yintercept = -1, color = "lightgray") +
+    geom_hline(yintercept = 0) +
+    geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
+    geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
+    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
+    NULL, 
+  stop("Specify your plot!")
+  )
 }
 
 make_graph <- function(gene_symbol, threshold = 10) {

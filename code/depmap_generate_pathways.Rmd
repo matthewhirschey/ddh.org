@@ -92,6 +92,8 @@ expression_join <- expression_id %>%
   rename(X1 = dep_map_id) %>% 
   select(X1, cell_line, lineage)
 
+save(expression_join, file=here::here("data", "expression_join.RData"))
+
 gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
 ```
 
