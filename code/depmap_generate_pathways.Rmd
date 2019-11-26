@@ -210,61 +210,7 @@ beep(sound = 8) #because mario is awesome
 ```
 
 #master_plots
-Long to run, and hangs on save object ~500MB
-```{r}
-gene_group <- sample #defined in first block (line 136)
-
-for (fav_gene in gene_group) {
-  message(" Plots for ", fav_gene)
-  #plot setup
-  target_achilles <- achilles %>% 
-    select(X1, fav_gene) %>% 
-    left_join(expression_join, by = "X1") %>% 
-    rename(dep_score = fav_gene) %>% 
-    select(cell_line, lineage, dep_score) 
-  
-  target_achilles$cell_line <- fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE)
-  
-  target_achilles_top <- target_achilles %>% 
-    top_frac(dep_score, n = 0.01)
-  
-  target_achilles_bottom <- target_achilles %>% 
-    top_frac(dep_score, n = -0.01) %>% 
-    arrange(dep_score)
-  
-    #plot1:cell_bins
-    cell_bins_plot <- ggplot(target_achilles) +
-      geom_vline(xintercept = 1, color = "lightgray") +
-      geom_vline(xintercept = -1, color = "lightgray") +
-      geom_vline(xintercept = 0) +
-      geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
-      labs(x = "Dependency Score (binned)") + 
-      theme_light()
-    
-    #plot2:cell_deps
-    cell_deps_plot <- ggplot(target_achilles) +
-      geom_point(aes(x = cell_line, y = dep_score), alpha = 0.2) +
-      labs(x = "Cell Lines", y = "Dependency Score") +
-      geom_hline(yintercept = mean_virtual_achilles) +
-      geom_hline(yintercept = 1, color = "lightgray") +
-      geom_hline(yintercept = -1, color = "lightgray") +
-      geom_hline(yintercept = 0) +
-      geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
-      geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
-      theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
-      NULL
-    
-    #place objects into list columns
-    cell_bins <- list(cell_bins_plot)
-    cell_deps <- list(cell_deps_plot)
-    plots <- tibble(fav_gene, cell_bins, cell_deps)
-    
-    master_plots <- master_plots %>% 
-      bind_rows(plots)
-}
-save(master_plots, file=here::here("data", "master_plots.RData"))
-beep(sound = 8) #because mario is awesome
-```
+Removed to generate on the fly
 
 #master_positive
 Generate list on the fly (redundant with above code), but it can be parallel, and not rely on one of the other chunks.
