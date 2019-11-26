@@ -168,7 +168,37 @@ make_graph <- function(gene_symbol, threshold = 10) {
       bind_rows(dep_related)
   }
   
-  simpleNetwork(dep_network, width="100%")
+  build_graph(dep_network)
+}
+
+build_graph <- function(dep_network = dep_network, deg = 2) {
+  #setup graph 
+  graph_network <- tidygraph::as_tbl_graph(dep_network)
+  nodes <-  as_tibble(graph_network) %>% 
+    rowid_to_column("id") %>% 
+    mutate(degree = degree(graph_network), 
+           group = 1) %>% 
+    arrange(desc(degree))
+  
+  links <- graph_network %>% 
+    activate(edges) %>% # %E>%
+    as_tibble()
+  
+  # determine the nodes that have at least the minimum degree
+  nodes_filtered <- nodes %>%
+    filter(degree >= deg) %>%  #input$degree
+    as.data.frame
+  
+  # filter the edge list to contain only links to or from the nodes that have the minimum or more degree
+  links_filtered <- links %>% 
+    filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>% 
+    as.data.frame
+  
+  # re-adjust the from and to values to reflect the new positions of nodes in the filtered nodes list
+  links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
+  links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
+  
+  forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100)
 }
 
 render_depmap_report_to_file <- function(file, gene_symbol) {
