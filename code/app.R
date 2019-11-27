@@ -75,9 +75,9 @@ make_bottom_table <- function(gene_symbol) {
     arrange(r2)
 }
 
-make_enrichment_table <- function(table, gene_symbol) {
+make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
   table %>% 
-    filter(fav_gene == gene_symbol) %>% 
+    dplyr::filter(fav_gene == gene_symbol) %>% 
     unnest(data) %>% 
     select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>% 
     arrange(Adjusted.P.value)
@@ -167,7 +167,6 @@ make_graph <- function(gene_symbol, threshold = 10) {
     dep_network <- dep_network %>% 
       bind_rows(dep_related)
   }
-  
   build_graph(dep_network)
 }
 
@@ -247,7 +246,14 @@ ui <- fluidPage(
                         fluidRow("text"),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph", 
-             forceNetworkOutput(outputId = "graph")),
+             sidebarLayout(
+               sidebarPanel(numericInput(inputId = "deg", 
+                                        label = "Minimum # of Connections", 
+                                        value = 2, min = 1, max = 50)),
+               #conditionalPanel(condition = "input.gene_symbol == NULL", 
+               #                 p("Enter a gene symbol to generate a graph")),
+               mainPanel(forceNetworkOutput(outputId = "graph")))
+    ),
     tabPanel("Methods", 
              h3("Methods"), 
              "description"),
