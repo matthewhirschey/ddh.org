@@ -7,6 +7,7 @@ library(here)
 library(lubridate)
 library(feather)
 library(rmarkdown)
+library(markdown)
 
 #LOAD DATA-----
 read_gene_summary_into_environment <- function(tmp.env) {
@@ -246,17 +247,17 @@ ui <- fluidPage(
                         fluidRow("text"),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph", 
-             sidebarLayout(
-               sidebarPanel(numericInput(inputId = "deg", 
-                                        label = "Minimum # of Connections", 
-                                        value = 2, min = 1, max = 50)),
+             #sidebarLayout( #UNCOMMENT THIS SECTION WHEN input$deg is working
+               #sidebarPanel(numericInput(inputId = "deg", 
+                                        #label = "Minimum # of Connections", 
+                                        #value = 2, min = 1, max = 50)),
                #conditionalPanel(condition = "input.gene_symbol == NULL", 
                #                 p("Enter a gene symbol to generate a graph")),
-               mainPanel(forceNetworkOutput(outputId = "graph")))
+               mainPanel(forceNetworkOutput(outputId = "graph"))#)
     ),
     tabPanel("Methods", 
-             h3("Methods"), 
-             "description"),
+             includeMarkdown(here::here("code", "methods.md"))
+             ),
     tabPanel("Download Report",
              h2("Report Generator"), 
              "To generate a report, click on the button below",
