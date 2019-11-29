@@ -44,17 +44,18 @@ Functional genomics is a field of molecular biology that aims to describe gene (
 Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries in genome-scaled pooled loss-of-function screening, which allows for the stable suppression of each gene individually in a subset of cells within a pooled format allowing for a cost-effective genome scale interrogation of gene essentiality. Next, using computational modeling, an accurate determination of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A core of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors. The overall goal is to identify all essentail genes in 2000 cell lines over the 5-year project period.  
   
 Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. These data generated correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis.  
-  
-Next, given some cells do not express all genes, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models. Across `r nrow(expression)` cell lines in this project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 #how many 0s?
 expression_long <- expression %>% 
   filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
   gather("gene", "gene_expression", -X1) %>% 
   arrange(desc(gene_expression))
+```
+  
+Next, given some cells do not express all genes, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models. Across `r nrow(expression)` cell lines in this project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
 
-p <- ggplot() +
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() +
   geom_histogram(data = expression_long, aes(x = gene_expression), binwidth = 0.25) +
   labs(title = paste("Binned gene expression values in ", length(expression$X1), " CCLE cell lines", sep = ""), 
        subtitle = paste0(
@@ -62,24 +63,26 @@ p <- ggplot() +
     x = "Normalized gene expression (TPM)", 
     y = "Count (Million)") +
   scale_y_continuous(breaks = seq(0, 3000000, by = 1000000), labels = c("0", "1", "2", "3")) +
+  theme_minimal() +
   NULL
-
-ggplotly(p)
 ```
 
-Of the `r nrow(achilles)` cell lines for which gene essentiality data is collected, `r sum(achilles$X1 %in% expression$X1)` have genome-wide gene expression data. 
-
-
+Of the `r nrow(achilles)` cell lines for which gene essentiality data is collected, `r sum(achilles$X1 %in% expression$X1)` have genome-wide gene expression data. From these cell lines, we removed dependency scores for genes from cell line that have a corresponding gene expression value of zero. For some genes expressed in highly specific cell types, this operation removed many dependency values. Thus, we set a threshold of `r params$threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-params$threshold` cell lines with dependency values, the correaltion pattern would be dependent upon too few of associations to be meaningful and were therefore removed.  
+  
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+achilles_long <- achilles %>% 
+  gather("gene", "dep_score", -X1)
 
-#Many genes giving too high r2 value to be real
-#count NAs
-achilles %>% 
-  summarise_all(list(~sum(is.na(.)))) %>% 
-  gather(gene, NAs) %>% 
-  arrange(desc(NAs))  %>% 
-  ggplot() +
-  geom_histogram(aes(x = NAs))
+no_expression <- expression_long %>% 
+  filter(gene_expression == 0) %>% 
+  unite(X1, gene, col = "match", sep = "-", remove = TRUE) %>% 
+  pull(match)
+
+achilles_no0 <- achilles_long %>% 
+  unite(X1, gene, col = "match", sep = "-", remove = FALSE) %>% 
+  filter(match %in% no_expression == FALSE) %>% 
+  select(-match) %>%
+  spread(gene, dep_score)
 
 #count NAs in corrected dataframe
 achilles_no0 %>% 
@@ -87,23 +90,25 @@ achilles_no0 %>%
   gather(gene, NAs) %>% 
   arrange(desc(NAs)) %>% 
   ggplot() +
-  geom_histogram(aes(x = NAs))
-
-#looks like we have genes with 'too many' NAs
-#therefore, need a cleaning step to remove genes
-
-na_cutoff <- params$na_cutoff
+  geom_histogram(aes(x = NAs)) +
+  labs(x = "Cells with the number of NAs", y = "Count") +
+  geom_vline(aes(xintercept = params$na_cutoff), color = "red") +
+  theme_minimal()
 
 toomanyNAs <- achilles_no0 %>% 
   summarise_all(list(~sum(is.na(.)))) %>% 
   gather(gene, NAs) %>% 
   arrange(desc(NAs)) %>% 
-  filter(NAs > na_cutoff) %>% 
+  filter(NAs > params$na_cutoff) %>% 
   pull(gene)
 
 achilles_clean <- achilles_no0 %>% 
-  select(-one_of(toomanyNAs)) #4491 elements for NAs > 100; 1871 elements for NAs > 400
+  select(-one_of(toomanyNAs)) 
 ```
+The `r length(toomanyNAs)` removed genes that had too few cells with expression and dependency data.  
+`r knitr::kable(head(sort(toomanyNAs), 20))`  
+  
+These 'cleaned' dependency data were then used to generate correlation values between the remaining `r length(achilles_clean)` gene-gene pairs.
 
 ### Summary Statistics
 
@@ -115,42 +120,42 @@ dep_plot2
 dep_plot1
 
 ### Cells with strong `r fav_gene` genetic dependencies 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-knitr::kable(target_achilles_bottom)
+```{r evaluate = FALSE}
+#knitr::kable(target_achilles_bottom)
 ```
 
 ### Cells with low or inverse `r fav_gene` genetic dependencies
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-knitr::kable(target_achilles_top)
+```{r evaluate = FALSE}
+#knitr::kable(target_achilles_top)
 ```
 
 ### Positive Ranked Dependency from DepMap  
-`r paste0("The", length(dep_top$gene), "genes that show the highest postive correlation for similar genetic dependencies are listed here.")`
-```{r template_dep_top, echo=FALSE}
-knitr::kable(dep_top)
+r paste0("The", length(dep_top$gene), "genes that show the highest postive correlation for similar genetic dependencies are listed here.")
+```{r evaluate = FALSE}
+#knitr::kable(dep_top)
 ```
 
 ### Positive Correlated Gene Sets  
-```{r template_top_complete, echo=FALSE}
-flat_top_complete %>% 
-  select(enrichr, Term, Overlap) %>% 
-  slice(1:10) %>% 
-  knitr::kable()
+```{r evaluate = FALSE}
+#flat_top_complete %>% 
+#  select(enrichr, Term, Overlap) %>% 
+#  slice(1:10) %>% 
+#  knitr::kable()
 
 ```
 
 ### Negative Ranked Dependency from DepMap  
-`r paste0("The ", length(dep_bottom$gene), " ranked genes that show the most negative correlation for similar genetic dependencies are listed here.")`  
-```{r template_dep_bottom, echo=FALSE}
-knitr::kable(dep_bottom)
+r paste0("The ", length(dep_bottom$gene), " ranked genes that show the most negative correlation for similar genetic dependencies are listed here.")
+```{r evaluate = FALSE}
+#knitr::kable(dep_bottom)
 ```
   
 ### Negative Correlated Gene Sets  
-```{r template_bottom_complete, echo=FALSE}
-flat_bottom_complete %>% 
-  select(enrichr, Term, Overlap) %>% 
-  slice(1:10) %>% 
-  knitr::kable()
+```{r evaluate = FALSE}
+#flat_bottom_complete %>% 
+#  select(enrichr, Term, Overlap) %>% 
+#  slice(1:10) %>% 
+#  knitr::kable()
 ```
   
 ## Code Availability  
