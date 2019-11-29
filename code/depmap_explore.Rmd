@@ -41,7 +41,7 @@ Import Broad Insititute and Sanger Depedencay data; added Broad cell line expres
 ##BROAD
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
 achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
-achilles_cor <- read_feather(here("data", paste0(params$release, "_achilles_cor.feather"))) 
+achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
 achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
 
@@ -58,11 +58,11 @@ achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_ac
 #EXPRESSION(BROAD)
 expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
 expression_long <- expression %>% gather("gene", "gene_expression", -X1) %>% arrange(desc(gene_expression))
-expression_cor <- read_feather(here("data", paste0(params$release, "_expression_cor.feather"))) 
+expression_cor <- read_feather(here::here("data", paste0(params$release, "_expression_cor.feather"))) 
 class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
 expression_cor_long <- read_feather(here::here("data", paste0(params$release, "_expression_cor_long.feather")))
 
-expression_id <- read_feather(here("data", paste0(params$release, "_expression_id.feather"))) 
+expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
 
 expression_join <- expression_id %>% 
   rename(X1 = dep_map_id) %>% 
