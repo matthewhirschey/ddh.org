@@ -84,7 +84,7 @@ make_enrichment_table <- function(table, gene_symbol) { #master_positive, master
     arrange(Adjusted.P.value)
 }
 
-make_plot <- function(gene_symbol, op) { #op = cell_bins, cell_deps
+setup_plot <- function(gene_symbol) {
   #plot setup
   target_achilles <- achilles %>% 
     select(X1, gene_symbol) %>% 
@@ -92,14 +92,20 @@ make_plot <- function(gene_symbol, op) { #op = cell_bins, cell_deps
     rename(dep_score = gene_symbol) %>% 
     select(cell_line, lineage, dep_score) 
   
-  target_achilles$cell_line <- fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE)
-  
   target_achilles_top <- target_achilles %>% 
-    top_frac(dep_score, n = 0.01)
+    arrange(desc(dep_score)) %>% 
+    top_frac(dep_score, n = 10)
   
   target_achilles_bottom <- target_achilles %>% 
-    top_frac(dep_score, n = -0.01) %>% 
-    arrange(dep_score)
+    arrange(dep_score) %>% 
+    top_frac(dep_score, n = 10)
+}
+  
+make_plot <- function(gene_symbol, op) { #op = cell_bins, cell_deps
+  #plot setup
+  setup_plot(gene_symbol)
+  target_achilles$cell_line <- fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE)
+  
   switch(op, 
   #plot1:cell_bins
   cell_bins = ggplot(target_achilles) +
@@ -204,9 +210,15 @@ build_graph <- function(dep_network = dep_network, deg = 2) {
 render_depmap_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
   read_gene_summary_into_environment(tmp.env)
-  render_dummy_report(file, gene_symbol, tmp.env)
+  render_complete_report(file, gene_symbol, tmp.env)
 }
 
+render_complete_report <- function (file, gene_symbol, tmp.env) {
+  fav_gene_summary <- tmp.env$gene_summary %>%
+    filter(approved_symbol == gene_symbol)
+  rmarkdown::render("report_depmap_app.rmd", output_file = paste0(gene_symbol, '_report.pdf'))
+  
+}
 render_dummy_report <- function (file, gene_symbol, tmp.env) {
   fav_gene_summary <- tmp.env$gene_summary %>%
     filter(approved_symbol == gene_symbol)
@@ -225,13 +237,19 @@ ui <- fluidPage(
              actionButton(inputId = "go", label = "Generate"), 
              hr(), 
              uiOutput("gene_summary")),
-    tabPanel("Cell Dependencies", 
-             fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-              plotOutput(outputId = "plotdeps"), 
-              plotOutput(outputId = "plotbins"))),
-             fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-              "text", 
-              "text"))),
+    navbarMenu(title = "Cell Dependencies",
+               tabPanel("Plots",
+                        fluidRow("text"),
+                        fluidRow(splitLayout(cellWidths = c("50%", "50%"),
+                                             plotOutput(outputId = "plotdeps"), 
+                                             plotOutput(outputId = "plotbins"))),
+                        fluidRow(splitLayout(cellWidths = c("50%", "50%"),
+                                             "text", 
+                                             "text"))),
+               tabPanel("Table",
+                        fluidRow("text"),
+                        fluidRow(dataTableOutput(outputId = "target_achilles_top")))
+               ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
                         fluidRow("text"),
@@ -262,7 +280,7 @@ ui <- fluidPage(
              h2("Report Generator"), 
              "To generate a report, click on the button below",
              br(),
-             downloadButton("report", "Download report"))
+             downloadButton(outputId = "report", label = "Download report"))
   )
 )
 
@@ -286,6 +304,16 @@ server <- function(input, output, session) {
   output$plotbins <- renderPlot(
     make_plot(data(), "cell_bins")
   )
+  output$target_achilles_top <- renderDataTable(
+    setup_plot(data()),
+    target_achilles_top, 
+    options = list(pageLength = 5)
+  )
+  output$target_achilles_bottom <- renderDataTable(
+    setup_plot(data()),
+    target_achilles_bottom, 
+    options = list(pageLength = 5)
+  )
   output$pos_enrich <- renderDataTable(
     make_enrichment_table(master_positive, data())
   )
@@ -295,7 +323,6 @@ server <- function(input, output, session) {
   output$graph <- renderForceNetwork(
     make_graph(data())
   )
-  
   output$report <- downloadHandler(
     # create pdf depmap report
     filename = paste0(data(), "_depmap.pdf"),
