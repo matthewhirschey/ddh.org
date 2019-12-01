@@ -41,9 +41,19 @@ Functional genomics is a field of molecular biology that aims to describe gene (
 
 
 ### Generate Data
-Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries in genome-scaled pooled loss-of-function screening, which allows for the stable suppression of each gene individually in a subset of cells within a pooled format allowing for a cost-effective genome scale interrogation of gene essentiality. Next, using computational modeling, an accurate determination of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A core of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors. The overall goal is to identify all essentail genes in 2000 cell lines over the 5-year project period.  
-  
-Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. These data generated correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis.  
+Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Next, using computational modeling, an normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A core of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors. The overall goal is to identify all essentail genes in 2000 cell lines over the 5-year project period.  
+
+Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. 
+
+**insert summary of scores**
+
+**Comparison of scores to gene expression**
+
+The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models.
+
+
+##Patterns##
+To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. These data generated correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis.  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #how many 0s?
 expression_long <- expression %>% 
@@ -52,7 +62,10 @@ expression_long <- expression %>%
   arrange(desc(gene_expression))
 ```
   
-Next, given some cells do not express all genes, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models. Across `r nrow(expression)` cell lines in this project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
+##remove noise##
+Next, given some cells do not express all genes, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. 
+
+Across `r nrow(expression)` cell lines in this project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ggplot() +
