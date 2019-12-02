@@ -286,7 +286,8 @@ ui <- fluidPage(
 
 #SERVER-----
 server <- function(input, output, session) {
-  data <- eventReactive(input$go, {input$gene_symbol})
+  data <- eventReactive(input$go, {
+    str_to_upper(input$gene_symbol)})
   
   output$gene_summary <- renderUI({
     # render details about the gene symbol user entered
@@ -307,12 +308,7 @@ server <- function(input, output, session) {
   output$target_achilles_top <- renderDataTable(
     setup_plot(data()),
     target_achilles_top, 
-    options = list(pageLength = 5)
-  )
-  output$target_achilles_bottom <- renderDataTable(
-    setup_plot(data()),
-    target_achilles_bottom, 
-    options = list(pageLength = 5)
+    options = list(pageLength = 12)
   )
   output$pos_enrich <- renderDataTable(
     make_enrichment_table(master_positive, data())
