@@ -133,7 +133,7 @@ Essential gene data from Project Achilles were downloaded from the DepMap portal
 ```{r dep_scores, echo=FALSE}
 #insert summary of scores
 achilles_long <- achilles %>% 
-  pivot_longer(-X1, names_to = "genes", values_to = "dep_score") %>% 
+  pivot_longer(-X1, names_to = "gene", values_to = "dep_score") %>% 
   filter(!is.na(dep_score))
 
 #sample_n(achilles_long, 5000)
@@ -149,6 +149,7 @@ ggplot() +
 #### Patterns
 To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. Next, we wanted to compare deas
 
+
 Next, we predicted that  that 
 
 
@@ -159,19 +160,50 @@ The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/abou
 
  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-#how many 0s?
 expression_long <- expression %>% 
   filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
-  gather("gene", "gene_expression", -X1) %>% 
+  pivot_longer(-X1, names_to = "gene", values_to = "gene_expression") %>% 
   arrange(desc(gene_expression))
+
+joined <- expression_long %>% 
+  left_join(achilles_long, by = c("gene" = "gene", "X1" = "X1"))
+
+log_breaks <- c(0, 1, 10, 100, 1000, 10000, 100000, 1000000)
+joined %>% 
+  #sample_n(10000) %>% 
+  ggplot() +
+  geom_hex(aes(x = dep_score, y = gene_expression), 
+           bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
+  scale_fill_viridis_c(option = "C", name = "Count", trans = "log10", breaks = log_breaks, labels = log_breaks) + #log scale transform legend
+  labs(x = "Dependency Score", y = "Gene Expression") +  
+  #coord_fixed() +
+  theme_minimal()
 ```
   
+  
+  
+  #prediction was v-shaped curve, with stronger dependencies as you move up in gene expression. 
+#expression has nothing to do with dep...?
+
+#if a gene is correlated with another gene (via dependency OR via expression), capture that.
+#plot correlation (abs?) of gene-gene cor long
+
+#difference between is high v. low
+#value (avg) is high v. low
+
+
 ##remove noise##
 Next, given some cells do not express all genes, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. 
 
 Across `r nrow(expression)` cell lines in this project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
+#how many 0s?
+expression_long <- expression %>% 
+  filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
+  gather("gene", "gene_expression", -X1) %>% 
+  arrange(desc(gene_expression))
+
 ggplot() +
   geom_histogram(data = expression_long, aes(x = gene_expression), binwidth = 0.25) +
   labs(title = paste("Binned gene expression values in ", length(expression$X1), " CCLE cell lines", sep = ""), 
