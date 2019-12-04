@@ -14,6 +14,7 @@ library(lubridate)
 library(tidyverse)
 library(feather)
 library(knitr)
+library(cowplot)
 
 ##LOAD DATA
 fav_gene <- "TP53"
@@ -41,24 +42,109 @@ The overall goal of the data-driven hypothesis (DDH) project is to use new tools
 Several high-quality, functional genomic datasets are published online and made available with Creative Commons Attribution 4.0 International [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses. Functional genomics is a field of molecular biology that aims to understand the function of all genes and proteins in a genome -- a stated goal of much basic science research. In functional genomics, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach. The advent and rapid adoption of data-sharing platforms, such as [figshare.com](https://figshare.com) have provided high-quality data sets for public interrogation. The DDH project aims to integrate functional genomics data and holds tremendous promise to generate hypotheses, data, and knowledge in order to provide a deep understanding of the dynamic properties of an organism.  
     
 ## How does it work?
-This project began as an extension of a simple and common concept in molecular biology called gene co-expression analysis. When a gene of unknown function is identified, 
+This project began as an extension of a simple and common concept in molecular biology called gene co-expression analysis. When a gene of unknown function is identified, one strategy to learn something about the new gene is to identify shared patterns of expression with other genes. If unkonwn Gene X is expressed with known genes A, B, and C, then you can infer that Gene X might be part of a functional module with A, B, C. This approach is particularly powerful when genes A, B, and C are part of a known biological pathway, which leads to the hypothesis that Gene X might also be part of that pathway.  
+  
+```{r echo=FALSE}
+# Dummy data
+x <- paste0("CTL ", seq(1,3))
+x <- x %>% 
+  c(x <- paste0("EXP ", seq(1,3)))
+y <- paste0("gene ", LETTERS[24])
+y <- y %>% 
+  c(paste0("gene ", LETTERS[1:6]))
+data <- expand.grid(X=x, Y=y, stringsAsFactors = TRUE)
 
-Introduce general idea
+pos <- runif(100, 0.2, 1)
+neg <- runif(100, -1, -0.2)
 
+i <- 0
+A <- NULL
+while (i < 4) {
+  a <- sample(pos, 3)
+  a <- a %>% c(sample(neg,3))
+  A <- c(A, a)
+  i <- i + 1
+}
+j <- 0
+B <- NULL
+while (j < 3) {
+  b <- sample(neg, 3)
+  b <- b %>% c(sample(pos,3))
+  B <- c(B, b)
+  j <- j + 1
+}
 
-funtionally map genes in common
+data$Z <- c(A,B)
 
+# Heatmap 
+ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
+  geom_tile() +
+  labs(x = "", y = "", fill = "Gene \nCorrelation", title = "Gene Coexpression Example", caption = "*simulated data") +
+  theme_minimal_grid(color = "white") +
+  scale_x_discrete(position = "top") 
+```
+  
+Following on this idea, we set out to map genes to common functional pathways based on dependence of a pathway for cell viability. Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) as part of a larger ['DepMap' projected](http://www.depmap.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Next, using computational modeling, an normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A score of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors.  
+  
+It is well-known that human cancer cell lines rely on different pathways for their viability. Indeed this is the entire rationale for personalized, precision medicine in cancer. The overall goal of the 'DepMap' project is to identify all essential genes in 2000 cell lines over the 5-year project period, to identify new therapeutic targets in various cancers. Despite not knowing the mechanistic basis for differing susceptibility, we reasoned that intrinsic reliance of a cell line on a pathway might allow unbiased detection of novel genes participating in the pathway.  
+  
+```{r echo=FALSE}
+# Dummy data
+x <- paste0("cell line ", seq(1,6))
+y <- paste0("gene ", LETTERS[24])
+y <- y %>% 
+  c(paste0("gene ", LETTERS[1:6]))
+data <- expand.grid(X=x, Y=y, stringsAsFactors = TRUE)
 
+pos <- runif(100, 0.2, 1)
+neg <- runif(100, -1, -0.2)
 
+i <- 0
+A <- NULL
+while (i < 3) {
+  a <- sample(pos, 3)
+  a <- a %>% c(sample(neg,3))
+  A <- c(A, a)
+  i <- i + 1
+}
+j <- 0
+B <- NULL
+while (j < 4) {
+  b <- sample(neg, 3)
+  b <- b %>% c(sample(pos,3))
+  B <- c(B, b)
+  j <- j + 1
+}
 
+data$Z <- c(B,A)
 
-**INSERT SCHEMATIC OF CONCEPT**
-
-Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Next, using computational modeling, an normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A core of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors. The overall goal is to identify all essentail genes in 2000 cell lines over the 5-year project period.  
-
+# Heatmap 
+ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
+  geom_tile() +
+  labs(x = "", y = "", fill = "Dependency \nScore", title = "Dependency Score Example", caption = "*simulated data") +
+  theme_minimal_grid(color = "white") + 
+  scale_fill_viridis() + 
+  scale_x_discrete(position = "top")
+```
+  
+## What did I do?
 Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. 
 
-**insert summary of scores**
+```{r}
+#insert summary of scores
+achilles_long <- achilles %>% 
+  pivot_longer(-X1, names_to = "genes", values_to = "dep_score") %>% 
+  filter(!is.na(dep_score))
+
+#sample_n(achilles_long, 5000)
+
+ggplot() +
+  geom_histogram(data = achilles_long, aes(x = dep_score), color = "gray", binwidth = 0.1) +
+  labs(x = "Dependency Score", y = "Count", title = paste0("Dependency Score Distribution from ", params$release)) +
+  theme_cowplot()
+```
+
+
 
 **Comparison of scores to gene expression**
 
@@ -138,6 +224,7 @@ These 'cleaned' dependency data were then used to generate correlation values be
 
 ### Summary Statistics
 
+## How does it work?
 
 ### Gene Query for TP53
 Distribution of dependency scores across `r length(achilles$X1)` cell lines  
@@ -203,4 +290,4 @@ Hugh S. Gannon, Nathan Kaplan, Aviad Tsherniak, Francisca Vazquez, Barbara A. We
 Kimberly H. Kim, Woojin Kim, Thomas P. Howard, Francisca Vazquez, ... Aviad Tsherniak, Jennifer N. Wu, Weishan Wang, Jeffrey R. Haswell, Loren D. Walensky, William C. Hahn, Stuart H. Orkin, & Charles W. M. Roberts.SWI/SNF-mutant cancers depend on catalytic and non-catalytic activity of EZH2. Nature Medicine 2015 Dec;21(12):1491-6. doi: 10.1038/nm.3968. Epub 2015 Nov 9.  
 Mark M. Pomerantz, Fugen Li, David Y. Takeda, Romina Lenci, ... Apurva Chonkar, Matthew Chabot, Paloma Cejas, Francisca Vazquez, Jennifer Cook, Ramesh A. Shivdasani, Michaela Bowden, Rosina Lis, William C Hahn, Philip W. Kantoff, Myles Brown, Massimo Loda, Henry W. Long, & Matthew L. Freedman. The androgen receptor cistrome is extensively reprogrammed in human prostate tumorigenesis. Nature Genetics 2015 Nov;47(11):1346-51. doi: 10.1038/ng.3419. Epub 2015 Oct 12. PMCID: PMC4707683.  
   
-`r stamp("Methods updated December 31, 1979")(now()) `
+`r lubridate::stamp("Methods updated December 31, 1979")(now()) `
