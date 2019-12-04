@@ -14,33 +14,46 @@ library(lubridate)
 library(tidyverse)
 library(feather)
 library(knitr)
-library(plotly)
 
 ##LOAD DATA
 fav_gene <- "TP53"
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
 achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
 expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
-
-
-
 ```
 
-## Rationale
-Like the proverbial man [searching for his lost keys under the lamp post](https://www.matthewhirschey.com/articles/exploratory-mind) because the light shines there, searching for biological truths often occurs under 'lamp posts' because that's where scientists can see.  
+![searching under the lamppost](`r "https://source.unsplash.com/y41FEMqdJ3A/400x300"`)  
+  
+## Why this project?
+Like the proverbial man [searching for his lost keys under the lamp post](https://www.matthewhirschey.com/articles/exploratory-mind) because the light shines there, searching for biological truths often occurs under 'lamp posts' because that's where scientists can see. But what if your keys are not under the light? Or your gene is totally unknown? What do you do?  
+  
+The scientific method has guided scientific minds for hundreds of years, starting with a question, followed by a hypothesis, and then an experimental path to test the prediction. While hypotheses are the bedrock of science, the volume, complexity, and sophistication of modern science necessitate a new method.  
+  
+Generating hypotheses is easy: take any two ideas and consider the possiblity that they are mechanistically linked. But generating *good* hypotheses is difficult. A good hypothesis needs a strong rationale, supported by ample data, all of which point to a bona fide mechanistic link. And then comes the significant time and cost to invest in testing the idea, which might or might not be *real* or relevant.  
+  
+New tools in Data Science -- a combination of computer programming, math & statistics, and topical expertise -- combined with the rapid adoption of open science and data sharing together allow scientists to access publically available datasets and interrogate these data *before* performing any experiments.  
+  
+Imagine having strong data to support your new hypothesis *before* testing it. Welcome to data-driven hypothesis.
 
-Weave in cost and speed of science. 
-How to people come up with hypotheses??
-Popular genes?
-Has to end with ddh.
+## What is this project?
+The overall goal of the data-driven hypothesis (DDH) project is to use new tools in Data Science to generate hypotheses supported by data that can be tested in the lab.  
+  
+Several high-quality, functional genomic datasets are published online and made available with Creative Commons Attribution 4.0 International [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses. Functional genomics is a field of molecular biology that aims to understand the function of all genes and proteins in a genome -- a stated goal of much basic science research. In functional genomics, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach. The advent and rapid adoption of data-sharing platforms, such as [figshare.com](https://figshare.com) have provided high-quality data sets for public interrogation. The DDH project aims to integrate functional genomics data and holds tremendous promise to generate hypotheses, data, and knowledge in order to provide a deep understanding of the dynamic properties of an organism.  
+    
+## How does it work?
+This project began as an extension of a simple and common concept in molecular biology called gene co-expression analysis. When a gene of unknown function is identified, 
 
-## Methods
-Functional genomics is a field of molecular biology that aims to describe gene (and protein) functions and interactions, with the overall goal to understand the function of all genes and proteins in a genome. To do so, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach. The advent and rapid adoption of data-sharing platforms has provided high-quality data sets for public interrogation. Integration of functional genomics data holds tremendous promise to knowledge and a deep understanding of the dynamic properties of an organism. 
+Introduce general idea
+
+
+funtionally map genes in common
+
+
+
+
 
 **INSERT SCHEMATIC OF CONCEPT**
 
-
-### Generate Data
 Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Next, using computational modeling, an normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A core of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors. The overall goal is to identify all essentail genes in 2000 cell lines over the 5-year project period.  
 
 Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. 
