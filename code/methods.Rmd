@@ -15,6 +15,7 @@ library(tidyverse)
 library(feather)
 library(knitr)
 library(cowplot)
+library(viridis)
 
 ##LOAD DATA
 fav_gene <- "TP53"
@@ -147,21 +148,11 @@ ggplot() +
 ```
   
 #### Patterns
-To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. Next, we wanted to compare deas
-
-
-Next, we predicted that  that 
-
-
-**Comparison of scores to gene expression**
-
-The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models.
-
-
- 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. High levels of gene expression are often thought to be indicative of key genes for a given cell type. Thus, we next compared dependency values to gene expression values. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation that conducts detailed genetic and pharmacologic characterization of a large panel of human cancer models. In the CCL2 2019 release, `r nrow(expression)` cell lines have been characterized for gene expression. In the `r params$release` DepMap release, `r sum(expression$X1 %in% achilles$X1 == TRUE)` of the `r nrow(achilles)` cell lines have gene expression data. Using these two datasets, we compared the essentiality of a gene to its expression value.  
+  
+```{r depVexp, echo=FALSE, message=FALSE, warning=FALSE}
 expression_long <- expression %>% 
-  filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
+  filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells and makes sure I'm analysing CCLE cells in Achilles
   pivot_longer(-X1, names_to = "gene", values_to = "gene_expression") %>% 
   arrange(desc(gene_expression))
 
@@ -180,48 +171,28 @@ joined %>%
   theme_minimal()
 ```
   
+We predicted a V-shaped curve, with with stronger dependencies as gene expression increases. Remarkably, we saw little relationship between gene expression and gene essentiality, demonstrating baseline gene expression levels are a poor indicator of the essentaility of a gene. This analysis also highlighted that several genes were binned on the x-axis, i.e. could have no measureable expression levels, but have assigned dependency scores. Across `r nrow(achilles)` cell lines in the Achilles project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
   
+#### Noise Reduction
+Given some cells do not express all genes, but would receive a dependency sore, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. Of the `r nrow(achilles)` cell lines for which gene essentiality data is collected, `r sum(achilles$X1 %in% expression$X1)` have genome-wide gene expression data. From these cell lines, we removed dependency scores for genes from cell line that have a corresponding gene expression value of zero.  
   
-  #prediction was v-shaped curve, with stronger dependencies as you move up in gene expression. 
-#expression has nothing to do with dep...?
-
-#if a gene is correlated with another gene (via dependency OR via expression), capture that.
-#plot correlation (abs?) of gene-gene cor long
-
-#difference between is high v. low
-#value (avg) is high v. low
-
-
-##remove noise##
-Next, given some cells do not express all genes, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. 
-
-Across `r nrow(expression)` cell lines in this project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r expression_0, echo=FALSE, message=FALSE, warning=FALSE}
 #how many 0s?
-expression_long <- expression %>% 
-  filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
-  gather("gene", "gene_expression", -X1) %>% 
-  arrange(desc(gene_expression))
-
 ggplot() +
   geom_histogram(data = expression_long, aes(x = gene_expression), binwidth = 0.25) +
-  labs(title = paste("Binned gene expression values in ", length(expression$X1), " CCLE cell lines", sep = ""), 
+  labs(title = paste("Binned gene expression values in ", sum(achilles$X1 %in% expression$X1), " Achilles cell lines", sep = ""), 
        subtitle = paste0(
     round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1), "% of all values are zero"), 
-    x = "Normalized gene expression (TPM)", 
+    x = "Gene expression (RPKM)", 
     y = "Count (Million)") +
   scale_y_continuous(breaks = seq(0, 3000000, by = 1000000), labels = c("0", "1", "2", "3")) +
   theme_minimal() +
   NULL
 ```
-
-Of the `r nrow(achilles)` cell lines for which gene essentiality data is collected, `r sum(achilles$X1 %in% expression$X1)` have genome-wide gene expression data. From these cell lines, we removed dependency scores for genes from cell line that have a corresponding gene expression value of zero. For some genes expressed in highly specific cell types, this operation removed many dependency values. Thus, we set a threshold of `r params$threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-params$threshold` cell lines with dependency values, the correaltion pattern would be dependent upon too few of associations to be meaningful and were therefore removed.  
   
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-achilles_long <- achilles %>% 
-  gather("gene", "dep_score", -X1)
-
+For some genes expressed in highly specific cell types, this operation removed many dependency values. After removing these values, we found that highly specilaized genes in discrete cell types might have too few cells with both gene expression values and gene essentiality values. Thus, if a gene was absent from too many cell lines, we omitted it to prevent correaltion values from relying on too few data points.  
+  
+```{r dep_cleaning, echo=FALSE, message=FALSE, warning=FALSE}
 no_expression <- expression_long %>% 
   filter(gene_expression == 0) %>% 
   unite(X1, gene, col = "match", sep = "-", remove = TRUE) %>% 
@@ -234,15 +205,34 @@ achilles_no0 <- achilles_long %>%
   spread(gene, dep_score)
 
 #count NAs in corrected dataframe
-achilles_no0 %>% 
+achilles_no0_plot <- achilles_no0 %>% 
   summarise_all(list(~sum(is.na(.)))) %>% 
   gather(gene, NAs) %>% 
   arrange(desc(NAs)) %>% 
-  ggplot() +
-  geom_histogram(aes(x = NAs)) +
-  labs(x = "Cells with the number of NAs", y = "Count") +
-  geom_vline(aes(xintercept = params$na_cutoff), color = "red") +
-  theme_minimal()
+  mutate(pos = sum(achilles$X1 %in% expression$X1)-NAs)
+
+#this is code to draw arrows graph labels
+arrows <- tibble(
+  x1 = c(sum(achilles$X1 %in% expression$X1)-params$na_cutoff, sum(achilles$X1 %in% expression$X1)-params$na_cutoff),
+  x2 = c(375, 100),
+  y1 = c(6000, 8000),
+  y2 = c(3000, 3200)
+)
+
+ggplot(achilles_no0_plot) +
+  geom_histogram(aes(x = pos)) +
+  labs(x = "Number of Cell Lines", y = "Number of Genes in Bin", title = "The number of cell lines each gene was present within") +
+  geom_curve(data = arrows, aes(x = x1, y = y1, xend = x2, yend = y2),
+             arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
+             color = "gray60", curvature = .20) +
+  annotate("text", x = 90, y = 2500, size = 4, color = "gray60",
+           label = glue::glue("These genes have too few \ncells with expression")) +
+  annotate("text", x = 500, y = 2500, size = 4, color = "gray60",
+           label = glue::glue("These genes have several \ncell lines with expression")) +
+  annotate("text", x = sum(achilles$X1 %in% expression$X1)-params$na_cutoff + 5, y = 12000, size = 3, color = "red", hjust = 0, fontface = "bold",
+           label = glue::glue("Threshold")) +
+  geom_vline(aes(xintercept = sum(achilles$X1 %in% expression$X1)-params$na_cutoff), color = "red") +
+  theme_cowplot()
 
 toomanyNAs <- achilles_no0 %>% 
   summarise_all(list(~sum(is.na(.)))) %>% 
@@ -252,16 +242,17 @@ toomanyNAs <- achilles_no0 %>%
   pull(gene)
 
 achilles_clean <- achilles_no0 %>% 
-  select(-one_of(toomanyNAs)) 
+  select(-one_of(toomanyNAs))
 ```
-The `r length(toomanyNAs)` removed genes that had too few cells with expression and dependency data.  
-`r knitr::kable(head(sort(toomanyNAs), 20))`  
   
-These 'cleaned' dependency data were then used to generate correlation values between the remaining `r length(achilles_clean)` gene-gene pairs.
+We set a threshold of no more than `r params$threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-params$threshold` cell lines with dependency values, the correaltion pattern of a gene would be dependent upon too few of associations to be meaningful, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data to be meaningful. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix to identify genes that shared similar patterns of essentiality with other genes.  
+  
+## How does it work?
+
 
 ### Summary Statistics
 
-## How does it work?
+
 
 ### Gene Query for TP53
 Distribution of dependency scores across `r length(achilles$X1)` cell lines  
