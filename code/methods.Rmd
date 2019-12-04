@@ -44,7 +44,7 @@ Several high-quality, functional genomic datasets are published online and made 
 ## How does it work?
 This project began as an extension of a simple and common concept in molecular biology called gene co-expression analysis. When a gene of unknown function is identified, one strategy to learn something about the new gene is to identify shared patterns of expression with other genes. If unkonwn Gene X is expressed with known genes A, B, and C, then you can infer that Gene X might be part of a functional module with A, B, C. This approach is particularly powerful when genes A, B, and C are part of a known biological pathway, which leads to the hypothesis that Gene X might also be part of that pathway.  
   
-```{r echo=FALSE}
+```{r gene_coexpression, echo=FALSE}
 # Dummy data
 x <- paste0("CTL ", seq(1,3))
 x <- x %>% 
@@ -79,7 +79,7 @@ data$Z <- c(A,B)
 # Heatmap 
 ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
-  labs(x = "", y = "", fill = "Gene \nCorrelation", title = "Gene Coexpression Example", caption = "*simulated data") +
+  labs(x = "", y = "", fill = "Gene \nCorrelation", title = "Gene Coexpression Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") +
   scale_x_discrete(position = "top") 
 ```
@@ -88,7 +88,7 @@ Following on this idea, we set out to map genes to common functional pathways ba
   
 It is well-known that human cancer cell lines rely on different pathways for their viability. Indeed this is the entire rationale for personalized, precision medicine in cancer. The overall goal of the 'DepMap' project is to identify all essential genes in 2000 cell lines over the 5-year project period, to identify new therapeutic targets in various cancers. Despite not knowing the mechanistic basis for differing susceptibility, we reasoned that intrinsic reliance of a cell line on a pathway might allow unbiased detection of novel genes participating in the pathway.  
   
-```{r echo=FALSE}
+```{r cell_dependency, echo=FALSE}
 # Dummy data
 x <- paste0("cell line ", seq(1,6))
 y <- paste0("gene ", LETTERS[24])
@@ -121,7 +121,7 @@ data$Z <- c(B,A)
 # Heatmap 
 ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
-  labs(x = "", y = "", fill = "Dependency \nScore", title = "Dependency Score Example", caption = "*simulated data") +
+  labs(x = "", y = "", fill = "Dependency \nScore", title = "Dependency Score Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") + 
   scale_fill_viridis() + 
   scale_x_discrete(position = "top")
@@ -129,8 +129,8 @@ ggplot(data, aes(X, fct_rev(Y), fill= Z)) +
   
 ## What did I do?
 Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. 
-
-```{r}
+  
+```{r dep_scores, echo=FALSE}
 #insert summary of scores
 achilles_long <- achilles %>% 
   pivot_longer(-X1, names_to = "genes", values_to = "dep_score") %>% 
@@ -140,10 +140,16 @@ achilles_long <- achilles %>%
 
 ggplot() +
   geom_histogram(data = achilles_long, aes(x = dep_score), color = "gray", binwidth = 0.1) +
-  labs(x = "Dependency Score", y = "Count", title = paste0("Dependency Score Distribution from ", params$release)) +
+  labs(x = "Dependency Score", y = "Count (Million)", title = paste0("Dependency Score Distribution from DepMap release ", params$release)) +
+  scale_y_continuous(breaks = c(0, 500000, 1000000, 1500000, 2000000), labels = c("0", "0.5", "1", "1.5", "2")) +
+  scale_x_continuous(breaks = c(-5:7)) +
   theme_cowplot()
 ```
+  
+#### Patterns
+To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. Next, we wanted to compare deas
 
+Next, we predicted that  that 
 
 
 **Comparison of scores to gene expression**
@@ -151,8 +157,7 @@ ggplot() +
 The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation to conduct a detailed genetic and pharmacologic characterization of a large panel of human cancer models.
 
 
-##Patterns##
-To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. These data generated correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis.  
+ 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #how many 0s?
 expression_long <- expression %>% 
