@@ -36,12 +36,12 @@ make_plot(gene_symbol, "cell_bins")
 ### Cells that lose fitness when `r gene_symbol` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 setup_plot(gene_symbol)
-knitr::kable(target_achilles_bottom, col.names = c("Cell Line", "Lineage", "Dep Score"))
+knitr::kable(head(target_achilles_bottom, n = 10), col.names = c("Cell Line", "Lineage", "Dep Score"))
 ```
     
 ### Cells that don't rely on `r gene_symbol` or if greater than 1 gain fitness when `r gene_symbol` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-knitr::kable(target_achilles_top, col.names = c("Cell Line", "Lineage", "Dep Score"))
+knitr::kable(head(target_achilles_top, n = 10), col.names = c("Cell Line", "Lineage", "Dep Score"))
 ```
   
 ## Positive Ranked Dependency from DepMap  
@@ -92,3 +92,4 @@ if(length(dep_bottom$gene) > 0) {
   pander("None")
 }
 ```
+
