@@ -23,6 +23,7 @@ library(here)
 fav_gene <- "TP53"
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
 achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
+class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
 expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
 
 #LOAD STATS
@@ -138,7 +139,7 @@ ggplot(data, aes(X, fct_rev(Y), fill= Z)) +
 ```
   
 ## What did I do?
-Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` across `r nrow(achilles)` cell lines. 
+Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` genes across `r nrow(achilles)` cell lines. 
   
 ```{r dep_scores, echo=FALSE}
 #insert summary of scores
@@ -310,6 +311,7 @@ Querying a single gene produces a functional map of the processes that gene *mig
 #### 1. Query YFG (your favorite gene)
 As an example, we will query the protein P53 (official gene symbol TP53). 
 
+**RESTART HERE.**
 Distribution of dependency scores across `r length(achilles$X1)` cell lines  
 
 dep_plot2

@@ -1,164 +1,254 @@
-Rationale
----------
+![searching under the
+lamppost](https://source.unsplash.com/y41FEMqdJ3A/400x300)
+
+Why this project?
+-----------------
 
 Like the proverbial man [searching for his lost keys under the lamp
 post](https://www.matthewhirschey.com/articles/exploratory-mind) because
 the light shines there, searching for biological truths often occurs
-under ‘lamp posts’ because that’s where scientists can see.
+under ‘lamp posts’ because that’s where scientists can see. But what if
+your keys are not under the light? Or your gene is totally unknown? What
+do you do?
 
-Weave in cost and speed of science. How to people come up with
-hypotheses?? Popular genes? Has to end with ddh.
+The scientific method has guided scientific minds for hundreds of years,
+starting with a question, followed by a hypothesis, and then an
+experimental path to test the prediction. While hypotheses are the
+bedrock of science, the volume, complexity, and sophistication of modern
+science necessitate a new method.
 
-Methods
--------
+Generating hypotheses is easy: take any two ideas and consider the
+possiblity that they are mechanistically linked. But generating *good*
+hypotheses is difficult. A good hypothesis needs a strong rationale,
+supported by ample data, all of which point to a bona fide mechanistic
+link. And then comes the significant time and cost to invest in testing
+the idea, which might or might not be *real* or relevant.
 
+New tools in Data Science – a combination of computer programming, math
+& statistics, and topical expertise – combined with the rapid adoption
+of open science and data sharing together allow scientists to access
+publically available datasets and interrogate these data *before*
+performing any experiments.
+
+Imagine having strong data to support your new hypothesis *before*
+testing it. Welcome to data-driven hypothesis.
+
+What is this project?
+---------------------
+
+The overall goal of the data-driven hypothesis (DDH) project is to use
+new tools in Data Science to generate hypotheses supported by data that
+can be tested in the lab.
+
+Several high-quality, functional genomic datasets are published online
+and made available with Creative Commons Attribution 4.0 International
+[(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses.
 Functional genomics is a field of molecular biology that aims to
-describe gene (and protein) functions and interactions, with the overall
-goal to understand the function of all genes and proteins in a genome.
-To do so, experimental strategies generally involve high-throughput,
-genome-wide approaches rather than a more traditional “gene-by-gene”
-approach. The advent and rapid adoption of data-sharing platforms has
-provided high-quality data sets for public interrogation. Integration of
-functional genomics data holds tremendous promise to knowledge and a
-deep understanding of the dynamic properties of an organism.
+understand the function of all genes and proteins in a genome – a stated
+goal of much basic science research. In functional genomics,
+experimental strategies generally involve high-throughput, genome-wide
+approaches rather than a more traditional “gene-by-gene” approach. The
+advent and rapid adoption of data-sharing platforms, such as
+[figshare.com](https://figshare.com) have provided high-quality data
+sets for public interrogation. The DDH project aims to integrate
+functional genomics data and holds tremendous promise to generate
+hypotheses, data, and knowledge in order to provide a deep understanding
+of the dynamic properties of an organism.
 
-**INSERT SCHEMATIC OF CONCEPT**
+How does it work?
+-----------------
 
-### Generate Data
+This project began as an extension of a simple and common concept in
+molecular biology called gene co-expression analysis. When a gene of
+unknown function is identified, one strategy to learn something about
+the new gene is to identify shared patterns of expression with other
+genes. If unkonwn Gene X is expressed with known genes A, B, and C, then
+you can infer that Gene X might be part of a functional module with A,
+B, C. This approach is particularly powerful when genes A, B, and C are
+part of a known biological pathway, which leads to the hypothesis that
+Gene X might also be part of that pathway.
 
-Project Achilles is a systematic effort by the [Broad
-Institute](https://www.broadinstitute.org) aimed at identifying and
-cataloging gene essentiality across hundreds of genomically
-characterized cancer cell lines using highly standardized pooled
-genome-scale loss-of-function screens. This project uses
-lentiviral-based pooled RNAi or CRISPR/Cas9 libraries in genome-scaled
-pooled loss-of-function screening, which allows for the stable
-suppression of each gene individually in a subset of cells within a
-pooled format allowing for a cost-effective genome scale interrogation
-of gene essentiality. Next, using computational modeling, an accurate
-determination of gene essentiality is given for each gene in a single
-cell line. A lower score means that a gene is more likely to be
-dependent in a given cell line. A core of -1 corresponds to the median
-of all common essential genes, whereas a score of 0 is equivalent to a
-gene that is not essential; a positive score indicates a gain in fitness
-upon gene ablation and often identifies tumor supressors. The overall
-goal is to identify all essentail genes in 2000 cell lines over the
-5-year project period.
+![](methods_files/figure-markdown_strict/gene_coexpression-1.png)
+
+Following on this idea, we set out to map genes to common functional
+pathways based on dependence of a pathway for cell viability. Project
+Achilles is a systematic effort by the [Broad
+Institute](https://www.broadinstitute.org) as part of a larger [‘DepMap’
+projected](http://www.depmap.org) aimed at identifying and cataloging
+gene essentiality across hundreds of genomically characterized cancer
+cell lines using highly standardized pooled genome-scale
+loss-of-function screens. This project uses lentiviral-based pooled RNAi
+or CRISPR/Cas9 libraries to systematically knock-out each gene in the
+genome, which allows for the stable suppression/ablation of each gene
+individually in a subset of cells within a pooled format allowing for
+genome wide interrogation of gene essentiality. Next, using
+computational modeling, an normalized value of gene essentiality is
+given for each gene in a single cell line. A lower score means that a
+gene is more likely to be dependent in a given cell line. A score of -1
+corresponds to the median of all common essential genes, whereas a score
+of 0 is equivalent to a gene that is not essential; a positive score
+indicates a gain in fitness upon gene ablation and often identifies
+tumor supressors.
+
+It is well-known that human cancer cell lines rely on different pathways
+for their viability. Indeed this is the entire rationale for
+personalized, precision medicine in cancer. The overall goal of the
+‘DepMap’ project is to identify all essential genes in 2000 cell lines
+over the 5-year project period, to identify new therapeutic targets in
+various cancers. Despite not knowing the mechanistic basis for differing
+susceptibility, we reasoned that intrinsic reliance of a cell line on a
+pathway might allow unbiased detection of novel genes participating in
+the pathway.
+
+![](methods_files/figure-markdown_strict/cell_dependency-1.png)
+
+What did I do?
+--------------
 
 Essential gene data from Project Achilles were downloaded from the
 DepMap portal at: [depmap.org](https://depmap.org/portal/download/). The
 19Q3 release contains gene essentiality scores for 18334 across 625 cell
-lines. To find patterns in gene dependencies across cell lines, we
-generated a Pearson correlation matrix of all genes by all genes. These
-data generated correlation values that matched values published on
-[depmap.org](https://depmap.org), validating the first step in our
-analysis.
+lines.
 
-Next, given some cells do not express all genes, we sought to remove
-dependency scores for gene-cell line pairs that have an expression value
-of zero under basal conditions. The [Cancer Cell Line
+![](methods_files/figure-markdown_strict/dep_scores-1.png)
+
+#### Patterns
+
+To find patterns in gene dependencies across cell lines, we generated a
+Pearson correlation matrix of all genes by all genes. This analysis
+generated gene-gene correlation values that matched values published on
+[depmap.org](https://depmap.org), validating the first step in our
+analysis. High levels of gene expression are often thought to be
+indicative of key genes for a given cell type. Thus, we next compared
+dependency values to gene expression values. The [Cancer Cell Line
 Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is
 a collaboration between the Broad Institute, and the Novartis Institutes
 for Biomedical Research and its Genomics Institute of the Novartis
-Research Foundation to conduct a detailed genetic and pharmacologic
-characterization of a large panel of human cancer models. Across 1210
-cell lines in this project, 16.4% of all gene expression values are
-zero, confirming this notion.
+Research Foundation that conducts detailed genetic and pharmacologic
+characterization of a large panel of human cancer models. In the CCL2
+2019 release, 1210 cell lines have been characterized for gene
+expression. In the 19Q3 DepMap release, 621 of the 625 cell lines have
+gene expression data. Using these two datasets, we compared the
+essentiality of a gene to its expression value.
 
-![](methods_files/figure-markdown_strict/unnamed-chunk-2-1.png)
+![](methods_files/figure-markdown_strict/depVexp-1.png)
 
+We predicted a V-shaped curve, with with stronger dependencies as gene
+expression increases. Remarkably, we saw little relationship between
+gene expression and gene essentiality, demonstrating baseline gene
+expression levels are a poor indicator of the essentaility of a gene.
+This analysis also highlighted that several genes were binned on the
+x-axis, i.e. could have no measureable expression levels, but have
+assigned dependency scores. Across 625 cell lines in the Achilles
+project, 16.4% of all gene expression values are zero, confirming this
+notion.
+
+#### Noise Reduction
+
+Given some cells do not express all genes, but would receive a
+dependency sore, we sought to remove dependency scores for gene-cell
+line pairs that have an expression value of zero under basal conditions.
 Of the 625 cell lines for which gene essentiality data is collected, 621
 have genome-wide gene expression data. From these cell lines, we removed
 dependency scores for genes from cell line that have a corresponding
-gene expression value of zero. For some genes expressed in highly
-specific cell types, this operation removed many dependency values.
-Thus, we set a threshold of zeros, meaning that if a gene had fewer than
-cell lines with dependency values, the correaltion pattern would be
-dependent upon too few of associations to be meaningful and were
-therefore removed.
+gene expression value of zero.
 
-![](methods_files/figure-markdown_strict/unnamed-chunk-3-1.png) The 1871
-removed genes that had too few cells with expression and dependency
-data.
+![](methods_files/figure-markdown_strict/expression_0-1.png)
 
-<table>
-<thead>
-<tr class="header">
-<th style="text-align: left;">x</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">A3GALT2</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">AADACL2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">AADACL3</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">AADACL4</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ACCSL</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ACER1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ACOD1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ACSM2A</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ACSM2B</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ACSM4</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ACTL7A</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ACTL9</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ACTRT1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ACTRT2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ADAD1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ADAM18</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ADAM2</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ADAM29</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ADAM30</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ADAM7</td>
-</tr>
-</tbody>
-</table>
+For some genes expressed in highly specific cell types, this operation
+removed many dependency values. After removing these values, we found
+that highly specilaized genes in discrete cell types might have too few
+cells with both gene expression values and gene essentiality values.
+Thus, if a gene was absent from too many cell lines, we omitted it to
+prevent correaltion values from relying on too few data points.
 
-These ‘cleaned’ dependency data were then used to generate correlation
-values between the remaining 16463 gene-gene pairs.
+![](methods_files/figure-markdown_strict/dep_cleaning-1.png)
 
-### Summary Statistics
+We set a threshold of no more than zeros, meaning that if a gene had
+fewer than cell lines with dependency values, the correaltion pattern of
+a gene would be dependent upon too few of associations to be meaningful,
+and that gene was therefore removed. This process removed 1871 genes
+that had too few cells with expression and dependency data to be
+meaningful. These ‘cleaned’ dependency data had 16463 remaining
+gene-dependency pairs, which were then used to generate correlation
+matrix.
 
-### Gene Query for TP53
+How does it work?
+-----------------
 
-Distribution of dependency scores across 625 cell lines
+To identify genes that shared similar patterns of essentiality with
+other genes, thereby placing genes in functional pathways, we generated
+a Pearson correlation matrix thereby quantifying the similarity in
+dependency patterns.
+
+![](methods_files/figure-markdown_strict/r2-1.png)
+
+This output produced a range of maximum correlation values for each
+gene.
+
+![](methods_files/figure-markdown_strict/achilles_max-1.png)
+
+#### Statistics
+
+Rather than setting an arbitrary threshold for the R^2 value that would
+be considered a low, medium, or high correlation between two genes, we
+performed a permutation test on the correlated data. A permutation test
+involves permuting one or more variables in a data set before performing
+the test, in order to break any existing relationships and simulate the
+null hypothesis. In this case, we broke the relationshipe between
+gene-gene pairs and the correlation values. We can then compare the true
+statistic (mean correlation) to the generated distribution of null
+statistics (fake means), along with standard deviations of these sampled
+data. This strategy will give a better idea of where to draw a threshold
+of a “signficiant correlation” for these analyses. We sampled 20,000 R^2
+values from all gene-gene pairs without replacement simulating a virtual
+Achilles dataset for a single cell. We then repeated this process 1000
+times mimicking 1000 discrete cell lines.
+
+This statistical analysis produced the following data: \* Mean:
+0.0032038  
+\* Standard Deviation: 0.064382
+
+Using a standard deviation threshold of 3, we calculated the boundaries
+of R^2 values to be greater than 0.1963498 or lower than -0.1899422 for
+negative correlations.
+
+#### Pathway Analyses
+
+To identify clusters of genes with shared relationships, we perfromed
+gene set enrichment analysis. Enrichment analysis is a computational
+method for inferring knowledge about a target gene set by comparing it
+to annotated gene sets representing prior biological knowledge.
+Enrichment analysis determines whether an input set of genes
+significantly overlaps with annotated gene sets. For each gene in our
+matrix, we determined the number of genes that were greater than or less
+than 3 standard deviations away from the permuted mean. This target gene
+list was then queried against 108 gene sets across a [broad range of
+curated data](https://amp.pharm.mssm.edu/Enrichr/#stats). By leveraging
+the [Enrichr](https://amp.pharm.mssm.edu/Enrichr/) resource from the
+[Ma’ayan Laboratory](http://labs.icahn.mssm.edu/maayanlab/), we
+determined the top ranked pathways, processes, drugs, cell lines,
+tissues, or diseases, and ranked by p-value. In this setting, the
+p-value is computed using a standard statistical method used by most
+enrichment analysis tools: Fisher’s exact test or the hypergeometric
+test. This is a binomial proportion test that assumes a binomial
+distribution and independence for probability of any gene belonging to
+any set. [See here for more information about how Enrichr computes it’s
+associations](https://amp.pharm.mssm.edu/Enrichr/help#background).
+
+What do I do?
+-------------
+
+Querying a single gene produces a functional map of the processes that
+gene *might* be involved in, and a summary of the analyses for that gene
+
+#### 1. Query YFG (your favorite gene)
+
+As an example, we will query the protein P53 (official gene symbol
+TP53).
+
+**RESTART HERE.** Distribution of dependency scores across 625 cell
+lines
 
 dep\_plot2 dep\_plot1
 
@@ -319,4 +409,4 @@ in human prostate tumorigenesis. Nature Genetics 2015
 Nov;47(11):1346-51. doi: 10.1038/ng.3419. Epub 2015 Oct 12. PMCID:
 PMC4707683.
 
-Methods updated November 29, 2019
+Methods updated December 04, 2019
