@@ -16,12 +16,21 @@ library(feather)
 library(knitr)
 library(cowplot)
 library(viridis)
+library(corrr)
+library(here)
 
 ##LOAD DATA
 fav_gene <- "TP53"
 achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
 achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
 expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
+
+#LOAD STATS
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
 ```
 
 ![searching under the lamppost](`r "https://source.unsplash.com/y41FEMqdJ3A/400x300"`)  
@@ -82,7 +91,7 @@ ggplot(data, aes(X, fct_rev(Y), fill= Z)) +
   geom_tile() +
   labs(x = "", y = "", fill = "Gene \nCorrelation", title = "Gene Coexpression Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") +
-  scale_x_discrete(position = "top") 
+  scale_x_discrete(position = "top")
 ```
   
 Following on this idea, we set out to map genes to common functional pathways based on dependence of a pathway for cell viability. Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) as part of a larger ['DepMap' projected](http://www.depmap.org) aimed at identifying and cataloging gene essentiality across hundreds of genomically characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Next, using computational modeling, an normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be dependent in a given cell line. A score of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness upon gene ablation and often identifies tumor supressors.  
@@ -242,19 +251,65 @@ toomanyNAs <- achilles_no0 %>%
   pull(gene)
 
 achilles_clean <- achilles_no0 %>% 
-  select(-one_of(toomanyNAs))
+  select(-one_of(toomanyNAs)) #would be nice to list these, but lose the kable in Rmd->md->html conversion
 ```
   
-We set a threshold of no more than `r params$threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-params$threshold` cell lines with dependency values, the correaltion pattern of a gene would be dependent upon too few of associations to be meaningful, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data to be meaningful. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix to identify genes that shared similar patterns of essentiality with other genes.  
+We set a threshold of no more than `r params$threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-params$threshold` cell lines with dependency values, the correaltion pattern of a gene would be dependent upon too few of associations to be meaningful, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data to be meaningful. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix.  
   
 ## How does it work?
+To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a Pearson correlation matrix thereby quantifying the similarity in dependency patterns. 
 
+```{r r2, echo=FALSE}
+achilles_cor_long <- achilles_cor %>% 
+  stretch()
 
-### Summary Statistics
+achilles_cor_long %>% 
+  filter(!is.na(r)) %>% 
+  #sample_n(1000) %>% 
+  ggplot() +
+  geom_histogram(aes(x = r), binwidth = 0.1) +
+  labs(x = "R^2 values", y = "Count", title = "Distribution of R^2 values across all gene-gene pairs") +
+  theme_cowplot()
+```
+  
+This output produced a range of maximum correlation values for each gene.  
+  
+```{r achilles_max, echo=FALSE}
+achilles_cor %>% 
+  select(-rowname) %>% 
+  summarize_all(list(~max(., na.rm = TRUE))) %>% 
+  gather("gene", "max") %>% 
+  arrange(desc(max)) %>% 
+  ggplot(aes(max)) +
+  geom_histogram(binwidth = 0.05) + 
+  #geom_vline(aes(xintercept = achilles_upper), color = "red") +
+  labs(title = "Distribution of Maximum R^2 values for each gene", x = "Maximum R^2 values", y = "Count") +
+  theme_cowplot()
 
+```
+  
+#### Statistics
+Rather than setting an arbitrary threshold for the R^2 value that would be considered a low, medium, or high correlation between two genes, we performed a permutation test on the correlated data. A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we  broke the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means), along with standard deviations of these sampled data. This strategy will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses. We sampled 20,000 R^2 values from all gene-gene pairs without replacement simulating a virtual Achilles dataset for a single cell. We then repeated this process 1000 times mimicking 1000 discrete cell lines.  
+  
+This statistical analysis produced the following data:
+* Mean: `r mean_virtual_achilles`  
+* Standard Deviation: `r sd_virtual_achilles`  
 
+Using a standard deviation threshold of `r sd_threshold`, we calculated the boundaries of R^2 values to be greater than `r achilles_upper` or lower than `r achilles_lower` for negative correlations.  
 
-### Gene Query for TP53
+#### Pathway Analyses
+```{r focused_lib, echo=FALSE}
+focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
+#find a way to out put this in a simple/clean format?
+```
+To identify clusters of genes with shared relationships, we perfromed gene set enrichment analysis. Enrichment analysis is a computational method for inferring knowledge about a target gene set by comparing it to annotated gene sets representing prior biological knowledge. Enrichment analysis determines whether an input set of genes significantly overlaps with annotated gene sets. For each gene in our matrix, we determined the number of genes that were greater than or less than `r sd_threshold` standard deviations away from the permuted mean. This target gene list was then queried against `r length(focused_lib)` gene sets across a [broad range of curated data](https://amp.pharm.mssm.edu/Enrichr/#stats). By leveraging the [Enrichr](https://amp.pharm.mssm.edu/Enrichr/) resource from the [Ma'ayan Laboratory](http://labs.icahn.mssm.edu/maayanlab/), we determined the top ranked pathways, processes, drugs, cell lines, tissues, or diseases, and ranked by p-value. In this setting, the p-value is computed using a standard statistical method used by most enrichment analysis tools: Fisher's exact test or the hypergeometric test. This is a binomial proportion test that assumes a binomial distribution and independence for probability of any gene belonging to any set. [See here for more information about how Enrichr computes it's associations](https://amp.pharm.mssm.edu/Enrichr/help#background). 
+  
+## What do I do?   
+Querying a single gene produces a functional map of the processes that gene *might* be involved in, and a summary of the analyses for that gene
+
+#### 1. Query YFG (your favorite gene)
+As an example, we will query the protein P53 (official gene symbol TP53). 
+
 Distribution of dependency scores across `r length(achilles$X1)` cell lines  
 
 dep_plot2
@@ -300,6 +355,9 @@ r paste0("The ", length(dep_bottom$gene), " ranked genes that show the most nega
 ```
   
 ## Code Availability  
+```{r include=FALSE}
+#update these links!
+```
 [Generate Data](https://github.com/hirscheylab/depmap/tree/master/code)
 [Statistical Analyses](https://github.com/hirscheylab/depmap/tree/master/code)
 [Pathway Generator](https://github.com/hirscheylab/depmap/tree/master/code)
