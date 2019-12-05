@@ -15,7 +15,7 @@ library(pander)
 
 ## Report for `r fav_gene_summary$approved_symbol`: `r fav_gene_summary$approved_name`  
 ### from datadrivenhypothesis.org  
-`r stamp("Report generated December 31, 1979")(now())`  
+`r lubridate::stamp("Report generated December 31, 1979")(now())`  
   
 ## Summary  
 **Gene**: `r fav_gene_summary$approved_symbol`  
