@@ -1,0 +1,139 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    labels:
+      app: shinyserver
+      template: shinyserver
+    name: depmap-shiny-pvc
+  spec:
+    accessModes:
+    - ReadWriteMany
+    resources:
+      requests:
+        storage: 1Gi
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: shinyserver
+      template: shinyserver
+    name: depmap-shiny
+  spec:
+    ports:
+    - name: depmap-shiny-service
+      port: 80
+      targetPort: 3838
+    selector:
+      app: depmap-shiny
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations:
+      template.openshift.io/expose-uri: http://{.spec.host}
+    labels:
+      app: shinyserver
+      template: shinyserver
+    name: depmap-shiny-route
+  spec:
+    host: depmap-shiny.apps.cloud.duke.edu
+    path: /
+    to:
+      kind: Service
+      name: depmap-shiny
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the appliation image
+    labels:
+      app: shinyserver
+      template: shinyserver
+    name: depmap-shiny
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Defines how to build the application
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: shinyserver
+      template: shinyserver
+    name: depmap-shiny
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: depmap-shiny:latest
+    source:
+      contextDir: ""
+      git:
+        ref: openshift-shiny-simple
+        uri: https://github.com/Duke-GCB/depmap.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile.shiny
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: R Shiny server deployment
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: shinyserver
+      template: shinyserver
+    name: depmap-shiny
+  spec:
+    replicas: 1
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: depmap-shiny
+        name: depmap-shiny
+      spec:
+        containers:
+        - image: depmap-shiny:latest
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3838
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          name: shinyserver
+          ports:
+          - containerPort: 3838
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3838
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          resources:
+            limits:
+              memory: 1G
+          volumeMounts:
+          - mountPath: /srv/data
+            name: depmap-shiny-vol
+        volumes:
+        - name: depmap-shiny-vol
+          persistentVolumeClaim:
+            claimName: depmap-shiny-pvc
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - shinyserver
+        from:
+          kind: ImageStreamTag
+          name: depmap-shiny:latest
+      type: ImageChange
+    - type: ConfigChange
+kind: List
+metadata: {}

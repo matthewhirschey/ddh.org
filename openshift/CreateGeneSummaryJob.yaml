@@ -1,0 +1,30 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-gene-summary
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: create-gene-summary
+        image: dleehr/depmap:code
+        command: ["Rscript"]
+        args:
+          - "/depmap/code/create_gene_summary.R"
+          - "--destdir"
+          - "/depmap-data/"
+        volumeMounts:
+        - mountPath: /depmap-data
+          name: depmap-data
+        env:
+        - name: ENTREZ_KEY
+          valueFrom:
+            secretKeyRef:
+              name: entrez-secret
+              key: apikey
+      volumes:
+      - name: depmap-data
+        persistentVolumeClaim:
+          claimName: depmap-dev-pvc
