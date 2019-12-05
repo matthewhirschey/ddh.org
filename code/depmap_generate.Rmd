@@ -279,7 +279,7 @@ utils:::print.sessionInfo(sessionInfo()[-8])
 ```
 #stamp
 ```{r}
-stamp("Data updated December 31, 1979")(now())
+lubridate::stamp("Data updated December 31, 1979")(now())
 ```
 
 #beep
