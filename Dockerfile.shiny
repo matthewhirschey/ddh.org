@@ -12,7 +12,9 @@ RUN install2.r --deps TRUE \
  lubridate \
  shinyWidgets \
  causaleffect \
- plotly
+ plotly \
+ networkD3 \
+ feather
 
 COPY ./shiny/shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /srv/shiny-server/
