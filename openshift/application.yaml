@@ -69,8 +69,8 @@ items:
     source:
       contextDir: ""
       git:
-        ref: openshift-shiny-simple
-        uri: https://github.com/Duke-GCB/depmap.git
+        ref: deploy
+        uri: https://github.com/hirscheylab/depmap.git
       type: Git
     strategy:
       dockerStrategy:
