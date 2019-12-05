@@ -11,7 +11,8 @@ RUN install2.r --deps TRUE \
  corrr  \
  lubridate \
  shinyWidgets \
- causaleffect
+ causaleffect \
+ plotly
 
 COPY ./shiny/shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /srv/shiny-server/
