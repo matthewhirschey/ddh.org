@@ -126,7 +126,7 @@ sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rd
 This is a test case for a single gene. Takes a single input, and then generates top and bottom correlated genes. Finally, binds them together to make a graph structure.
 ```{r}
 fav_gene <- c("TP53")
-
+n <- 10
 #find top and bottom correlations for fav_gene
 dep_top <- achilles_cor %>% 
   focus(fav_gene) %>% 
