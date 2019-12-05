@@ -131,7 +131,7 @@ make_plot <- function(gene_symbol, op) { #op = cell_bins, cell_deps
   )
 }
 
-make_graph <- function(gene_symbol, threshold = 10) {
+setup_graph <- function(gene_symbol, threshold = 10) {
   dep_network <- tibble()
   
  #find top and bottom correlations for fav_gene
@@ -174,11 +174,12 @@ make_graph <- function(gene_symbol, threshold = 10) {
     dep_network <- dep_network %>% 
       bind_rows(dep_related)
   }
-  build_graph(dep_network)
+  return(dep_network)
 }
 
-build_graph <- function(dep_network = dep_network, deg = 2) {
+make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_graph
   #setup graph 
+  #make graph
   graph_network <- tidygraph::as_tbl_graph(dep_network)
   nodes <-  as_tibble(graph_network) %>% 
     rowid_to_column("id") %>% 
@@ -317,7 +318,7 @@ server <- function(input, output, session) {
     make_enrichment_table(master_negative, data())
   )
   output$graph <- renderForceNetwork(
-    make_graph(data())
+    make_graph(setup_graph(data()))
   )
   output$report <- downloadHandler(
     # create pdf depmap report
