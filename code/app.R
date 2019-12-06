@@ -8,6 +8,7 @@ library(lubridate)
 library(feather)
 library(rmarkdown)
 library(markdown)
+library(tidygraph)
 
 #LOAD DATA-----
 #read data from creat_gene_summary.R
