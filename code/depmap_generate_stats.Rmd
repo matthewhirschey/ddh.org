@@ -10,24 +10,13 @@ This document loads the data generated in depmap_generate, and then generates an
 
 ##Load libraries
 ```{r load_block, echo=TRUE, message=FALSE, warning=FALSE}
-#not sure which exactly of these I need
 library(tidyverse)
 library(lubridate)
 library(here)
-#library(readxl)
-#library(janitor)
 library(feather)
 library(corrr)
 library(purrr)
-#library(viridis)
-#library(enrichR)
-#library(glue)
 library(moderndive)
-#library(rmarkdown)
-#library(gridExtra)
-#library(knitr)
-#library(pander)
-#library(vroom)
 library(beepr) #long analysis; get some coffee, and comeback when ready
 
 #clear environment
@@ -105,3 +94,7 @@ mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achille
 sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
 ```
 
+#how long?
+```{r}
+end_time <- Sys.time()
+```
