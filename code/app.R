@@ -248,7 +248,7 @@ ui <- fluidPage(
              uiOutput("gene_summary")),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
-                        fluidRow("text"),
+                        fluidRow(h4(textOutput("text_cell_dep_plot"))),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                              plotOutput(outputId = "cell_deps"), 
                                              plotOutput(outputId = "cell_bins"))),
@@ -256,22 +256,22 @@ ui <- fluidPage(
                                              "text", 
                                              "text"))),
                tabPanel("Table",
-                        fluidRow("text"),
+                        fluidRow(h4(textOutput("text_cell_dep_table"))),
                         fluidRow(dataTableOutput(outputId = "target_achilles")))
                ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
-                        fluidRow("text"),
+                        fluidRow(h4(textOutput("text_dep_top"))),
                         fluidRow(dataTableOutput(outputId = "dep_top"))),
                tabPanel("Pathways",
-                        fluidRow("text"),
+                        fluidRow(h4(textOutput("text_pos_enrich"))),
                         fluidRow(dataTableOutput(outputId = "pos_enrich")))),
     navbarMenu(title = "Dissimilar",
                tabPanel("Genes",
-                        fluidRow("text"),
+                        fluidRow(h4(textOutput("text_dep_bottom"))),
                         fluidRow(dataTableOutput(outputId = "dep_bottom"))),
                tabPanel("Pathways",
-                        fluidRow("text"),
+                        fluidRow(h4(textOutput("text_neg_enrich"))),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph", 
              #sidebarLayout( #UNCOMMENT THIS SECTION WHEN input$deg is working
@@ -297,6 +297,13 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   data <- eventReactive(input$go, {
     str_to_upper(input$gene_symbol)})
+  
+  output$text_cell_dep_plot <- renderText({paste("Dependency plots generated for ", data())})
+  output$text_cell_dep_table <- renderText({paste("Dependency table generated for ", data())})
+  output$text_dep_top <- renderText({paste("Similar dependencies of ", data())})
+  output$text_pos_enrich <- renderText({paste("Pathways for similar dependencies of ", data())})
+  output$text_dep_bottom <- renderText({paste("Inverse dependencies of ", data())})
+  output$text_neg_enrich <- renderText({paste("Pathways for inverse dependencies of ", data())})
   
   output$gene_summary <- renderUI({
     # render details about the gene symbol user entered
