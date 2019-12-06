@@ -127,7 +127,7 @@ make_celldeps <- function(gene_symbol) {
     select(cell_line, lineage, dep_score) %>% 
     arrange(dep_score) %>% 
     ggplot() +
-    geom_point(aes(x = fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE), y = dep_score), alpha = 0.2) +
+    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score), alpha = 0.2) +
     labs(x = "Cell Lines", y = "Dependency Score") +
     geom_hline(yintercept = mean_virtual_achilles) +
     geom_hline(yintercept = 1, color = "lightgray") +
