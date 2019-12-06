@@ -1,4 +1,4 @@
-#data file generation
+#### Data file generation
 To generate the data files, run:  
 1. code/create_gene_summary.R  
 2. code/generate_depmap_data.R  
