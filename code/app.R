@@ -298,12 +298,12 @@ server <- function(input, output, session) {
   data <- eventReactive(input$go, {
     str_to_upper(input$gene_symbol)})
   
-  output$text_cell_dep_plot <- renderText({paste("Dependency plots generated for ", data())})
-  output$text_cell_dep_table <- renderText({paste("Dependency table generated for ", data())})
-  output$text_dep_top <- renderText({paste("Similar dependencies of ", data())})
-  output$text_pos_enrich <- renderText({paste("Pathways for similar dependencies of ", data())})
-  output$text_dep_bottom <- renderText({paste("Inverse dependencies of ", data())})
-  output$text_neg_enrich <- renderText({paste("Pathways for inverse dependencies of ", data())})
+  output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", data())})
+  output$text_cell_dep_table <- renderText({paste0("Dependency table generated for ", data())})
+  output$text_dep_top <- renderText({paste0("Genes with similar dependencies as ", data())})
+  output$text_pos_enrich <- renderText({paste0("Pathways of genes with similar dependencies as ", data())})
+  output$text_dep_bottom <- renderText({paste0("Genes with inverse dependencies as ", data())})
+  output$text_neg_enrich <- renderText({paste0("Pathways of genes with inverse dependencies as ", data())})
   
   output$gene_summary <- renderUI({
     # render details about the gene symbol user entered
