@@ -21,10 +21,11 @@ library(here)
 
 ##LOAD DATA
 fav_gene <- "TP53"
-achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
-achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
+load(file = here::here("data", "gene_summary.RData"))
+load(file = here::here("data", paste0(params$release, "_achilles_.Rdata")))
+load(file = here::here("data", paste0(params$release, "_achilles_cor.Rdata")))
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
-expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
+load(file = here::here("data", paste0(params$release, "_expression.Rdata")))
 
 #LOAD STATS
 sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
