@@ -35,7 +35,7 @@ sample <- sample(names(achilles_cor), size = 10) #comment this out
 r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 
-gene_group <- sample #change sample to full (~60' on my laptop)
+gene_group <- full #(~60' on a laptop); change to sample for testing
 
 #master_table_top
 for (fav_gene in gene_group) {
