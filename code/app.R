@@ -10,19 +10,28 @@ library(rmarkdown)
 library(markdown)
 
 #LOAD DATA-----
+#read data from creat_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
 }
+#read data from generate_depmap_data.R
 load(file=here::here("data", "achilles.RData"))
+load(file=here::here("data", "achilles_cor.RData"))
 load(file=here::here("data", "expression_join.RData"))
 
-#read in datasets saved from depmap_generate_pathways.Rmd
+#read data from generate_depmap_stats.R
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
+
+#read data from generate_depmap_pathways.R
 load(file=here::here("data", "master_bottom_table.RData"))
 load(file=here::here("data", "master_top_table.RData"))
 load(file=here::here("data", "master_positive.RData"))
 load(file=here::here("data", "master_negative.RData"))
-
 
 #FUNCTIONS-----
 gene_summary_details <- function(gene_summary) {
@@ -84,51 +93,50 @@ make_enrichment_table <- function(table, gene_symbol) { #master_positive, master
     arrange(Adjusted.P.value)
 }
 
-setup_plot <- function(gene_symbol) {
-  #plot setup
+make_achilles_table <- function(gene_symbol) {
   target_achilles <- achilles %>% 
     select(X1, gene_symbol) %>% 
     left_join(expression_join, by = "X1") %>% 
     rename(dep_score = gene_symbol) %>% 
-    select(cell_line, lineage, dep_score) 
-  
-  target_achilles_top <- target_achilles %>% 
-    arrange(desc(dep_score)) %>% 
-    top_frac(dep_score, n = 10)
-  
-  target_achilles_bottom <- target_achilles %>% 
-    arrange(dep_score) %>% 
-    top_frac(dep_score, n = 10)
+    select(cell_line, lineage, dep_score) %>% 
+    arrange(dep_score)
+  return(target_achilles)
 }
   
-make_plot <- function(gene_symbol, op) { #op = cell_bins, cell_deps
-  #plot setup
-  setup_plot(gene_symbol)
-  target_achilles$cell_line <- fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE)
-  
-  switch(op, 
-  #plot1:cell_bins
-  cell_bins = ggplot(target_achilles) +
+make_cellbins <- function(gene_symbol) {
+  achilles %>% #plot setup
+    select(X1, gene_symbol) %>% 
+    left_join(expression_join, by = "X1") %>% 
+    rename(dep_score = gene_symbol) %>% 
+    select(cell_line, lineage, dep_score) %>% 
+    arrange(dep_score) %>% 
+    ggplot() +
     geom_vline(xintercept = 1, color = "lightgray") +
     geom_vline(xintercept = -1, color = "lightgray") +
     geom_vline(xintercept = 0) +
     geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
     labs(x = "Dependency Score (binned)") + 
-    theme_light(),
-    #plot2:cell_deps
-  cell_deps = ggplot(target_achilles) +
-    geom_point(aes(x = cell_line, y = dep_score), alpha = 0.2) +
+    theme_light()
+}
+
+make_celldeps <- function(gene_symbol) {
+  achilles %>% #plot setup
+    select(X1, gene_symbol) %>% 
+    left_join(expression_join, by = "X1") %>% 
+    rename(dep_score = gene_symbol) %>% 
+    select(cell_line, lineage, dep_score) %>% 
+    arrange(dep_score) %>% 
+    ggplot() +
+    geom_point(aes(x = fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = FALSE), y = dep_score), alpha = 0.2) +
     labs(x = "Cell Lines", y = "Dependency Score") +
     geom_hline(yintercept = mean_virtual_achilles) +
     geom_hline(yintercept = 1, color = "lightgray") +
     geom_hline(yintercept = -1, color = "lightgray") +
     geom_hline(yintercept = 0) +
-    geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
-    geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
+    #geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
+    #geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
     theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
-    NULL, 
-  stop("Specify your plot!")
-  )
+    NULL
 }
 
 setup_graph <- function(gene_symbol, threshold = 10) {
@@ -242,14 +250,14 @@ ui <- fluidPage(
                tabPanel("Plots",
                         fluidRow("text"),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                             plotOutput(outputId = "plotdeps"), 
-                                             plotOutput(outputId = "plotbins"))),
+                                             plotOutput(outputId = "cell_deps"), 
+                                             plotOutput(outputId = "cell_bins"))),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                              "text", 
                                              "text"))),
                tabPanel("Table",
                         fluidRow("text"),
-                        fluidRow(dataTableOutput(outputId = "target_achilles_top")))
+                        fluidRow(dataTableOutput(outputId = "target_achilles")))
                ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
@@ -270,9 +278,9 @@ ui <- fluidPage(
                #sidebarPanel(numericInput(inputId = "deg", 
                                         #label = "Minimum # of Connections", 
                                         #value = 2, min = 1, max = 50)),
-               #conditionalPanel(condition = "input.gene_symbol == NULL", 
-               #                 p("Enter a gene symbol to generate a graph")),
-               mainPanel(forceNetworkOutput(outputId = "graph"))#)
+               conditionalPanel(condition = 'input.gene_symbol === NULL', 
+                                p("Enter a gene symbol to generate a graph")),
+               mainPanel(forceNetworkOutput(outputId = "graph"))#uncomment this parenthesis)
     ),
     tabPanel("Methods", 
              includeMarkdown(here::here("code", "methods.md"))
@@ -300,15 +308,14 @@ server <- function(input, output, session) {
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  output$plotdeps <- renderPlot(
-    make_plot(data(), "cell_deps")
+  output$cell_deps <- renderPlot(
+    make_celldeps(data())
   )
-  output$plotbins <- renderPlot(
-    make_plot(data(), "cell_bins")
+  output$cell_bins <- renderPlot(
+    make_cellbins(data())
   )
-  output$target_achilles_top <- renderDataTable(
-    setup_plot(data()),
-    target_achilles_top, 
+  output$target_achilles <- renderDataTable(
+    make_achilles_table(data()),
     options = list(pageLength = 12)
   )
   output$pos_enrich <- renderDataTable(
