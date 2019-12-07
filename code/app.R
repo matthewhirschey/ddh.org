@@ -75,7 +75,8 @@ make_top_table <- function(gene_symbol) {
     dplyr::filter(fav_gene == gene_symbol) %>% 
     unnest(data) %>% 
     select(-fav_gene) %>% 
-    arrange(desc(r2))
+    arrange(desc(r2)) %>% 
+    rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
 }
 
 make_bottom_table <- function(gene_symbol) {
@@ -83,7 +84,8 @@ make_bottom_table <- function(gene_symbol) {
     dplyr::filter(fav_gene == gene_symbol) %>% 
     unnest(data) %>% 
     select(-fav_gene) %>% 
-    arrange(r2)
+    arrange(r2) %>% 
+    rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
 }
 
 make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
@@ -91,7 +93,8 @@ make_enrichment_table <- function(table, gene_symbol) { #master_positive, master
     dplyr::filter(fav_gene == gene_symbol) %>% 
     unnest(data) %>% 
     select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>% 
-    arrange(Adjusted.P.value)
+    arrange(Adjusted.P.value) %>% 
+    rename("Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
 }
 
 make_achilles_table <- function(gene_symbol) {
@@ -100,7 +103,8 @@ make_achilles_table <- function(gene_symbol) {
     left_join(expression_join, by = "X1") %>% 
     rename(dep_score = gene_symbol) %>% 
     select(cell_line, lineage, dep_score) %>% 
-    arrange(dep_score)
+    arrange(dep_score) %>% 
+    rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
   return(target_achilles)
 }
   
@@ -153,7 +157,7 @@ setup_graph <- function(gene_symbol, threshold = 10) {
   #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
   related_genes <- dep_top %>% 
     bind_rows(dep_bottom) %>% 
-    dplyr::pull(gene)
+    dplyr::pull("Gene")
   
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
