@@ -308,6 +308,46 @@ build_graph <- function(dep_network = dep_network, deg = 2) {
 }
 build_graph(dep_network, 2)
 build_graph(dep_network, 10)
+
+
+build_graph_report <- function(dep_network = dep_network, deg = 2) {
+  #setup graph 
+  graph_network <- tidygraph::as_tbl_graph(dep_network)
+  nodes <-  as_tibble(graph_network) %>% 
+    rowid_to_column("id") %>% 
+    mutate(degree = degree(graph_network), 
+           group = 1) %>% 
+    arrange(desc(degree))
+  
+  links <- graph_network %>% 
+    activate(edges) %>% # %E>%
+    as_tibble()
+  
+  # determine the nodes that have at least the minimum degree
+  nodes_filtered <- nodes %>%
+    filter(degree >= deg) %>%  #input$degree
+    as.data.frame
+  
+  # filter the edge list to contain only links to or from the nodes that have the minimum or more degree
+  links_filtered <- links %>% 
+    filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>% 
+    as.data.frame
+  
+  links_filtered$from <- match(links_filtered$from, nodes_filtered$id)
+  links_filtered$to <- match(links_filtered$to, nodes_filtered$id)
+  
+  graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
+  
+  graph_network_ggraph %>%       
+    ggraph(layout = "auto") +      
+    geom_edge_fan(color = 'steelblue') +
+    geom_node_point(color = 'black') +   
+    geom_node_label(aes(label = name), repel = TRUE) +
+    theme_graph()
+}
+build_graph_report(dep_network, 2)
+build_graph(dep_network, 2)
+
 ```
 
 
@@ -365,6 +405,7 @@ Thinking about graph_netwrok as two tibbles inside a larger table graph, it beca
 ```{r}
 #minimum degree
 m <- 3
+graph_network <- as_tbl_graph(dep_network)
 
 graph_network <- as_tbl_graph(dep_network) %>% 
   activate(nodes) %>% #active by default, add centrality measures to nodes
