@@ -196,7 +196,7 @@ make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_gra
   graph_network <- tidygraph::as_tbl_graph(dep_network)
   nodes <-  as_tibble(graph_network) %>% 
     rowid_to_column("id") %>% 
-    mutate(degree = degree(graph_network), 
+    mutate(degree = igraph::degree(graph_network), 
            group = 1) %>% 
     arrange(desc(degree))
   
@@ -221,6 +221,44 @@ make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_gra
   forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100)
 }
 
+make_graph_report <- function(dep_network = dep_network, deg = 2) {
+  #setup graph 
+  graph_network <- tidygraph::as_tbl_graph(dep_network)
+  nodes <-  as_tibble(graph_network) %>% 
+    rowid_to_column("id") %>% 
+    mutate(degree = igraph::degree(graph_network), 
+           group = 1) %>% 
+    arrange(desc(degree))
+  
+  links <- graph_network %>% 
+    activate(edges) %>% # %E>%
+    as_tibble()
+  
+  # determine the nodes that have at least the minimum degree
+  nodes_filtered <- nodes %>%
+    filter(degree >= deg) %>%  #input$degree
+    as.data.frame
+  
+  # filter the edge list to contain only links to or from the nodes that have the minimum or more degree
+  links_filtered <- links %>% 
+    filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>% 
+    as.data.frame
+  
+  links_filtered$from <- match(links_filtered$from, nodes_filtered$id)
+  links_filtered$to <- match(links_filtered$to, nodes_filtered$id)
+  
+  graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
+  
+  graph_network_ggraph %>%       
+    ggraph(layout = "nicely") +      
+    geom_edge_fan(aes(color = r2)) + #, color = 'steelblue'
+    geom_node_point(aes(size = degree), color = 'black', alpha = 0.8) +   
+    geom_node_label(aes(label = name), repel = TRUE) +
+    scale_edge_color_viridis(option = "inferno") +
+    theme_graph()
+  
+}
+
 render_depmap_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
   read_gene_summary_into_environment(tmp.env)
@@ -230,6 +268,17 @@ render_depmap_report_to_file <- function(file, gene_symbol) {
 render_complete_report <- function (file, gene_symbol, tmp.env) {
   fav_gene_summary <- tmp.env$gene_summary %>%
     filter(approved_symbol == gene_symbol)
+  p1 <- make_celldeps(gene_symbol) 
+  p2 <- make_cellbins(gene_symbol)
+  target_achilles_bottom <- make_achilles_table(gene_symbol) %>% slice(1:10)
+  target_achilles_top <- make_achilles_table(gene_symbol) %>% dplyr::arrange(desc(`Dependency Score`)) %>%  slice(1:10)
+  dep_top <- make_top_table(gene_symbol)
+  flat_top_complete <- make_enrichment_table(master_positive, gene_symbol)
+  dep_bottom <- make_bottom_table(gene_symbol)
+  flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
+  graph_report <- setup_graph(gene_symbol, 10) %>% make_graph_report(., 2)
+  
+  
   rmarkdown::render("report_depmap_app.rmd", output_file = paste0(gene_symbol, '_report.pdf'))
   
 }
