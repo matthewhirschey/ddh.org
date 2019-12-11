@@ -41,6 +41,10 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
     if (fetched_cnt %% 1000 == 0) {
       message("Fetched ", fetched_cnt)
     }
+    # Just testing here
+    if (fetched_cnt > 100) {
+      break
+    }
   }
 
   gene_summary <- hugo %>%
