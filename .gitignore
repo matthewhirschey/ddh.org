@@ -13,3 +13,4 @@ validation/
 doc/
 singularity/
 config.sh
+logs
