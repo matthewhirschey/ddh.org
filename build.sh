@@ -3,4 +3,5 @@
 
 source config.sh
 
-RSCRIPT_CMD="singularity exec singularity/depmap.sif Rscript" make gene_summary
+make container_image
+RSCRIPT_CMD="singularity exec singularity/depmap.sif Rscript" make
