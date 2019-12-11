@@ -4,7 +4,15 @@
 # singularity exec singularity/depmap.sif RScript
 RSCRIPT_CMD ?= Rscript
 
-container: singularity/depmap.sif
+# The first target is the default, it makes "all" the data. Does not include container_image
+all: gene_summary depmap_data depmap_stats depmap_tables
+
+# The clean target removes all the files in data/
+clean:
+	rm data/*
+
+# Map simple target names to the files on which they depend
+container_image: singularity/depmap.sif
 gene_summary: data/gene_summary.RData
 depmap_data: data/19Q3_achilles_cor.Rdata data/19Q3_achilles.Rdata data/19Q3_expression.Rdata data/19Q3_expression_id.Rdata
 depmap_stats: data/sd_threshold.rds data/achilles_lower.rds data/achilles_upper.rds data/mean_virtual_achilles.rds data/sd_virtual_achilles.rds
