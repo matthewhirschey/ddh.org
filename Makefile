@@ -1,10 +1,11 @@
 .PHONY = dirs
 
-SINGULARITY_IMG = singularity/depmap.sif
-SINGULARITY_EXEC = singularity exec ${SINGULARITY_IMG}
+# Default command to use for Rscript shall simply be Rscript. When running under a container, this may be
+# singularity exec singularity/depmap.sif RScript
+RSCRIPT_CMD ?= Rscript
 
 container: singularity/depmap.sif
-gene_summary: data/gene_summary.feather
+gene_summary: data/gene_summary.RData
 depmap_data: data/19Q3_achilles_cor.Rdata data/19Q3_achilles.Rdata data/19Q3_expression.Rdata data/19Q3_expression_id.Rdata
 depmap_stats: data/sd_threshold.rds data/achilles_lower.rds data/achilles_upper.rds data/mean_virtual_achilles.rds data/sd_virtual_achilles.rds
 depmap_tables: data/master_top_table.Rdata data/master_bottom_table.RData
@@ -15,26 +16,24 @@ dirs:
 
 singularity/depmap.sif:
 	@echo "Pulling container image"
-	singularity pull singularity/depmap.sif docker://dleehr/depmap:latest
+	singularity pull singularity/depmap.sif ${DOCKER_IMG}
 
-data/gene_summary.feather: code/create_gene_summary.R
+data/gene_summary.RData: code/create_gene_summary.R
 	@echo "Creating gene summary"
-	${SINGULARITY_EXEC} Rscript code/create_gene_summary.R --entrezkey ${ENTREZ_KEY}
+	$(RSCRIPT_CMD) code/create_gene_summary.R --entrezkey ${ENTREZ_KEY}
 
 data/19Q3_achilles_cor.Rdata data/19Q3_achilles.Rdata data/19Q3_expression.Rdata data/19Q3_expression_id.Rdata: code/generate_depmap_data.R
 	@echo "Creating depmap data"
-	${SINGULARITY_EXEC} Rscript code/generate_depmap_data.R
+	$(RSCRIPT_CMD) code/generate_depmap_data.R
 
 data/sd_threshold.rds data/achilles_lower.rds data/achilles_upper.rds data/mean_virtual_achilles.rds data/sd_virtual_achilles.rds: data/19Q3_achilles_cor.Rdata code/generate_depmap_stats.R
 	@echo "Creating depmap stats"
-	${SINGULARITY_EXEC} Rscript code/generate_depmap_stats.R
+	$(RSCRIPT_CMD) code/generate_depmap_stats.R
 
 data/master_top_table.Rdata data/master_bottom_table.RData: code/generate_depmap_tables.R data/gene_summary.RData data/19Q3_achilles_cor.Rdata data/achilles_lower.rds data/achilles_upper.rds
 	@echo "Creating depmap tables"
-	${SINGULARITY_EXEC} Rscript code/generate_depmap_tables.R
+	$(RSCRIPT_CMD) code/generate_depmap_tables.R
 
 data/master_positive.RData data/master_negative.RData: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.Rdata data/achilles_lower.rds data/achilles_upper.rds
 	@echo "Creating depmap pathways"
-	${SINGULARITY_EXEC} Rscript code/generate_depmap_pathways.R
-
-all: dirs container depmap_data depmap_stats gene_summary
+	$(RSCRIPT_CMD) code/generate_depmap_pathways.R

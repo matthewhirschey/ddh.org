@@ -12,3 +12,4 @@ data/
 validation/
 doc/
 singularity/
+config.sh
