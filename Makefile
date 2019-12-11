@@ -11,6 +11,9 @@ all: gene_summary depmap_data depmap_stats depmap_tables
 clean:
 	rm data/*
 
+clean_container:
+	rm -r singularity/*
+
 # Map simple target names to the files on which they depend
 container_image: singularity/depmap.sif
 gene_summary: data/gene_summary.RData
@@ -24,7 +27,7 @@ dirs:
 
 singularity/depmap.sif:
 	@echo "Pulling container image"
-	singularity pull singularity/depmap.sif ${DOCKER_IMG}
+	singularity pull singularity/images/depmap.sif ${DOCKER_IMG}
 
 data/gene_summary.RData: code/create_gene_summary.R
 	@echo "Creating gene summary"
