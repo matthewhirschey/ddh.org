@@ -73,10 +73,14 @@ gene_summary_ui <- function(gene_symbol) {
 
 #alias lookup
 alias_lookup <- function(gene_symbol) {
-  ifelse(dim(dplyr::filter(gene_summary, approved_symbol == gene_symbol)) == 0, 
-         return("empty"), 
-         return(dplyr::filter(gene_summary, approved_symbol == gene_symbol))
-  )
+  if(nrow(dplyr::filter(gene_summary, approved_symbol == gene_symbol)) == 1){
+    result <- dplyr::filter(gene_summary, approved_symbol == gene_symbol)
+  } else {
+    ifelse(sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))) > 0, 
+           result <- paste0("Found ", sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))), " entries. Make sure to use the 'Official' gene symbol."),
+           result <- paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias."))
+  }
+  return(result)
 }
 
 make_top_table <- function(gene_symbol) {
