@@ -7,31 +7,29 @@ spec:
   template:
     spec:
       initContainers:
-      - name: change-permissions
-        image: busybox:1.28
-        command: ['chmod', '-R', '0775', '/depmap-data']
-        volumeMounts:
-        - name: depmap-data
-          mountPath: /depmap-data
       containers:
       - name: download-ddh-data
         image: dukegcb/lando-util:0.5.4
-        workingDir: /depmap-data
+        workingDir: /data
+        env:
+        - name: DDSCLIENT_CONF
+          value: "/etc/ddsclient/ddsclient-config"
         command:
         - "python"
         - "-m"
         - "lando_util.stagedata"
         - "/etc/file-list.json"
-        - "/depmap-data/download.log"
+        - "/data/download.log"
         volumeMounts:
         - name: depmap-data
-          mountPath: "/depmap-data"
+          mountPath: "/data"
         - name: ddsclient-config
           mountPath: "/etc/ddsclient"
           readOnly: true
         - name: file-list
           mountPath: "/etc/file-list.json"
           readOnly: true
+          subPath: "file-list.json"
       restartPolicy: OnFailure
       volumes:
       - name: depmap-data
