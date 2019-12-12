@@ -15,7 +15,8 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  plotly \
  networkD3 \
  feather \
- tidygraph
+ tidygraph \
+ ggraph
 
 COPY ./shiny/shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /srv/shiny-server/
