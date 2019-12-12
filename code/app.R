@@ -71,6 +71,14 @@ gene_summary_ui <- function(gene_symbol) {
   result
 }
 
+#alias lookup
+alias_lookup <- function(gene_symbol) {
+  ifelse(dim(dplyr::filter(gene_summary, approved_symbol == gene_symbol)) == 0, 
+         return("empty"), 
+         return(dplyr::filter(gene_summary, approved_symbol == gene_symbol))
+  )
+}
+
 make_top_table <- function(gene_symbol) {
   master_top_table %>% 
     dplyr::filter(fav_gene == gene_symbol) %>% 
