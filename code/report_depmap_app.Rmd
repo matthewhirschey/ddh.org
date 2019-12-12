@@ -4,13 +4,14 @@ output:
     latex_engine: xelatex
 ---
 
-```{r template_setup, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(here)
 library(knitr)
 library(pander)
+library(patchwork)
 ```
 
 ## Report for `r fav_gene_summary$approved_symbol`: `r fav_gene_summary$approved_name`  
@@ -29,25 +30,23 @@ library(pander)
 ## Distribution of `r gene_symbol` dependency scores across `r length(achilles$X1)` cell lines  
   
 ```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
-make_plot(gene_symbol, "cell_deps")
-make_plot(gene_symbol, "cell_bins")
+p1 + p2
 ```
   
 ### Cells that lose fitness when `r gene_symbol` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-setup_plot(gene_symbol)
-knitr::kable(head(target_achilles_bottom, n = 10), col.names = c("Cell Line", "Lineage", "Dep Score"))
+pander(target_achilles_bottom)
 ```
     
 ### Cells that don't rely on `r gene_symbol` or if greater than 1 gain fitness when `r gene_symbol` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-knitr::kable(head(target_achilles_top, n = 10), col.names = c("Cell Line", "Lineage", "Dep Score"))
+pander(target_achilles_top)
 ```
   
 ## Positive Ranked Dependency from DepMap  
-`r if(length(dep_top$gene) > 0) {pander(paste("The", length(dep_top$gene), "genes that show the highest postive correlation for similar genetic dependencies are listed here."))} else {}`  
+`r if(length(dep_top$Gene) > 0) {pander(paste("The", length(dep_top$Gene), "genes that show the highest postive correlation for similar genetic dependencies are listed here."))} else {}`  
 ```{r template_dep_top, echo=FALSE}
-if(length(dep_top$gene) > 0) {
+if(length(dep_top$Gene) > 0) {
   pander(dep_top, justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
 } else {
   pander("Zero genes reached threshold")
@@ -58,9 +57,9 @@ if(length(dep_top$gene) > 0) {
 ## Positive Correlated Gene Sets  
   
 ```{r template_top_complete, echo=FALSE}
-if(length(dep_top$gene) > 0) {
+if(length(dep_top$Gene) > 0) {
   flat_top_complete %>% 
-    select(enrichr, Term, Overlap) %>% 
+    select(`Gene Set`, `Gene List`, Overlap) %>% 
     slice(1:50) %>% 
     pander(justify = c("left", "left", "right"), split.table = Inf)
 } else {
@@ -70,9 +69,9 @@ if(length(dep_top$gene) > 0) {
   
 \newpage
 ## Negative Ranked Dependency from DepMap  
-`r if(length(dep_bottom$gene) > 0) {pander(paste0("The ", length(dep_bottom$gene), " ranked genes that show the most negative correlation for similar genetic dependencies are listed here."))} else {}`  
+`r if(length(dep_bottom$Gene) > 0) {pander(paste0("The ", length(dep_bottom$Gene), " ranked genes that show the most negative correlation for similar genetic dependencies are listed here."))} else {}`  
 ```{r template_dep_bottom, echo=FALSE}
-if(length(dep_bottom$gene) > 0) {
+if(length(dep_bottom$Gene) > 0) {
   pander(dep_bottom, justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
 } else {
   pander("Zero genes reached threshold")
@@ -83,13 +82,24 @@ if(length(dep_bottom$gene) > 0) {
 ## Negative Correlated Gene Sets  
    
 ```{r template_bottom_complete, echo=FALSE}
-if(length(dep_bottom$gene) > 0) {
+if(length(dep_bottom$Gene) > 0) {
   flat_bottom_complete %>% 
-    select(enrichr, Term, Overlap) %>% 
+    select(`Gene Set`, `Gene List`, Overlap) %>% 
     slice(1:50) %>% 
     pander(justify = c("left", "left", "right"), split.table = Inf)
 } else {
   pander("None")
+}
+```
+
+\newpage  
+## Graph  
+   
+```{r template_graph, echo=FALSE}
+if(length(dep_bottom$Gene) > 0) {
+  graph_report
+} else {
+  pander("Graph cannot be built")
 }
 ```
 
