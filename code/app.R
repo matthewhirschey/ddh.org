@@ -198,7 +198,10 @@ make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_gra
   nodes <-  as_tibble(graph_network) %>% 
     rowid_to_column("id") %>% 
     mutate(degree = igraph::degree(graph_network), 
-           group = 1) %>% 
+           group = case_when(name %in% fav_gene == TRUE ~ "query", 
+                             name %in% dep_top$y == TRUE ~ "pos", 
+                             name %in% dep_bottom$y == TRUE ~ "neg", 
+                             TRUE ~ "connected")) %>% 
     arrange(desc(degree))
   
   links <- graph_network %>% 
@@ -219,8 +222,10 @@ make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_gra
   links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
   links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
   
-  forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100)
-}
+  node_color <- 'd3.scaleOrdinal(["#74D055", "#3A568C", "#FDE825", "#450D53"])'
+  
+  forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100, Nodesize = "degree", colourScale = node_color)
+  }
 
 make_graph_report <- function(dep_network = dep_network, deg = 2) {
   #setup graph 
@@ -228,7 +233,10 @@ make_graph_report <- function(dep_network = dep_network, deg = 2) {
   nodes <-  as_tibble(graph_network) %>% 
     rowid_to_column("id") %>% 
     mutate(degree = igraph::degree(graph_network), 
-           group = 1) %>% 
+           group = case_when(name %in% fav_gene == TRUE ~ "query", 
+                             name %in% dep_top$y == TRUE ~ "pos", 
+                             name %in% dep_bottom$y == TRUE ~ "neg", 
+                             TRUE ~ "connected")) %>% 
     arrange(desc(degree))
   
   links <- graph_network %>% 
@@ -251,13 +259,12 @@ make_graph_report <- function(dep_network = dep_network, deg = 2) {
   graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
   
   graph_network_ggraph %>%       
-    ggraph::ggraph(layout = "nicely") +      
-    geom_edge_fan(aes(color = r2)) + #, color = 'steelblue'
-    geom_node_point(aes(size = degree), color = 'black', alpha = 0.8) +   
+    ggraph::ggraph(layout = "auto") +      
+    geom_edge_fan(aes(edge_width = abs(r2)), alpha = 0.3) +
+    geom_node_point(aes(size = degree, color = group), alpha = 0.7) +   
     geom_node_label(aes(label = name), repel = TRUE) +
-    scale_edge_color_viridis(option = "inferno") +
+    scale_colour_viridis(discrete = TRUE, name = "Group", labels = c("Query", "Positive", "Negative", "Connected")) +
     theme_graph(base_family = 'Helvetica')
-  
 }
 
 render_report_to_file <- function(file, gene_symbol) {
