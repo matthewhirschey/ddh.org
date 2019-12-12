@@ -14,7 +14,8 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  causaleffect \
  plotly \
  networkD3 \
- feather
+ feather \
+ tidygraph
 
 COPY ./shiny/shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /srv/shiny-server/
