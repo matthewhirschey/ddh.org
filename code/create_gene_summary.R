@@ -6,7 +6,8 @@ library(rentrez)
 library(feather)
 
 gene_names_url <- "https://www.genenames.org/cgi-bin/download/custom?col=gd_hgnc_id&col=gd_app_sym&col=gd_app_name&col=gd_prev_sym&col=gd_aliases&col=gd_pub_chrom_map&col=gd_pub_refseq_ids&col=md_eg_id&col=gd_locus_type&col=md_mim_id&col=md_prot_id&status=Approved&hgnc_dbtag=on&order_by=gd_app_sym_sort&format=text&submit=submit"
-gene_summary_output_filename <- "gene_summary.feather"
+gene_summary_output_filename <- "gene_summary.RData"
+fetch_batch_size <- 100   # batch size of 500 was too high. 200 worked, using 100 as reasonable default
 
 # returns a data frame based on gene_names_url and summaries from entrez "gene" database.
 build_gene_summary <- function(gene_names_url, entrez_key) {
@@ -17,32 +18,35 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
   hugo <- vroom(gene_names_url, delim = "\t", col_names = TRUE) %>%
     clean_names()
 
-  entrez <- tibble(
-    ncbi_gene_id_supplied_by_ncbi = numeric(),
-    entrez_summary = character()
-  )
-
   ids <- hugo %>%
     drop_na(ncbi_gene_id_supplied_by_ncbi) %>%
     pull(ncbi_gene_id_supplied_by_ncbi)
 
+  # split the list of NCBI gene IDs into batches of size fetch_batch_size
+  # so that entrez_summary can be called with batches instead of single IDs
+  ids_batches <-split(ids, ceiling(seq_along(ids)/fetch_batch_size))
+
+  entrez <- tibble(
+    ncbi_gene_id_supplied_by_ncbi = numeric(),
+    entrez_summary = character()
+  )
   fetched_cnt <- 0
-  for (ncbi_gene_id_supplied_by_ncbi in ids) {
-    gene_summary <- entrez_summary(db="gene", id=ncbi_gene_id_supplied_by_ncbi)
-    entrez_summary <- NA
-    if (gene_summary$summary != "") {
-      entrez_summary <- gene_summary$summary
-    }
-    tmp <- tibble(ncbi_gene_id_supplied_by_ncbi, entrez_summary)
-    entrez <- entrez %>%
-      bind_rows(tmp)
-    fetched_cnt <- fetched_cnt + 1
-    # Show a message every 1000 so a user can monitor progress
+  # Fetch each batch
+  for (id_batch in ids_batches) {
+    summary_batch <- entrez_summary(db="gene", id=id_batch)
+    # summary_batch is a list of summaries, so loop and handle each individually
+    for (summary in summary_batch) {
+      fetched_cnt <- fetched_cnt + 1
+      tmp <- tibble(ncbi_gene_id_supplied_by_ncbi=as.numeric(summary$uid), entrez_summary=summary$summary)
+      entrez <- entrez %>%
+        bind_rows(tmp)
+      }
     if (fetched_cnt %% 1000 == 0) {
       message("Fetched ", fetched_cnt)
     }
   }
 
+  # Join hugo and the entrez fetched results
   gene_summary <- hugo %>%
     left_join(entrez) %>%
     rename(ncbi_gene_id = ncbi_gene_id_supplied_by_ncbi)
@@ -57,7 +61,7 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
 
 create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_path) {
   gene_summary = build_gene_summary(gene_names_url, entrez_key)
-  write_feather(gene_summary, path = gene_summary_output_path)
+  save(gene_summary, file = gene_summary_output_path)
 }
 
 # Command line argument parser that will let a user optionally specify:

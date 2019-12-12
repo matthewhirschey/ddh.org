@@ -11,3 +11,6 @@ tmp/
 data/
 validation/
 doc/
+singularity/
+config.sh
+logs
