@@ -9,6 +9,7 @@ library(feather)
 library(rmarkdown)
 library(markdown)
 library(tidygraph)
+library(ggraph)
 
 #LOAD DATA-----
 #read data from creat_gene_summary.R
@@ -250,22 +251,32 @@ make_graph_report <- function(dep_network = dep_network, deg = 2) {
   graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
   
   graph_network_ggraph %>%       
-    ggraph(layout = "nicely") +      
+    ggraph::ggraph(layout = "nicely") +      
     geom_edge_fan(aes(color = r2)) + #, color = 'steelblue'
     geom_node_point(aes(size = degree), color = 'black', alpha = 0.8) +   
     geom_node_label(aes(label = name), repel = TRUE) +
     scale_edge_color_viridis(option = "inferno") +
-    theme_graph()
+    theme_graph(base_family = 'Helvetica')
   
 }
 
-render_depmap_report_to_file <- function(file, gene_symbol) {
+render_report_to_file <- function(file, gene_symbol) {
   tmp.env <- environment()
   read_gene_summary_into_environment(tmp.env)
-  render_complete_report(file, gene_symbol, tmp.env)
+  src <- normalizePath('report_depmap_app.Rmd')
+  
+  # temporarily switch to the temp dir, in case you do not have write
+  # permission to the current working directory
+  
+  owd <- setwd(tempdir())
+  on.exit(setwd(owd))
+  
+  file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
+  out <- render_complete_report(file, gene_symbol, tmp.env)
+  file.rename(out, file)
 }
 
-render_complete_report <- function (file, gene_symbol, tmp.env) {
+render_complete_report <- function (file, gene_symbol, tmp.env) { #how to leverage tmp.env?
   fav_gene_summary <- tmp.env$gene_summary %>%
     filter(approved_symbol == gene_symbol)
   p1 <- make_celldeps(gene_symbol) 
@@ -277,9 +288,7 @@ render_complete_report <- function (file, gene_symbol, tmp.env) {
   dep_bottom <- make_bottom_table(gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- setup_graph(gene_symbol, 10) %>% make_graph_report(., 2)
-  
-  
-  rmarkdown::render("report_depmap_app.rmd", output_file = paste0(gene_symbol, '_report.pdf'))
+  rmarkdown::render("report_depmap_app.rmd", output_file = file)
   
 }
 render_dummy_report <- function (file, gene_symbol, tmp.env) {
@@ -389,10 +398,10 @@ server <- function(input, output, session) {
     make_graph(setup_graph(data()))
   )
   output$report <- downloadHandler(
-    # create pdf depmap report
-    filename = paste0(data(), "_depmap.pdf"),
+    # create pdf report
+    filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
-      render_depmap_report_to_file(file, data())
+      render_report_to_file(file, data())
     }
   )
 }
