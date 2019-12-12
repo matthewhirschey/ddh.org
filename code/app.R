@@ -60,27 +60,15 @@ gene_summary_ui <- function(gene_symbol) {
     gene_summary_row <- tmp.env$gene_summary %>%
       filter(approved_symbol == gene_symbol)
     if (dim(gene_summary_row)[1] == 0) {
-      result <- tagList(
-        h4(paste0("Gene symbol \"", gene_symbol, "\" not found. Please make sure this is the 'Official' gene symbol and not an alias."))
-      )
+      ifelse(sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))) > 0, 
+             result <- tagList(h4(paste0("Found ", sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))), " entries. Make sure to use the 'Official' gene symbol."))),
+             result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias."))))
     } else {
       title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
       result <- gene_summary_details(gene_summary_row)
     }
   }
   result
-}
-
-#alias lookup
-alias_lookup <- function(gene_symbol) {
-  if(nrow(dplyr::filter(gene_summary, approved_symbol == gene_symbol)) == 1){
-    result <- dplyr::filter(gene_summary, approved_symbol == gene_symbol)
-  } else {
-    ifelse(sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))) > 0, 
-           result <- paste0("Found ", sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))), " entries. Make sure to use the 'Official' gene symbol."),
-           result <- paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias."))
-  }
-  return(result)
 }
 
 make_top_table <- function(gene_symbol) {
