@@ -11,7 +11,7 @@ release <- "19Q3"
 start_time <- Sys.time()
 
 #LOAD data 
-load(file = here::here("data", paste0(release, "_achilles_cor.Rdata")))
+load(file = here::here("data", paste0(release, "_achilles_cor.RData")))
 
 #convert cor
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
@@ -36,11 +36,11 @@ achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
 achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
 
 #save
-saveRDS(sd_threshold, file = here::here("data", "sd_threshold.rds"))
-saveRDS(achilles_lower, file = here::here("data", "achilles_lower.rds"))
-saveRDS(achilles_upper, file = here::here("data", "achilles_upper.rds"))
-saveRDS(mean_virtual_achilles, file = here::here("data", "mean_virtual_achilles.rds"))
-saveRDS(sd_virtual_achilles, file = here::here("data", "sd_virtual_achilles.rds"))
+saveRDS(sd_threshold, file = here::here("data", "sd_threshold.Rds"))
+saveRDS(achilles_lower, file = here::here("data", "achilles_lower.Rds"))
+saveRDS(achilles_upper, file = here::here("data", "achilles_upper.Rds"))
+saveRDS(mean_virtual_achilles, file = here::here("data", "mean_virtual_achilles.Rds"))
+saveRDS(sd_virtual_achilles, file = here::here("data", "sd_virtual_achilles.Rds"))
 
 #how long
 end_time <- Sys.time()

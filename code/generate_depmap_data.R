@@ -18,7 +18,7 @@ start_time <- Sys.time()
 ##BROAD
 achilles <- read_csv(achilles_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
-save(achilles, file = here::here("data", paste0(release, "_achilles.Rdata")))
+save(achilles, file = here::here("data", paste0(release, "_achilles.RData")))
 
 achilles_long <- achilles %>% 
   pivot_longer(-X1, names_to = "gene", values_to = "dep_score")
@@ -26,11 +26,11 @@ achilles_long <- achilles %>%
 #EXPRESSION(BROAD)
 expression <- read_csv(ccle_url, col_names = TRUE) %>% 
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
-save(expression, file = here::here("data", paste0(release, "_expression.Rdata")))
+save(expression, file = here::here("data", paste0(release, "_expression.RData")))
 
 expression_id <- read_csv(cclemeta_url, col_names = TRUE) %>% 
   clean_names
-save(expression_id, file = here::here("data", paste0(release, "_expression_id.Rdata")))
+save(expression_id, file = here::here("data", paste0(release, "_expression_id.RData")))
 
 expression_join <- expression_id %>% 
   rename(X1 = dep_map_id) %>% 
@@ -70,7 +70,7 @@ achilles_clean <- achilles_no0 %>%
 achilles_cor <- achilles_clean %>% #originally 'achilles'
   select(-X1) %>% 
   correlate() #(diagonal = 0) set to 0 so easy to summarize, but should be NA; so added na.rm = TRUE to fun() in EDA
-save(achilles_cor, file = here::here("data", paste0(release, "_achilles_cor.Rdata")))
+save(achilles_cor, file = here::here("data", paste0(release, "_achilles_cor.RData")))
 
 #how long
 end_time <- Sys.time()

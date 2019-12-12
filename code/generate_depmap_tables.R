@@ -13,9 +13,9 @@ start_time <- Sys.time()
 
 #LOAD data 
 load(file = here::here("data", "gene_summary.RData"))
-load(file = here::here("data", paste0(release, "_achilles_cor.Rdata")))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
+load(file = here::here("data", paste0(release, "_achilles_cor.RData")))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
 
 #convert cor
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
