@@ -5,10 +5,10 @@ library(corrr)
 library(moderndive)
 
 #rm(list=ls()) 
-
-#set params
-release <- "19Q3"
 start_time <- Sys.time()
+
+#read current release information to set parameters for processing
+source(here::here("code", "current_release.R"))
 
 #LOAD data 
 load(file = here::here("data", paste0(release, "_achilles_cor.RData")))

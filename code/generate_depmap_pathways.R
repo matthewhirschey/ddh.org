@@ -7,10 +7,10 @@ library(corrr)
 library(enrichR)
 
 #rm(list=ls()) 
-
-#set params
-release <- "19Q3"
 start_time <- Sys.time()
+
+#read current release information to set parameters for processing
+source(here::here("code", "current_release.R"))
 
 #define pathway enrichment analysis loop function
 enrichr_loop <- function(gene_list, databases){

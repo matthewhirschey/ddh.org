@@ -7,12 +7,9 @@ library(purrr)
 
 #rm(list=ls()) 
 
-#set params
-release <- "19Q3"
-achilles_url <- "https://ndownloader.figshare.com/files/16757666"
-ccle_url <- "https://ndownloader.figshare.com/files/16757690"
-cclemeta_url <- "https://ndownloader.figshare.com/files/16757723"
-na_cutoff <- 400
+#read current release information to set parameters for download
+source(here::here("code", "current_release.R"))
+
 start_time <- Sys.time()
 
 ##BROAD
@@ -35,6 +32,7 @@ save(expression_id, file = here::here("data", paste0(release, "_expression_id.RD
 expression_join <- expression_id %>% 
   rename(X1 = dep_map_id) %>% 
   select(X1, stripped_cell_line_name, lineage)
+save(expression_join, file = here::here("data", paste0(release, "_expression_join.RData")))
 
 expression_long <- expression %>% 
   filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
