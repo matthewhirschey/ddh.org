@@ -12,7 +12,7 @@ library(tidygraph)
 library(ggraph)
 
 #LOAD DATA-----
-#read current release information 
+#read current release information
 source("current_release.R")
 
 #read data from creat_gene_summary.R
@@ -26,11 +26,11 @@ load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
 load(file=here::here("data", paste0(release, "_expression_join.RData")))
 
 #read data from generate_depmap_stats.R
-sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
-mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
-sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
 
 #read data from generate_depmap_pathways.R
 load(file=here::here("data", "master_bottom_table.RData"))
