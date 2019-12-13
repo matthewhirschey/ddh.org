@@ -14,3 +14,5 @@ doc/
 singularity/
 config.sh
 logs
+venv
+ddh-data
