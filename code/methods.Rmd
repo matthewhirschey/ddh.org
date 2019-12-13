@@ -2,9 +2,6 @@
 title: "Methods"
 author: Matthew Hirschey
 output: md_document
-params:
-  release: "19Q3"
-  na_cutoff: 400
 ---
 
 ```{r setup, include=FALSE}
@@ -24,14 +21,17 @@ library(tidygraph)
 library(ggraph)
 library(pander)
 
+#read current release information 
+source(here::here("code", "current_release.R"))
+
 ##LOAD DATA
 fav_gene <- "TP53"
 load(file = here::here("data", "gene_summary.RData"))
-load(file = here::here("data", paste0(params$release, "_achilles.Rdata")))
-load(file = here::here("data", paste0(params$release, "_achilles_cor.Rdata")))
+load(file = here::here("data", paste0(release, "_achilles.Rdata")))
+load(file = here::here("data", paste0(release, "_achilles_cor.Rdata")))
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
-load(file = here::here("data", paste0(params$release, "_expression.Rdata")))
-load(file = here::here("data", "expression_join.RData"))
+load(file = here::here("data", paste0(release, "_expression.Rdata")))
+load(file = here::here("data", paste0(release, "_expression_join.RData")))
 
 #LOAD STATS
 sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
@@ -175,7 +175,7 @@ ggplot(data, aes(X, fct_rev(Y), fill= Z)) +
 ```
   
 ## What did I do?
-Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r params$release` release contains gene essentiality scores for `r ncol(achilles)` genes across `r nrow(achilles)` cell lines, and was used for this project. 
+Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r release` release contains gene essentiality scores for `r ncol(achilles)` genes across `r nrow(achilles)` cell lines, and was used for this project. 
   
 ```{r dep_scores, echo=FALSE}
 #insert summary of scores
@@ -187,14 +187,14 @@ achilles_long <- achilles %>%
 
 ggplot() +
   geom_histogram(data = achilles_long, aes(x = dep_score), color = "gray", binwidth = 0.1) +
-  labs(x = "Dependency Score", y = "Count (Million)", title = paste0("Dependency Score Distribution from DepMap release ", params$release)) +
+  labs(x = "Dependency Score", y = "Count (Million)", title = paste0("Dependency Score Distribution from DepMap release ", release)) +
   scale_y_continuous(breaks = c(0, 500000, 1000000, 1500000, 2000000), labels = c("0", "0.5", "1", "1.5", "2")) +
   scale_x_continuous(breaks = c(-5:7)) +
   theme_cowplot()
 ```
   
 #### Patterns
-To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. High levels of gene expression are often thought to be indicative of key genes for a given cell type. Thus, we next compared dependency values to gene expression values. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation, which together conduct detailed genetic and pharmacologic characterization of a large panel of human cancer models. As of the CCLE 2019 release, `r nrow(expression)` cell lines have been characterized for gene expression. In the `r params$release` DepMap release, `r sum(expression$X1 %in% achilles$X1 == TRUE)` of the `r nrow(achilles)` cell lines have gene expression data. Using these two datasets, we compared the essentiality of a gene to its expression value.  
+To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. High levels of gene expression are often thought to be indicative of key genes for a given cell type. Thus, we next compared dependency values to gene expression values. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation, which together conduct detailed genetic and pharmacologic characterization of a large panel of human cancer models. As of the CCLE 2019 release, `r nrow(expression)` cell lines have been characterized for gene expression. In the `r release` DepMap release, `r sum(expression$X1 %in% achilles$X1 == TRUE)` of the `r nrow(achilles)` cell lines have gene expression data. Using these two datasets, we compared the essentiality of a gene to its expression value.  
   
 ```{r depVexp, echo=FALSE, message=FALSE, warning=FALSE}
 expression_long <- expression %>% 
@@ -260,7 +260,7 @@ achilles_no0_plot <- achilles_no0 %>%
 
 #this is code to draw arrows graph labels
 arrows <- tibble(
-  x1 = c(sum(achilles$X1 %in% expression$X1)-params$na_cutoff, sum(achilles$X1 %in% expression$X1)-params$na_cutoff),
+  x1 = c(sum(achilles$X1 %in% expression$X1)-na_cutoff, sum(achilles$X1 %in% expression$X1)-na_cutoff),
   x2 = c(375, 100),
   y1 = c(6000, 8000),
   y2 = c(3000, 3200)
@@ -276,23 +276,23 @@ ggplot(achilles_no0_plot) +
            label = glue::glue("These genes have too few \ncells with expression")) +
   annotate("text", x = 500, y = 2500, size = 4, color = "gray60",
            label = glue::glue("These genes have several \ncell lines with expression")) +
-  annotate("text", x = sum(achilles$X1 %in% expression$X1)-params$na_cutoff + 5, y = 12000, size = 3, color = "red", hjust = 0, fontface = "bold",
+  annotate("text", x = sum(achilles$X1 %in% expression$X1)-na_cutoff + 5, y = 12000, size = 3, color = "red", hjust = 0, fontface = "bold",
            label = glue::glue("Threshold")) +
-  geom_vline(aes(xintercept = sum(achilles$X1 %in% expression$X1)-params$na_cutoff), color = "red") +
+  geom_vline(aes(xintercept = sum(achilles$X1 %in% expression$X1)-na_cutoff), color = "red") +
   theme_cowplot()
 
 toomanyNAs <- achilles_no0 %>% 
   summarise_all(list(~sum(is.na(.)))) %>% 
   gather(gene, NAs) %>% 
   arrange(desc(NAs)) %>% 
-  filter(NAs > params$na_cutoff) %>% 
+  filter(NAs > na_cutoff) %>% 
   pull(gene)
 
 achilles_clean <- achilles_no0 %>% 
   select(-one_of(toomanyNAs)) #would be nice to list these, but lose the kable in Rmd->md->html conversion
 ```
   
-We set a threshold of no more than `r params$threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-params$threshold` cell lines with dependency values, the correaltion pattern of a gene would be meaningless, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix.  
+We set a threshold of no more than `r threshold` zeros, meaning that if a gene had fewer than `r length(achilles)-threshold` cell lines with dependency values, the correaltion pattern of a gene would be meaningless, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix.  
   
 ## How does it work?
 To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a Pearson correlation matrix on these prioritized data in order to quantify the similarity in dependency patterns and annotate genes in functional pathways.  
