@@ -13,7 +13,7 @@ library(ggraph)
 
 #LOAD DATA-----
 #read current release information 
-source(here::here("code", "current_release.R"))
+source("current_release.R")
 
 #read data from creat_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
