@@ -19,19 +19,10 @@ enrichr_loop <- function(gene_list, databases){
     return(flat_complete)
   } else {
     flat_complete <- as_tibble()
-    for(lib in databases){
-      enriched <- enrichr(gene_list, lib)
-      
-      flat <- flatten_dfc(enriched) %>% 
-        mutate(enrichr = lib)
-      
-      flat_complete <- flat_complete %>% 
-        bind_rows(flat)
-    }
+    enriched <- enrichr(gene_list, databases)
+    flat_complete <- bind_rows(enriched, .id = "enrichr")
     flat_complete <- flat_complete %>% 
       arrange(Adjusted.P.value) 
-    #select(enrichr, Term, Overlap)
-    
     flat_complete$enrichr <- str_replace_all(flat_complete$enrichr, "\\_", " ")
     flat_complete$Term <- str_replace_all(flat_complete$Term, "\\_", " ")
     return(flat_complete)
