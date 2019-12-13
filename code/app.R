@@ -12,15 +12,18 @@ library(tidygraph)
 library(ggraph)
 
 #LOAD DATA-----
+#read current release information 
+source(here::here("code", "current_release.R"))
+
 #read data from creat_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
 }
 #read data from generate_depmap_data.R
-load(file=here::here("data", "achilles.RData"))
-load(file=here::here("data", "achilles_cor.RData"))
-load(file=here::here("data", "expression_join.RData"))
+load(file=here::here("data", paste0(release, "_achilles.RData")))
+load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
+load(file=here::here("data", paste0(release, "_expression_join.RData")))
 
 #read data from generate_depmap_stats.R
 sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
