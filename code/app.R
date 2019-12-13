@@ -352,6 +352,9 @@ ui <- fluidPage(
                                 p("Enter a gene symbol to generate a graph")),
                mainPanel(forceNetworkOutput(outputId = "graph"))#uncomment this parenthesis)
     ),
+    tabPanel("Methods",
+             includeMarkdown("methods.md")
+             ),
     tabPanel("Download Report",
              h2("Report Generator"),
              "To generate a report, click on the button below",
