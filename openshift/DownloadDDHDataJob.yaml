@@ -1,0 +1,44 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-ddh-data
+spec:
+  template:
+    spec:
+      initContainers:
+      containers:
+      - name: download-ddh-data
+        image: dukegcb/lando-util:0.5.4
+        workingDir: /data
+        env:
+        - name: DDSCLIENT_CONF
+          value: "/etc/ddsclient/ddsclient-config"
+        command:
+        - "python"
+        - "-m"
+        - "lando_util.stagedata"
+        - "/etc/file-list.json"
+        - "/data/download.log"
+        volumeMounts:
+        - name: depmap-data
+          mountPath: "/data"
+        - name: ddsclient-config
+          mountPath: "/etc/ddsclient"
+          readOnly: true
+        - name: file-list
+          mountPath: "/etc/file-list.json"
+          readOnly: true
+          subPath: "file-list.json"
+      restartPolicy: OnFailure
+      volumes:
+      - name: depmap-data
+        persistentVolumeClaim:
+          claimName: depmap-data-pvc
+      - name: ddsclient-config
+        secret:
+          secretName: ddsclient-config-secret
+      - name: file-list
+        configMap:
+          name: ddh-data-file-list
+

@@ -6,13 +6,13 @@ items:
     labels:
       app: shinyserver
       template: shinyserver
-    name: depmap-shiny-pvc
+    name: depmap-data-pvc
   spec:
     accessModes:
     - ReadWriteMany
     resources:
       requests:
-        storage: 1Gi
+        storage: 5Gi
 - apiVersion: v1
   kind: Service
   metadata:
@@ -116,15 +116,15 @@ items:
             initialDelaySeconds: 30
             timeoutSeconds: 30
           resources:
-            limits:
-              memory: 1G
+            requests:
+              memory: 3G
           volumeMounts:
           - mountPath: /srv/data
             name: depmap-shiny-vol
         volumes:
         - name: depmap-shiny-vol
           persistentVolumeClaim:
-            claimName: depmap-shiny-pvc
+            claimName: depmap-data-pvc
     triggers:
     - imageChangeParams:
         automatic: true
