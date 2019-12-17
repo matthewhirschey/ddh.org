@@ -10,10 +10,11 @@ library(rmarkdown)
 library(markdown)
 library(tidygraph)
 library(ggraph)
+library(viridis)
 
 #LOAD DATA-----
 #read current release information
-source("current_release.R")
+source(here::here("code", "current_release.R"))
 
 #read data from creat_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
@@ -148,7 +149,7 @@ make_celldeps <- function(gene_symbol) {
     NULL
 }
 
-setup_graph <- function(gene_symbol, threshold = 10) {
+make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
   dep_network <- tibble()
 
  #find top and bottom correlations for fav_gene
@@ -165,23 +166,23 @@ setup_graph <- function(gene_symbol, threshold = 10) {
 
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
-    message("Getting correlations related to ", gene_symbol, ", including ", i)
+    message("Getting correlations from ", i, " related to ", gene_symbol)
     dep_top_related <- achilles_cor %>%
       focus(i) %>%
       arrange(desc(.[[2]])) %>% #use column index
       filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i) %>%
+      mutate(x = i, origin = "pos") %>%
       rename(y = rowname, r2 = i) %>%
-      select(x, y, r2) %>%
+      select(x, y, r2, origin) %>%
       slice(1:threshold) #limit for visualization?
 
     dep_bottom_related <- achilles_cor %>%
       focus(i) %>%
       arrange(.[[2]]) %>% #use column index
       filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i) %>%
+      mutate(x = i, origin = "neg") %>%
       rename(y = rowname, r2 = i) %>%
-      select(x, y, r2) %>%
+      select(x, y, r2, origin) %>%
       slice(1:threshold) #limit for visualization?
 
     #each temp object is bound together, and then bound to the final df for graphing
@@ -191,19 +192,15 @@ setup_graph <- function(gene_symbol, threshold = 10) {
     dep_network <- dep_network %>%
       bind_rows(dep_related)
   }
-  return(dep_network)
-}
-
-make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_graph
-  #setup graph
+  
   #make graph
   graph_network <- tidygraph::as_tbl_graph(dep_network)
   nodes <-  as_tibble(graph_network) %>%
     rowid_to_column("id") %>%
     mutate(degree = igraph::degree(graph_network),
-           group = case_when(name %in% fav_gene == TRUE ~ "query",
-                             name %in% dep_top$y == TRUE ~ "pos",
-                             name %in% dep_bottom$y == TRUE ~ "neg",
+           group = case_when(name %in% gene_symbol == TRUE ~ "query",
+                             name %in% dep_top$Gene ~ "pos",
+                             name %in% dep_bottom$Gene ~ "neg",
                              TRUE ~ "connected")) %>%
     arrange(desc(degree))
 
@@ -225,20 +222,64 @@ make_graph <- function(dep_network = dep_network, deg = 2) { #change to make_gra
   links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
   links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
 
+  #Pos #74D055, Neg #3A568C, Q #FDE825, C #450D53
   node_color <- 'd3.scaleOrdinal(["#74D055", "#3A568C", "#FDE825", "#450D53"])'
 
   forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100, Nodesize = "degree", colourScale = node_color)
   }
 
-make_graph_report <- function(dep_network = dep_network, deg = 2) {
-  #setup graph
+make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
+  dep_network <- tibble()
+  
+  #find top and bottom correlations for fav_gene
+  dep_top <- make_top_table(gene_symbol) %>%
+    slice(1:threshold)
+  
+  dep_bottom <- make_bottom_table(gene_symbol) %>%
+    slice(1:threshold) #limit for visualization?
+  
+  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
+  related_genes <- dep_top %>%
+    bind_rows(dep_bottom) %>%
+    dplyr::pull("Gene")
+  
+  #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
+  for (i in related_genes){
+    message("Getting correlations from ", i, " related to ", gene_symbol)
+    dep_top_related <- achilles_cor %>%
+      focus(i) %>%
+      arrange(desc(.[[2]])) %>% #use column index
+      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      mutate(x = i, origin = "pos") %>%
+      rename(y = rowname, r2 = i) %>%
+      select(x, y, r2, origin) %>%
+      slice(1:threshold) #limit for visualization?
+    
+    dep_bottom_related <- achilles_cor %>%
+      focus(i) %>%
+      arrange(.[[2]]) %>% #use column index
+      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      mutate(x = i, origin = "neg") %>%
+      rename(y = rowname, r2 = i) %>%
+      select(x, y, r2, origin) %>%
+      slice(1:threshold) #limit for visualization?
+    
+    #each temp object is bound together, and then bound to the final df for graphing
+    dep_related <- dep_top_related %>%
+      bind_rows(dep_bottom_related)
+    
+    dep_network <- dep_network %>%
+      bind_rows(dep_related)
+  }
+  
+  #make graph
   graph_network <- tidygraph::as_tbl_graph(dep_network)
   nodes <-  as_tibble(graph_network) %>%
     rowid_to_column("id") %>%
     mutate(degree = igraph::degree(graph_network),
-           group = case_when(name %in% fav_gene == TRUE ~ "query",
-                             name %in% dep_top$y == TRUE ~ "pos",
-                             name %in% dep_bottom$y == TRUE ~ "neg",
+           group = case_when(name %in% gene_symbol == TRUE ~ "query",
+                             name %in% dep_top$Gene ~ "pos",
+                             name %in% dep_bottom$Gene ~ "neg",
                              TRUE ~ "connected")) %>%
     arrange(desc(degree))
 
@@ -297,7 +338,7 @@ render_complete_report <- function (file, gene_symbol, tmp.env) { #how to levera
   flat_top_complete <- make_enrichment_table(master_positive, gene_symbol)
   dep_bottom <- make_bottom_table(gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
-  graph_report <- setup_graph(gene_symbol, 10) %>% make_graph_report(., 2)
+  graph_report <- make_graph_report(gene_symbol)
   rmarkdown::render("report_depmap_app.rmd", output_file = file)
 
 }
@@ -405,7 +446,7 @@ server <- function(input, output, session) {
     make_enrichment_table(master_negative, data())
   )
   output$graph <- renderForceNetwork(
-    make_graph(setup_graph(data()))
+    make_graph(data())
   )
   output$report <- downloadHandler(
     # create pdf report
