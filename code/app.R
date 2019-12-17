@@ -351,6 +351,7 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
 
 #UI------
 ui <- fluidPage(
+  tags$head(includeHTML("gtag.html")),
   navbarPage(
     title = "Data-Driven Hypothesis",
     tabPanel("Home",
