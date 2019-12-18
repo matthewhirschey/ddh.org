@@ -1,0 +1,71 @@
+apiVersion: v1
+items:
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the base shiny image
+    labels:
+      app: ddh
+    name: base-shiny
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the base shiny image
+    labels:
+      app: ddh
+    name: ddh-shiny
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Build config for base shiny application
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: ddh
+    name: base-shiny
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: base-shiny:latest
+    source:
+      contextDir: "base-shiny"
+      git:
+        ref: master
+        uri: https://github.com/hirscheylab/depmap.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      description: Build config for DDH shiny application
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+      app: ddh
+    name: ddh-shiny
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ddh-shiny:latest
+    source:
+      git:
+        ref: master
+        uri: https://github.com/hirscheylab/depmap.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile.ddh-shiny
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+kind: List
+metadata: {}

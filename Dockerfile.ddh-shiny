@@ -1,4 +1,4 @@
-FROM shiny:base
+FROM base-shiny:latest
 LABEL maintainer="Dan Leehr <dan.leehr@duke.edu>"
 
 COPY ./code /srv/
