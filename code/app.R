@@ -467,9 +467,11 @@ server <- function(input, output, session) {
   output$neg_enrich <- renderDataTable(
     make_enrichment_table(master_negative, data())
   )
-  output$graph <- renderForceNetwork(
+  output$graph <- renderForceNetwork({
+    withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
     make_graph(data())
-  )
+    })
+  })
   output$report <- downloadHandler(
     # create pdf report
     filename = function() {paste0(data(), "_ddh.pdf")},
