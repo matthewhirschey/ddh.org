@@ -15,7 +15,7 @@ items:
       description: Keeps track of changes in the base shiny image
     labels:
       app: ddh
-    name: ddh-shiny
+    name: ddh-shiny-app
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
@@ -50,12 +50,12 @@ items:
       template.alpha.openshift.io/wait-for-ready: "true"
     labels:
       app: ddh
-    name: ddh-shiny
+    name: ddh-shiny-app
   spec:
     output:
       to:
         kind: ImageStreamTag
-        name: ddh-shiny:latest
+        name: ddh-shiny-app:latest
     source:
       git:
         ref: master
@@ -63,7 +63,10 @@ items:
       type: Git
     strategy:
       dockerStrategy:
-        dockerfilePath: Dockerfile.ddh-shiny
+        from:
+          kind: ImageStreamTag
+          name: base-shiny:latest
+        dockerfilePath: Dockerfile.ddh-shiny-app
     triggers:
     - type: ImageChange
     - type: ConfigChange
