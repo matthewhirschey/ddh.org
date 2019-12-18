@@ -13,7 +13,6 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  feather \
  tidygraph \
  ggraph \
- ggplotly \
  cowplot
 
 COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
