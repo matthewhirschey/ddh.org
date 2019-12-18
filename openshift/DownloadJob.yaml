@@ -21,7 +21,7 @@ spec:
         - "/etc/file-list.json"
         - "/data/download.log"
         volumeMounts:
-        - name: depmap-data
+        - name: ddh-data
           mountPath: "/data"
         - name: ddsclient-config
           mountPath: "/etc/ddsclient"
@@ -32,9 +32,9 @@ spec:
           subPath: "file-list.json"
       restartPolicy: OnFailure
       volumes:
-      - name: depmap-data
+      - name: ddh-data
         persistentVolumeClaim:
-          claimName: depmap-data-pvc
+          claimName: ddh-data-pvc
       - name: ddsclient-config
         secret:
           secretName: ddsclient-config-secret

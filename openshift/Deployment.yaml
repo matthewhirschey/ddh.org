@@ -69,5 +69,15 @@ items:
       targetPort: 3838
     selector:
       app: ddh
+- kind: Route
+  metadata:
+    labels:
+      app: ddh
+    name: ddh-shiny-route
+  spec:
+    path: /
+    to:
+      kind: Service
+      name: ddh-shiny-app
 kind: List
 metadata: {}

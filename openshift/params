@@ -1,5 +1,0 @@
-APPLICATION_DOMAIN_SUFFIX="apps.cloud.duke.edu"
-MEMORY_LIMIT="1G"
-NAME="depmap-shiny"
-SOURCE_REPOSITORY_REF="deploy"
-SOURCE_REPOSITORY_URL="https://github.com/hirscheylab/depmap.git"
