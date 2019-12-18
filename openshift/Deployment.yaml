@@ -66,6 +66,7 @@ items:
     ports:
     - name: ddh-shiny-service
       port: 80
+      protocol: TCP
       targetPort: 3838
     selector:
       app: ddh
