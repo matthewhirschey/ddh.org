@@ -370,9 +370,7 @@ ui <- fluidPage(
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                              plotlyOutput(outputId = "cell_deps"),
                                              plotlyOutput(outputId = "cell_bins"))),
-                        fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                             "text",
-                                             "text"))),
+                        HTML("<p></p><p><b>Left:</b> Cell Line Dependency Curve. Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essentail within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out. <b>Right:</b> Histogram of Binned Dependency Scores. Dependency scores across all cell lines for queried gene partitioned into 0.25 unit bins. Shape of the histogram curve reveals overall influence of queried gene on cellular fitness</p>")),
                tabPanel("Table",
                         fluidRow(h4(textOutput("text_cell_dep_table"))),
                         fluidRow(dataTableOutput(outputId = "target_achilles")))
