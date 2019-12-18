@@ -15,7 +15,12 @@ Openshift deployment of ddh application using shiny server
 ## Deployment
 
 1. Create shared storage `oc create -f Storage.yaml`
-2. Download data sets `oc create -f DownloadData.yaml` and wait for job to complete
+2. Download data sets from DukeDS:
+    1. Create a [ddsclient config file](https://github.com/Duke-GCB/DukeDSClient/wiki/Agent-User-Keys-(setup)) if you don't have one already
+    2. Create a secret with your credentials: `oc create secret generic ddsclient-config-secret --from-file=ddsclient-config=$HOME/.ddsclient`
+    3. Create a config map with the list of files to download: `oc create configmap ddh-data-file-list --from-file=file-list.json`
+    4. Create the job to download data: `oc create -f DownloadJob.yaml`
+    5. Wait for the download to complete `oc get job download-ddh-data`
 3. Create Build and image configurations `oc create -f Build.yaml`
 4. Deploy application: `oc create -f Deployment.yaml`
 5. Ask openshift for the application route: `oc get route ddh-shiny-route`
