@@ -11,6 +11,8 @@ library(markdown)
 library(tidygraph)
 library(ggraph)
 library(viridis)
+library(cowplot)
+library(plotly)
 
 #LOAD DATA-----
 #read current release information
@@ -126,7 +128,7 @@ make_cellbins <- function(gene_symbol) {
     geom_vline(xintercept = 0) +
     geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
     labs(x = "Dependency Score (binned)") +
-    theme_light()
+    theme_cowplot()
 }
 
 make_celldeps <- function(gene_symbol) {
@@ -137,12 +139,13 @@ make_celldeps <- function(gene_symbol) {
     select(cell_line, lineage, dep_score) %>%
     arrange(dep_score) %>%
     ggplot() +
-    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score), alpha = 0.2) +
+    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score, text = paste0("Cell Line: ", cell_line)), alpha = 0.2) +
     labs(x = "Cell Lines", y = "Dependency Score") +
     geom_hline(yintercept = mean_virtual_achilles) +
     geom_hline(yintercept = 1, color = "lightgray") +
     geom_hline(yintercept = -1, color = "lightgray") +
     geom_hline(yintercept = 0) +
+    theme_cowplot() +
     #geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
     #geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
     theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
@@ -351,10 +354,11 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
 
 #UI------
 ui <- fluidPage(
+  tags$head(includeHTML("gtag.html")),
   navbarPage(
     title = "Data-Driven Hypothesis",
     tabPanel("Home",
-             "text",
+             "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover new novel genes in established processes or new funtions for well-studied genes.",
              hr(),
              textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
              actionButton(inputId = "go", label = "Generate"),
@@ -362,39 +366,57 @@ ui <- fluidPage(
              uiOutput("gene_summary")),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
-                        fluidRow(h4(textOutput("text_cell_dep_plot"))),
-                        fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                             plotOutput(outputId = "cell_deps"),
-                                             plotOutput(outputId = "cell_bins"))),
-                        fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                             "text",
-                                             "text"))),
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate dependency plots"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
+                                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
+                                                              plotlyOutput(outputId = "cell_deps"),
+                                                              plotlyOutput(outputId = "cell_bins"))),
+                                         HTML("<p></p><p><b>Left:</b> Cell Line Dependency Curve. Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essentail within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out. <b>Right:</b> Histogram of Binned Dependency Scores. Dependency scores across all cell lines for queried gene partitioned into 0.25 unit bins. Shape of the histogram curve reveals overall influence of queried gene on cellular fitness</p>"))),
                tabPanel("Table",
-                        fluidRow(h4(textOutput("text_cell_dep_table"))),
-                        fluidRow(dataTableOutput(outputId = "target_achilles")))
-               ),
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of dependent cell line"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_cell_dep_table"))),
+                                         fluidRow(dataTableOutput(outputId = "target_achilles"))))
+    ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
-                        fluidRow(h4(textOutput("text_dep_top"))),
-                        fluidRow(dataTableOutput(outputId = "dep_top"))),
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of similar genes"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_dep_top"))),
+                                         fluidRow(dataTableOutput(outputId = "dep_top")))),
                tabPanel("Pathways",
-                        fluidRow(h4(textOutput("text_pos_enrich"))),
-                        fluidRow(dataTableOutput(outputId = "pos_enrich")))),
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of similar pathways"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_pos_enrich"))),
+                                         fluidRow(dataTableOutput(outputId = "pos_enrich"))))),
     navbarMenu(title = "Dissimilar",
                tabPanel("Genes",
-                        fluidRow(h4(textOutput("text_dep_bottom"))),
-                        fluidRow(dataTableOutput(outputId = "dep_bottom"))),
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of dissimilar genes"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_dep_bottom"))),
+                                         fluidRow(dataTableOutput(outputId = "dep_bottom")))),
                tabPanel("Pathways",
-                        fluidRow(h4(textOutput("text_neg_enrich"))),
-                        fluidRow(dataTableOutput(outputId = "neg_enrich")))),
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of dissimilar pathways"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_neg_enrich"))),
+                                         fluidRow(dataTableOutput(outputId = "neg_enrich"))))),
     tabPanel("Graph",
              #sidebarLayout( #UNCOMMENT THIS SECTION WHEN input$deg is working
-               #sidebarPanel(numericInput(inputId = "deg",
-                                        #label = "Minimum # of Connections",
-                                        #value = 2, min = 1, max = 50)),
-               conditionalPanel(condition = 'input.gene_symbol === NULL',
-                                p("Enter a gene symbol to generate a graph")),
-               mainPanel(forceNetworkOutput(outputId = "graph"))#uncomment this parenthesis)
+             #sidebarPanel(numericInput(inputId = "deg",
+             #label = "Minimum # of Connections",
+             #value = 2, min = 1, max = 50)),
+             conditionalPanel(condition = 'input.go == 0',
+                              "Enter a gene symbol to generate a graph"),
+             conditionalPanel(condition = 'input.go != 0', 
+                              mainPanel(forceNetworkOutput(outputId = "graph")))
+             #uncomment this parenthesis)
     ),
     tabPanel("Methods",
              includeMarkdown("methods.md")
@@ -429,11 +451,11 @@ server <- function(input, output, session) {
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  output$cell_deps <- renderPlot(
-    make_celldeps(data())
+  output$cell_deps <- renderPlotly(
+    ggplotly(make_celldeps(data()), tooltip = "text")
   )
-  output$cell_bins <- renderPlot(
-    make_cellbins(data())
+  output$cell_bins <- renderPlotly(
+    ggplotly(make_cellbins(data()))
   )
   output$target_achilles <- renderDataTable(
     make_achilles_table(data()),
@@ -445,9 +467,11 @@ server <- function(input, output, session) {
   output$neg_enrich <- renderDataTable(
     make_enrichment_table(master_negative, data())
   )
-  output$graph <- renderForceNetwork(
+  output$graph <- renderForceNetwork({
+    withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
     make_graph(data())
-  )
+    })
+  })
   output$report <- downloadHandler(
     # create pdf report
     filename = function() {paste0(data(), "_ddh.pdf")},
