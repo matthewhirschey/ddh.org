@@ -355,7 +355,7 @@ ui <- fluidPage(
   navbarPage(
     title = "Data-Driven Hypothesis",
     tabPanel("Home",
-             "text",
+             "Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the Hirschey Lab. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across various measures, in order to  discover new novel genes in established processes or new processes for well-studied genes.",
              hr(),
              textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
              actionButton(inputId = "go", label = "Generate"),
