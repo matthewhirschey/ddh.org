@@ -69,7 +69,8 @@ items:
       targetPort: 3838
     selector:
       app: ddh
-- kind: Route
+- apiVersion: v1
+  kind: Route
   metadata:
     labels:
       app: ddh
