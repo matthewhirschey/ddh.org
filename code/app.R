@@ -358,7 +358,7 @@ ui <- fluidPage(
   navbarPage(
     title = "Data-Driven Hypothesis",
     tabPanel("Home",
-             "Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the Hirschey Lab. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across various measures, in order to discover new novel genes in established processes or new processes for well-studied genes.",
+             "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover new novel genes in established processes or new funtions for well-studied genes.",
              hr(),
              textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
              actionButton(inputId = "go", label = "Generate"),
@@ -394,8 +394,8 @@ ui <- fluidPage(
                #sidebarPanel(numericInput(inputId = "deg",
                                         #label = "Minimum # of Connections",
                                         #value = 2, min = 1, max = 50)),
-               conditionalPanel(condition = 'input.gene_symbol === NULL',
-                                p("Enter a gene symbol to generate a graph")),
+               conditionalPanel(condition = 'input.go == 0',
+                                p(strong("Enter a gene symbol to generate a graph"))),
                mainPanel(forceNetworkOutput(outputId = "graph"))#uncomment this parenthesis)
     ),
     tabPanel("Methods",
