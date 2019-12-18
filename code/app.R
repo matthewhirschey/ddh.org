@@ -11,6 +11,8 @@ library(markdown)
 library(tidygraph)
 library(ggraph)
 library(viridis)
+library(cowplot)
+library(plotly)
 
 #LOAD DATA-----
 #read current release information
@@ -126,7 +128,7 @@ make_cellbins <- function(gene_symbol) {
     geom_vline(xintercept = 0) +
     geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
     labs(x = "Dependency Score (binned)") +
-    theme_light()
+    theme_cowplot()
 }
 
 make_celldeps <- function(gene_symbol) {
@@ -143,6 +145,7 @@ make_celldeps <- function(gene_symbol) {
     geom_hline(yintercept = 1, color = "lightgray") +
     geom_hline(yintercept = -1, color = "lightgray") +
     geom_hline(yintercept = 0) +
+    theme_cowplot() +
     #geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
     #geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
     theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
