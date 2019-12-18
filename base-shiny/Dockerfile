@@ -9,8 +9,6 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  janitor \
  corrr  \
  lubridate \
- shinyWidgets \
- causaleffect \
  plotly \
  networkD3 \
  feather \
