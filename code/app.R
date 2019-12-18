@@ -139,7 +139,7 @@ make_celldeps <- function(gene_symbol) {
     select(cell_line, lineage, dep_score) %>%
     arrange(dep_score) %>%
     ggplot() +
-    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score), alpha = 0.2) +
+    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score, text = paste0("Cell Line: ", cell_line)), alpha = 0.2) +
     labs(x = "Cell Lines", y = "Dependency Score") +
     geom_hline(yintercept = mean_virtual_achilles) +
     geom_hline(yintercept = 1, color = "lightgray") +
@@ -368,7 +368,7 @@ ui <- fluidPage(
                tabPanel("Plots",
                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                             plotOutput(outputId = "cell_deps"),
+                                             plotlyOutput(outputId = "cell_deps"),
                                              plotOutput(outputId = "cell_bins"))),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                              "text",
@@ -433,8 +433,8 @@ server <- function(input, output, session) {
   output$dep_bottom <- renderDataTable(
     make_bottom_table(data())
   )
-  output$cell_deps <- renderPlot(
-    make_celldeps(data())
+  output$cell_deps <- renderPlotly(
+    ggplotly(make_celldeps(data()), tooltip = "text")
   )
   output$cell_bins <- renderPlot(
     make_cellbins(data())
