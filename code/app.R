@@ -369,7 +369,7 @@ ui <- fluidPage(
                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                              plotlyOutput(outputId = "cell_deps"),
-                                             plotOutput(outputId = "cell_bins"))),
+                                             plotlyOutput(outputId = "cell_bins"))),
                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                              "text",
                                              "text"))),
@@ -436,8 +436,8 @@ server <- function(input, output, session) {
   output$cell_deps <- renderPlotly(
     ggplotly(make_celldeps(data()), tooltip = "text")
   )
-  output$cell_bins <- renderPlot(
-    make_cellbins(data())
+  output$cell_bins <- renderPlotly(
+    ggplotly(make_cellbins(data()))
   )
   output$target_achilles <- renderDataTable(
     make_achilles_table(data()),
