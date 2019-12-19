@@ -21,6 +21,7 @@ depmap_data: data/19Q3_achilles_cor.RData data/19Q3_achilles.RData data/19Q3_exp
 depmap_stats: data/sd_threshold.Rds data/achilles_lower.Rds data/achilles_upper.Rds data/mean_virtual_achilles.Rds data/sd_virtual_achilles.Rds
 depmap_tables: data/master_top_table.RData data/master_bottom_table.RData
 depmap_pathways: data/master_positive.RData data/master_negative.RData
+depmap_pathways_parts = 10
 
 dirs:
 	mkdir -p data
@@ -46,6 +47,11 @@ data/master_top_table.RData data/master_bottom_table.RData: code/generate_depmap
 	@echo "Creating depmap tables"
 	$(RSCRIPT_CMD) code/generate_depmap_tables.R
 
-data/master_positive.RData data/master_negative.RData: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
-	@echo "Creating depmap pathways"
-	$(RSCRIPT_CMD) code/generate_depmap_pathways.R
+data/master_positive_%_of_10.Rds data/master_negative_%_of_10.Rds: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
+	@echo "Creating depmap pathways part" $*
+	$(RSCRIPT_CMD) code/generate_depmap_pathways.R --group $(num_parts) --idx $*
+
+data/master_positive.RData data/master_negative.RData: code/merge_depmap_pathways.R data/master_positive_1_of_10.Rds data/master_positive_2_of_10.Rds data/master_positive_3_of_10.Rds data/master_positive_4_of_10.Rds data/master_positive_5_of_10.Rds data/master_positive_6_of_10.Rds data/master_positive_7_of_10.Rds data/master_positive_8_of_10.Rds data/master_positive_9_of_10.Rds data/master_positive_10_of_10.Rds data/master_negative_1_of_10.Rds data/master_negative_2_of_10.Rds data/master_negative_3_of_10.Rds data/master_negative_4_of_10.Rds data/master_negative_5_of_10.Rds data/master_negative_6_of_10.Rds data/master_negative_7_of_10.Rds data/master_negative_8_of_10.Rds data/master_negative_9_of_10.Rds data/master_negative_10_of_10.Rds
+	@echo "Merging depmap pathways parts"
+	$(RSCRIPT_CMD) code/merge_depmap_pathways.R --group $(num_parts)
+
