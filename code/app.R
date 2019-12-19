@@ -351,6 +351,35 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
   rmarkdown::render("report_dummy_depmap.rmd", output_file = file)
 }
 
+outputDir <- "responses"
+
+# Define the fields we want to save from the form
+fields <- c("first_name", "last_name", "email")
+
+saveData <- function(input) {
+  # put variables in a data frame
+  data <- data.frame(matrix(nrow=1,ncol=0))
+  for (x in fields) {
+    var <- input[[x]]
+    data[[x]] <- var
+  }
+  data$submit_time <- date()
+  
+  # Create a unique file name
+  fileName <- sprintf(
+    "%s_%s.rds", 
+    as.integer(Sys.time()), 
+    digest::digest(data)
+  )
+  
+  # Write the file to the local system
+  saveRDS(
+    object = data,
+    file = file.path(outputDir, fileName)
+  )
+}
+
+
 
 #UI------
 ui <- fluidPage(
@@ -423,9 +452,17 @@ ui <- fluidPage(
              ),
     tabPanel("Download Report",
              h2("Report Generator"),
+             conditionalPanel(condition = 'input.submit == 0',
+                              "Please enter your name and email address to download a report", 
+                              textInput("first_name", "First Name", ""), 
+                              textInput("last_name", "Last Name", ""), 
+                              textInput("email", "Email Address", ""), 
+                              actionButton(inputId = "submit", 
+                                           label = "Enter")),
+             conditionalPanel(condition = 'input.submit != 0', 
              "To generate a report, click on the button below",
              br(),
-             downloadButton(outputId = "report", label = "Download report"))
+             downloadButton(outputId = "report", label = "Download report")))
   )
 )
 
@@ -433,6 +470,11 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   data <- eventReactive(input$go, {
     str_to_upper(input$gene_symbol)})
+  
+  # When the Submit button is clicked, save the form data
+  observeEvent(input$submit, {
+    saveData(input)
+  })
 
   output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", data())})
   output$text_cell_dep_table <- renderText({paste0("Dependency table generated for ", data())})
