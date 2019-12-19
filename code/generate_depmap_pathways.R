@@ -7,7 +7,7 @@ library(corrr)
 library(enrichR)
 
 #rm(list=ls()) 
-start_time <- Sys.time()
+time_begin_pathways <- Sys.time()
 
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
@@ -129,4 +129,4 @@ save(master_positive, file=here::here("data", "master_positive.RData")) #change 
 save(master_negative, file=here::here("data", "master_negative.RData")) #change file name to include decX
 
 #how long
-end_time <- Sys.time()
+time_end_pathways <- Sys.time()
