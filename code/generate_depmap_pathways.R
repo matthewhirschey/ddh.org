@@ -50,7 +50,9 @@ master_negative <- tibble(
 )
 
 #define list and make sub groups
-sample <- sample(names(achilles_cor), size = 2) #comment this out
+random_sample <- sample(names(achilles_cor), size = 2) #comment this out
+sample <- c("TP53", "SIRT4")
+
 r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 deciles <- full %>%
