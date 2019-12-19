@@ -4,11 +4,11 @@ output:
   pdf_document:
     toc: TRUE
 params:
-  release: "19Q3"
-  achilles_url: "https://ndownloader.figshare.com/files/16757666"
-  ccle_url: "https://ndownloader.figshare.com/files/16757690"
-  cclemeta_url: "https://ndownloader.figshare.com/files/16757723"
-  na_cutoff: 400
+  release: "19Q4"
+  achilles_url: "https://ndownloader.figshare.com/files/20234073" #achilles_gene_effect.csv
+  ccle_url: "https://ndownloader.figshare.com/files/20234346" #CCLE_expression.csv
+  cclemeta_url: "https://ndownloader.figshare.com/files/20274744" #sample_info.csv
+  na_cutoff: 589
 
 ---
 Overall goal of this project is to generate a correlation matrix from Broad Dependency Map data, to look at 'dependency signatures'. This will allow us to infer a functional relationship between genes, based on similar changes in cellular fitness. Chose to get data from Broad, as they have previous made available dependency correlation data on www.depmap.org. Will use Sanger to try to validate some of the findings; unfortunatley, Sanger lists only binary scores.
@@ -44,7 +44,7 @@ achilles_long <- achilles %>%
 
 table(is.na(achilles))
 #This shows FALSE: 11427188; TRUE: 31562; 
-count(achilles_long %>% filter(is.na(dep_score)) %>% group_by(gene))
+count(achilles_long %>% filter(is.na(dep_score)) %>% group_by(gene)) %>% arrange(desc(n))
 #bizarre: 734 genes each have 43 NAs (0.2% missing); missing because previous dataset releases did or did not contain cell line dependency data with these genes; dataset does not contain gene-level dependency information for every cell line
 
 ##SANGER
@@ -75,7 +75,7 @@ expression_join <- expression_id %>%
 #remove data from correlations if expression of a gene is *too low
 ```{r}
 sum(achilles$X1 %in% expression$X1)
-#621 cell lines match CCLE and DepMap
+#621 cell lines match CCLE and DepMap; 19Q4 684
 
 #this measures range of DGE across cells
 #expression %>% 
