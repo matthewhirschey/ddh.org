@@ -49,9 +49,9 @@ data/master_top_table.RData data/master_bottom_table.RData: code/generate_depmap
 
 data/master_positive_%_of_10.Rds data/master_negative_%_of_10.Rds: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
 	@echo "Creating depmap pathways part" $*
-	$(RSCRIPT_CMD) code/generate_depmap_pathways.R --group $(num_parts) --idx $*
+	$(RSCRIPT_CMD) code/generate_depmap_pathways.R --group $(depmap_pathways_parts) --idx $*
 
 data/master_positive.RData data/master_negative.RData: code/merge_depmap_pathways.R data/master_positive_1_of_10.Rds data/master_positive_2_of_10.Rds data/master_positive_3_of_10.Rds data/master_positive_4_of_10.Rds data/master_positive_5_of_10.Rds data/master_positive_6_of_10.Rds data/master_positive_7_of_10.Rds data/master_positive_8_of_10.Rds data/master_positive_9_of_10.Rds data/master_positive_10_of_10.Rds data/master_negative_1_of_10.Rds data/master_negative_2_of_10.Rds data/master_negative_3_of_10.Rds data/master_negative_4_of_10.Rds data/master_negative_5_of_10.Rds data/master_negative_6_of_10.Rds data/master_negative_7_of_10.Rds data/master_negative_8_of_10.Rds data/master_negative_9_of_10.Rds data/master_negative_10_of_10.Rds
 	@echo "Merging depmap pathways parts"
-	$(RSCRIPT_CMD) code/merge_depmap_pathways.R --group $(num_parts)
+	$(RSCRIPT_CMD) code/merge_depmap_pathways.R --group $(depmap_pathways_parts)
 
