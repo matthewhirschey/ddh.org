@@ -28,9 +28,9 @@ group_size <- opt$groups
 master_positive_filename <- "master_positive.RData"
 master_positive <- merge_rds_files("master_positive", group_size)
 print(paste0("Saving master_positive to ", master_positive_filename))
-saveRDS(master_positive, file=here::here("data", master_positive_filename))
+save(master_positive, file=here::here("data", master_positive_filename))
 
 master_negative_filename <- "master_negative.RData"
 master_negative <- merge_rds_files("master_negative", group_size)
 print(paste0("Saving master_negative to ", master_negative_filename))
-saveRDS(master_negative, file=here::here("data", master_negative_filename))
+save(master_negative, file=here::here("data", master_negative_filename))
