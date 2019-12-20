@@ -29,6 +29,16 @@ start_time <- Sys.time()
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
 
+enrichr_with_retry <- function(gene_list, databases) {
+  ret <- enrichr(gene_list, databases)
+  if (is.null(ret)) {
+    message("Received NULL back from enrichr sleeping for ", sleep_after_enrichr_null_response, " seconds.")
+    Sys.sleep(sleep_after_enrichr_null_response)
+    ret <- enrichr(gene_list, databases)
+  }
+  ret
+}
+
 #define pathway enrichment analysis loop function
 enrichr_loop <- function(gene_list, databases){
   if(is_empty(gene_list)){
@@ -36,7 +46,7 @@ enrichr_loop <- function(gene_list, databases){
     return(flat_complete)
   } else {
     flat_complete <- as_tibble()
-    enriched <- enrichr(gene_list, databases)
+    enriched <- enrichr_with_retry(gene_list, databases)
     flat_complete <- bind_rows(enriched, .id = "enrichr")
     flat_complete <- flat_complete %>% 
       arrange(Adjusted.P.value) 
