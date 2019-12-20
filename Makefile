@@ -4,8 +4,9 @@
 # singularity exec singularity/depmap.sif RScript
 RSCRIPT_CMD ?= Rscript
 
-# Defines number of groups to split pathways data into
-depmap_pathways_groups = 10
+# Defines number intermediate pathway data files that allow running in parallel
+# Chaning this number rqeuires an update to the "data/master_positive.RData data/master_negative.RData"" rule.
+num_subset_pathways_files = 10
 
 # The first target is the default, it makes "all" the data. Does not include container_image
 all: gene_summary depmap_data depmap_stats depmap_tables depmap_pathways
@@ -49,11 +50,19 @@ data/master_top_table.RData data/master_bottom_table.RData: code/generate_depmap
 	@echo "Creating depmap tables"
 	$(RSCRIPT_CMD) code/generate_depmap_tables.R
 
-data/master_positive_%_of_10.Rds data/master_negative_%_of_10.Rds: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
-	@echo "Creating depmap pathways partial files" $*
-	$(RSCRIPT_CMD) code/generate_depmap_pathways.R --group $(depmap_pathways_groups) --idx $*
+data/positive_subset_%_of_10.Rds: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
+	@echo "Creating depmap positive pathways subset files" $*
+	$(RSCRIPT_CMD) code/generate_depmap_pathways.R --type positive --num-subset-files $(num_subset_pathways_files) --idx $*
 
-data/master_positive.RData data/master_negative.RData: code/merge_depmap_pathways.R data/master_positive_1_of_10.Rds data/master_positive_2_of_10.Rds data/master_positive_3_of_10.Rds data/master_positive_4_of_10.Rds data/master_positive_5_of_10.Rds data/master_positive_6_of_10.Rds data/master_positive_7_of_10.Rds data/master_positive_8_of_10.Rds data/master_positive_9_of_10.Rds data/master_positive_10_of_10.Rds data/master_negative_1_of_10.Rds data/master_negative_2_of_10.Rds data/master_negative_3_of_10.Rds data/master_negative_4_of_10.Rds data/master_negative_5_of_10.Rds data/master_negative_6_of_10.Rds data/master_negative_7_of_10.Rds data/master_negative_8_of_10.Rds data/master_negative_9_of_10.Rds data/master_negative_10_of_10.Rds
-	@echo "Merging depmap pathways partial files"
-	$(RSCRIPT_CMD) code/merge_depmap_pathways.R --group $(depmap_pathways_groups)
+data/master_positive.RData: code/merge_depmap_pathways.R data/positive_subset_1_of_10.Rds data/positive_subset_2_of_10.Rds data/positive_subset_3_of_10.Rds data/positive_subset_4_of_10.Rds data/positive_subset_5_of_10.Rds data/positive_subset_6_of_10.Rds data/positive_subset_7_of_10.Rds data/positive_subset_8_of_10.Rds data/positive_subset_9_of_10.Rds data/positive_subset_10_of_10.Rds
+	@echo "Merging depmap positive pathways subset files"
+	$(RSCRIPT_CMD) code/merge_depmap_pathways.R --type positive --num-subset-files $(num_subset_pathways_files)
+
+data/negative_subset_%_of_10.Rds: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q3_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
+	@echo "Creating depmap negative pathways subset files" $*
+	$(RSCRIPT_CMD) code/generate_depmap_pathways.R --type negative --num-subset-files $(num_subset_pathways_files) --idx $*
+
+data/master_negative.RData: code/merge_depmap_pathways.R data/negative_subset_1_of_10.Rds data/negative_subset_2_of_10.Rds data/negative_subset_3_of_10.Rds data/negative_subset_4_of_10.Rds data/negative_subset_5_of_10.Rds data/negative_subset_6_of_10.Rds data/negative_subset_7_of_10.Rds data/negative_subset_8_of_10.Rds data/negative_subset_9_of_10.Rds data/negative_subset_10_of_10.Rds
+	@echo "Merging depmap negative pathways subset files"
+	$(RSCRIPT_CMD) code/merge_depmap_pathways.R --type negative --num-subset-files $(num_subset_pathways_files)
 
