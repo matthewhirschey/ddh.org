@@ -66,7 +66,7 @@ generate_positive_data <- function(gene_group, achilles_cor, achilles_upper, gen
 
   for (fav_gene in gene_group) {
     message("Top pathway enrichment analyses for ", fav_gene)
-    flat_top_complete <- achilles_cor %>%
+    enriched_data <- achilles_cor %>%
       focus(fav_gene) %>%
       arrange(desc(.[[2]])) %>% #use column index
       filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
@@ -76,17 +76,22 @@ generate_positive_data <- function(gene_group, achilles_cor, achilles_upper, gen
       rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
       pull("gene") %>%
       c(fav_gene, .) %>%
-      enrichr_loop(., focused_lib) %>%  #added small here
-      arrange(Adjusted.P.value) %>%
-      slice(1:100)
-    
-    positive <- flat_top_complete  %>%
-      mutate(fav_gene = fav_gene) %>%
-      group_by(fav_gene) %>%
-      nest()
-    
-    subset_positive <- subset_positive %>%
-      bind_rows(positive)
+      enrichr_loop(., focused_lib)
+    if (is.null(enriched_data)) {
+      message("Warning: Top pathway - no correlated genes for ", fav_gene)
+    } else {
+      flat_top_complete  <- enriched_data %>%
+        arrange(Adjusted.P.value) %>%
+        slice(1:100)
+      
+      positive <- flat_top_complete  %>%
+        mutate(fav_gene = fav_gene) %>%
+        group_by(fav_gene) %>%
+        nest()
+      
+      subset_positive <- subset_positive %>%
+        bind_rows(positive)      
+    }
     
     Sys.sleep(sleep_seconds_between_requests)
   }
@@ -102,7 +107,7 @@ generate_negative_data <- function(gene_group, achilles_cor, achilles_lower, gen
   
   for (fav_gene in gene_group) {
     message("Bottom pathway enrichment analyses for ", fav_gene)
-    flat_bottom_complete <- achilles_cor %>%
+    enriched_data <- achilles_cor %>%
       focus(fav_gene) %>%
       arrange(.[[2]]) %>% #use column index
       filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
@@ -111,17 +116,23 @@ generate_negative_data <- function(gene_group, achilles_cor, achilles_lower, gen
       select(approved_symbol, approved_name, fav_gene) %>%
       rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
       pull("gene") %>%
-      enrichr_loop(., focused_lib) %>%  #added small here
-      arrange(Adjusted.P.value) %>%
-      slice(1:100)
+      enrichr_loop(., focused_lib)
     
-    negative <- flat_bottom_complete %>%
-      mutate(fav_gene = fav_gene) %>%
-      group_by(fav_gene) %>%
-      nest()
+    if (is.null(enriched_data)) {
+      message("Warning: Bottom pathway - no correlated genes for ", fav_gene)
+    } else {
+      flat_bottom_complete  <- enriched_data %>%
+        arrange(Adjusted.P.value) %>%
+        slice(1:100)
     
-    subset_negative <- subset_negative %>%
-      bind_rows(negative)
+      negative <- flat_bottom_complete %>%
+        mutate(fav_gene = fav_gene) %>%
+        group_by(fav_gene) %>%
+        nest()
+      
+      subset_negative <- subset_negative %>%
+        bind_rows(negative)
+    }
     
     Sys.sleep(sleep_seconds_between_requests)
   }
