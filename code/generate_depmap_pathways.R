@@ -1,5 +1,9 @@
-## THIS CODE GENERATES positive_subset_*_of_*.Rds or positive_subset__*_of_*.Rds files.
-## These files can be merged by running merge_depmap_pathways.R
+## THIS CODE GENERATES positive_subset_*_of_*.Rds or negative_subset__*_of_*.Rds files.
+## This script is meant to be run multiple times in parallel to quickly calculate the data.
+## Commands to create the first file for both postiive and negative if we create 10 files for each:
+##  Rscript code/generate_depmap_pathways.R --type positive  --idx 1 --num-subset-files 10
+##  Rscript code/generate_depmap_pathways.R --type negative  --idx 1 --num-subset-files 10
+## The files created by this script can be merged by running merge_depmap_pathways.R
 
 #load libraries
 library(tidyverse)
@@ -134,22 +138,24 @@ save_subset_pathways_file <- function(pathways_type, subset_file_idx, num_subset
   saveRDS(subset_data, file=subset_filepath)
 }
 
-main <- function () {
-  opt <- dpu_parse_command_line(include_idx=TRUE)
-  start_time <- Sys.time()
-  
-  message("Generating data for pathways ", opt$pathways_type, " subset ", opt$subset_file_idx, ".")
+# writes subset file into /data directory based on the pathway type, index and number subset files
+create_pathway_subset_file <- function(pathways_type, subset_file_idx, num_subset_files) {
+  message("Generating data for pathways ", pathways_type, " subset ", subset_file_idx, ".")
   input_data <- read_input_data()
-  gene_group <- get_gene_names_to_process(opt$subset_file_idx, opt$num_subset_files, input_data$achilles_cor)
+  gene_group <- get_gene_names_to_process(subset_file_idx, num_subset_files, input_data$achilles_cor)
   message("Processing ", length(gene_group), " genes.")
-  
-  if (opt$pathways_type == dpu_pathways_positive_type) {
+  if (pathways_type == dpu_pathways_positive_type) {
     subset_data <- generate_positive_data(gene_group, input_data$achilles_cor, input_data$achilles_upper, input_data$gene_summary)
   } else {
     subset_data <- generate_negative_data(gene_group, input_data$achilles_cor, input_data$achilles_lower, input_data$gene_summary)
   }
-  save_subset_pathways_file(opt$pathways_type, opt$subset_file_idx, opt$num_subset_files, subset_data)
+  save_subset_pathways_file(pathways_type, subset_file_idx, num_subset_files, subset_data)
+}
 
+main <- function () {
+  opt <- dpu_parse_command_line(include_idx=TRUE)
+  start_time <- Sys.time()
+  create_pathway_subset_file(opt$pathways_type, opt$subset_file_idx, opt$num_subset_files)
   end_time <- Sys.time()
   message("Elapsed time ", (end_time - start_time))
 }

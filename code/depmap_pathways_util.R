@@ -19,7 +19,7 @@ dpu_get_all_pathways_subset_filepaths <- function(pathways_type, num_subset_file
 # parse command line for --type, --num-subset-files and optionally --idx
 dpu_parse_command_line <- function (include_idx) {
   option_list <- list(
-    make_option(c("--type"), type="character", default="positive",dest='pathways_type',
+    make_option(c("--type"), type="character", default="positive", dest='pathways_type',
                 help="Type of pathways file to create either 'positive' or 'negative'"),
     make_option(c("--num-subset-files"), type="integer", dest='num_subset_files',
                 help="Number of subset pathways files")
