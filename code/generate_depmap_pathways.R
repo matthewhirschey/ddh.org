@@ -75,7 +75,7 @@ generate_positive_data <- function(gene_group, achilles_cor, achilles_upper, gen
       rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
       pull("gene") %>%
       c(fav_gene, .) %>%
-      enrichr_loop(., focused_lib)
+      enrichr_loop(., focused_lib) %>%
       arrange(Adjusted.P.value) %>%
       slice(1:100)
 
@@ -110,9 +110,7 @@ generate_negative_data <- function(gene_group, achilles_cor, achilles_lower, gen
       select(approved_symbol, approved_name, fav_gene) %>%
       rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
       pull("gene") %>%
-      enrichr_loop(., focused_lib)
-    
-    flat_bottom_complete  <- enriched_data %>%
+      enrichr_loop(., focused_lib) %>%
       arrange(Adjusted.P.value) %>%
       slice(1:100)
 
