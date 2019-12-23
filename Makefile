@@ -4,8 +4,8 @@
 # singularity exec singularity/depmap.sif RScript
 RSCRIPT_CMD ?= Rscript
 
-# Defines number intermediate pathway data files that allow running in parallel
-# Changing this number rqeuires an update to the data/master_positive.RData and data/master_negative.RData rules.
+# Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
+# Changing this number requires an update to the data/master_positive.RData and data/master_negative.RData rules below.
 num_subset_pathways_files = 10
 
 # The first target is the default, it makes "all" the data. Does not include container_image
