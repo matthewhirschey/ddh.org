@@ -1,8 +1,8 @@
 ## THIS CODE GENERATES positive_subset_*_of_*.Rds or negative_subset__*_of_*.Rds files.
 ## This script is meant to be run multiple times in parallel to quickly calculate the data.
 ## Commands to create the first file for both postiive and negative if we create 10 files for each:
-##  Rscript code/generate_depmap_pathways.R --type positive  --idx 1 --num-subset-files 10
-##  Rscript code/generate_depmap_pathways.R --type negative  --idx 1 --num-subset-files 10
+##  Rscript code/generate_depmap_pathways.R --type positive --idx 1 --num-subset-files 10
+##  Rscript code/generate_depmap_pathways.R --type negative --idx 1 --num-subset-files 10
 ## The files created by this script can be merged by running merge_depmap_pathways.R
 
 #load libraries

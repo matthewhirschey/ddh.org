@@ -1,5 +1,8 @@
 ## THIS CODE GENERATES master_posistive or master_negative TABLES
-## Based upon positive_subset_*_of_*.Rds or negative_subset_*_of_*.Rds files.
+## Based upon positive_subset_*_of_*.Rds or negative_subset_*_of_*.Rds files created by generate_depmap_pathways.R
+## You can run it like so (assuming you ran generate_depmap_pathways.R with --num-subset-files 10)
+##  Rscript code/merge_depmap_pathways.R --type positive --num-subset-files 10
+##  Rscript code/merge_depmap_pathways.R --type negative --num-subset-files 10
 
 library(tidyverse)
 library(here)
