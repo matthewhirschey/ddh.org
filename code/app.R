@@ -369,6 +369,8 @@ save_data <- function(input) {
     digest::digest(data) #gives it a unique name
   )
   
+  #create dir
+  dir.create(file.path(here::here("data", "users")), showWarnings = FALSE)
   # Write the file to the local system
   saveRDS(
     object = data,
