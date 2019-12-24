@@ -6,7 +6,7 @@ library(here)
 library(corrr)
 
 #rm(list=ls()) 
-start_time <- Sys.time()
+time_begin_tables <- Sys.time()
 
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
@@ -84,4 +84,4 @@ save(master_top_table, file=here::here("data", "master_top_table.RData"))
 save(master_bottom_table, file=here::here("data", "master_bottom_table.RData"))
 
 #how long
-end_time <- Sys.time()
+time_end_tables <- Sys.time()

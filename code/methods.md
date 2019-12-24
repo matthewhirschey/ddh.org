@@ -17,16 +17,9 @@ experimental path to test the prediction. While hypotheses are the
 bedrock of science, the volume, complexity, and sophistication of modern
 science necessitate new methods to generate hypotheses.
 
-Generating hypotheses is easy: take any two ideas and consider the
-possiblity that they are mechanistically linked. But generating *good*
-hypotheses is difficult. A good hypothesis needs a strong rationale,
-supported by ample data, all of which point to a bona fide mechanistic
-link. And then comes the significant time and cost to invest in testing
-the idea, which might or might not be *real* or relevant.
-
 New tools in Data Science – a combination of computer programming, math
 & statistics, and topical expertise – combined with the rapid adoption
-of open science and data sharing allow scientists to access publically
+of open science and data sharing allow scientists to access publicly
 available datasets and interrogate these data *before* performing any
 experiments.
 
@@ -62,7 +55,7 @@ This project began as an extension of a simple and common concept in
 molecular biology called gene co-expression analysis. When a gene of
 unknown function is identified, one strategy to learn something about
 the new gene is to identify shared patterns of expression with other
-genes. If unkonwn Gene X is expressed with known genes A, B, and C, then
+genes. If unknown Gene X is expressed with known genes A, B, and C, then
 you can infer that Gene X might be part of a functional module with A,
 B, C. This approach is particularly powerful when genes A, B, and C are
 part of a known biological pathway, which leads to the hypothesis that
@@ -74,20 +67,20 @@ Following on this idea, we set out to map genes to common functional
 pathways based on dependence of a pathway for cell viability. Project
 Achilles is a systematic effort by the [Broad
 Institute](https://www.broadinstitute.org) as part of a larger [‘DepMap’
-projecte](http://www.depmap.org) aimed at identifying and cataloging
-gene essentiality across hundreds of genomically characterized cancer
-cell lines using highly standardized pooled genome-scale
-loss-of-function screens. This project uses lentiviral-based pooled RNAi
-or CRISPR/Cas9 libraries to systematically knock-out each gene in the
-genome, which allows for the stable suppression/ablation of each gene
-individually in a subset of cells within a pooled format allowing for
-genome wide interrogation of gene essentiality. Using computational
-modeling, a normalized value of gene essentiality is given for each gene
-in a single cell line. A lower score means that a gene is more likely to
-be essential in a given cell line. A score of -1 corresponds to the
-median of all common essential genes, whereas a score of 0 is equivalent
-to a gene that is not essential; a positive score indicates a gain in
-fitness and often identifies tumor supressor genes.
+project](http://www.depmap.org) aimed at identifying and cataloging gene
+essentiality across hundreds of well-characterized cancer cell lines
+using highly standardized pooled genome-scale loss-of-function screens.
+This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries
+to systematically knock-out each gene in the genome, which allows for
+the stable suppression/ablation of each gene individually in a subset of
+cells within a pooled format allowing for genome wide interrogation of
+gene essentiality. Using computational modeling, a normalized value of
+gene essentiality is given for each gene in a single cell line. A lower
+score means that a gene is more likely to be essential in a given cell
+line. A score of -1 corresponds to the median of all common essential
+genes, whereas a score of 0 is equivalent to a gene that is not
+essential; a positive score indicates a gain in fitness and often
+identifies tumor suppressor genes.
 
 It is well-known that human cancer cell lines rely on different pathways
 for their viability. Indeed this is the entire rationale for
@@ -106,8 +99,8 @@ What did I do?
 
 Essential gene data from Project Achilles were downloaded from the
 DepMap portal at: [depmap.org](https://depmap.org/portal/download/). The
-19Q3 release contains gene essentiality scores for 18334 genes across
-625 cell lines, and was used for this project.
+19Q4 release contains gene essentiality scores for 18334 genes across
+689 cell lines, and was used for this project.
 
 ![](methods_files/figure-markdown_strict/dep_scores-1.png)
 
@@ -125,22 +118,22 @@ a collaboration between the Broad Institute, and the Novartis Institutes
 for Biomedical Research and its Genomics Institute of the Novartis
 Research Foundation, which together conduct detailed genetic and
 pharmacologic characterization of a large panel of human cancer models.
-As of the CCLE 2019 release, 1210 cell lines have been characterized for
-gene expression. In the 19Q3 DepMap release, 621 of the 625 cell lines
+As of the CCLE 2019 release, 1249 cell lines have been characterized for
+gene expression. In the 19Q4 DepMap release, 684 of the 689 cell lines
 have gene expression data. Using these two datasets, we compared the
 essentiality of a gene to its expression value.
 
 ![](methods_files/figure-markdown_strict/depVexp-1.png)
 
-We predicted a V-shaped curve, with with stronger dependencies as gene
+We predicted a V-shaped curve, with stronger dependencies as gene
 expression increases. Surprisingly, we saw no relationship between gene
 expression and gene essentiality, where genes with both low and high
 expression displayed both gains and losses in fitness. The overall
 observation from this dataset shows baseline gene expression levels are
-poor indicators of the essentaility of a gene. This analysis also
+poor indicators of the essentiality of a gene. This analysis also
 highlighted that several genes were binned on the x-axis, i.e. could
-have no measureable expression levels, but have assigned dependency
-scores. Across 625 cell lines in the Achilles project, 16.4% of all gene
+have no measurable expression levels, but have assigned dependency
+scores. Across 689 cell lines in the Achilles project, 16.6% of all gene
 expression values are zero, confirming this notion.
 
 #### Noise Reduction
@@ -148,8 +141,8 @@ expression values are zero, confirming this notion.
 Given cells do not express all genes, but might receive a dependency
 sore in this experimental paradigm, we sought to remove dependency
 scores for gene-cell line pairs that have an expression value of zero
-under basal conditions. Of the 625 cell lines for which gene
-essentiality data is collected, 621 have genome-wide gene expression
+under basal conditions. Of the 689 cell lines for which gene
+essentiality data is collected, 684 have genome-wide gene expression
 data. From these cell lines, we removed dependency scores for genes from
 cell line that have a corresponding gene expression value of zero.
 
@@ -157,7 +150,7 @@ cell line that have a corresponding gene expression value of zero.
 
 For some genes expressed in highly specific and restricted cell types,
 this operation removed many dependency values. After removing these
-values, we found that highly specilaized genes in discrete cell types
+values, we found that highly specialized genes in discrete cell types
 have too few cells with both gene expression values and gene
 essentiality values to assign a meaningful correlation value. Thus, if a
 gene was absent from too many cell lines, we omitted it to prevent
@@ -165,13 +158,13 @@ assigned values from relying on too few data points.
 
 ![](methods_files/figure-markdown_strict/dep_cleaning-1.png)
 
-We set a threshold of no more than zeros, meaning that if a gene had
-fewer than cell lines with dependency values, the correaltion pattern of
-a gene would be meaningless, and that gene was therefore removed. This
-process removed 1871 genes that had too few cells with expression and
-dependency data. These ‘cleaned’ dependency data had 16463 remaining
-gene-dependency pairs, which were then used to generate correlation
-matrix.
+We set a threshold of no more than 589 zeros, meaning that if a gene had
+fewer than 100 cell lines with dependency values, the correlation
+pattern of a gene would be meaningless, and that gene was therefore
+removed. This process removed 894 genes that had too few cells with
+expression and dependency data. These ‘cleaned’ dependency data had
+17440 remaining gene-dependency pairs, which were then used to generate
+correlation matrix.
 
 How does it work?
 -----------------
@@ -184,7 +177,7 @@ functional pathways.
 
 ![](methods_files/figure-markdown_strict/r2-1.png)
 
-This process generated approximately 336 million correlation values,
+This process generated approximately 304 million correlation values,
 with a distribution centered around zero. This output produced a range
 of maximum correlation values for each gene.
 
@@ -197,27 +190,27 @@ be considered a low, medium, or high correlation between two genes, we
 performed a permutation test on the correlated data. A permutation test
 involves permuting one or more variables in a data set before performing
 the test, in order to break any existing relationships and simulate the
-null hypothesis. In this case, we broke the relationshipe between
+null hypothesis. In this case, we broke the relationship between
 gene-gene pairs and the correlation values. We can then compare the true
 statistic (mean correlation) to the generated distribution of null
 statistics (fake means), along with standard deviations of these sampled
 data. This strategy will give a better idea of where to draw a threshold
-of a “signficiant correlation” for these analyses. We sampled 20,000 r^2
+of a “significant correlation” for these analyses. We sampled 20,000 r^2
 values from all gene-gene pairs without replacement simulating a virtual
 Achilles dataset for a single cell. We then repeated this process 1000
 times mimicking 1000 discrete cell lines.
 
 This statistical analysis produced the following data:  
-**Mean:** 0.0029348  
-**Standard Deviation:** 0.0594495
+**Mean:** 0.0032181  
+**Standard Deviation:** 0.0684781
 
 Using a standard deviation threshold of 3, we calculated the boundaries
-of r^2 values to be greater than 0.18 or lower than -0.18 for negative
+of r^2 values to be greater than 0.21 or lower than -0.2 for negative
 correlations.
 
 #### Pathway Analyses
 
-To identify clusters of genes with shared relationships, we perfromed
+To identify clusters of genes with shared relationships, we performed
 gene set enrichment analysis. Enrichment analysis is a computational
 method for inferring knowledge about a target gene set by comparing it
 to annotated gene sets representing prior biological knowledge.
@@ -256,8 +249,8 @@ difficult problem to prioritize experimentally.
 
 As an example, we will query the protein P53. Typing in the given
 protein name “P53” produces an error, because the official gene symbol
-needs to be enetered. Querying TP53 (official gene symbol) generates a
-short summary of the gene, its name and list of aliases, and an entrez
+needs to be entered. Querying TP53 (official gene symbol) generates a
+short summary of the gene, its name and list of aliases, and an Entrez
 gene summary paragraph when available.
 
 #### Summary
@@ -281,9 +274,9 @@ variants (PMIDs: 12032546, 20937277). \[provided by RefSeq, Dec 2016\]
 
 #### 2. Dependencies
 
-The first plot shows the distribution of dependency scores across 625
+The first plot shows the distribution of dependency scores across 689
 cell lines ranked from lowest (strongest dependencies) to highest (no
-dependency or inverse). Each of the 625 cell lines is represented by a
+dependency or inverse). Each of the 689 cell lines is represented by a
 single point on the plot. Generally, values below -1 indicate the gene
 of interest (TP53 in this example) is essential in that cell line;
 values between -1 and 0, mean that cells lose fitness, but the gene is
@@ -295,7 +288,7 @@ its role as a tumor suppressor.
 
 The second plot is a histogram of dependency scores, showing the
 distribution of scores for TP53. While the majority of cells have little
-change in celluar growth when TP53 is absent (the histogram is centered
+change in cellular growth when TP53 is absent (the histogram is centered
 around zero), some cells require TP53 for growth (cells scoring below
 -1), whereas in other cells TP53 functions as a tumor suppressor (cells
 with a score above 1).
@@ -326,31 +319,31 @@ consistent patterns of dependency on a gene.
 <tr class="odd">
 <td style="text-align: left;">NMCG1</td>
 <td style="text-align: left;">central_nervous_system</td>
-<td style="text-align: right;">4.52</td>
+<td style="text-align: right;">4.6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">DKMG</td>
 <td style="text-align: left;">central_nervous_system</td>
-<td style="text-align: right;">4.83</td>
+<td style="text-align: right;">4.89</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">TUHR4TKB</td>
 <td style="text-align: left;">kidney</td>
-<td style="text-align: right;">3.62</td>
+<td style="text-align: right;">3.65</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">KMRC1</td>
 <td style="text-align: left;">kidney</td>
-<td style="text-align: right;">4.09</td>
+<td style="text-align: right;">4.13</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">TTC642</td>
-<td style="text-align: left;">rhabdoid</td>
-<td style="text-align: right;">3.98</td>
+<td style="text-align: left;">soft_tissue</td>
+<td style="text-align: right;">4.03</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">BIN67</td>
-<td style="text-align: left;">rhabdoid</td>
+<td style="text-align: left;">ovary</td>
 <td style="text-align: right;">3.55</td>
 </tr>
 </tbody>
@@ -358,11 +351,11 @@ consistent patterns of dependency on a gene.
 
 #### Cells with low or inverse TP53 genetic dependencies
 
-<table style="width:61%;">
+<table style="width:56%;">
 <colgroup>
 <col style="width: 16%" />
-<col style="width: 26%" />
-<col style="width: 18%" />
+<col style="width: 19%" />
+<col style="width: 19%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -374,33 +367,33 @@ consistent patterns of dependency on a gene.
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">BL70</td>
-<td style="text-align: left;">lymphoma</td>
-<td style="text-align: right;">-1.39</td>
+<td style="text-align: left;">lymphocyte</td>
+<td style="text-align: right;">-1.36</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">HCC15</td>
 <td style="text-align: left;">lung</td>
-<td style="text-align: right;">-1.32</td>
+<td style="text-align: right;">-1.29</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">KASUMI1</td>
-<td style="text-align: left;">leukemia</td>
-<td style="text-align: right;">-1.08</td>
+<td style="text-align: left;">blood</td>
+<td style="text-align: right;">-1.06</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">HCC1143</td>
 <td style="text-align: left;">breast</td>
-<td style="text-align: right;">-0.92</td>
+<td style="text-align: right;">-0.93</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">KMS34</td>
-<td style="text-align: left;">multiple_myeloma</td>
-<td style="text-align: right;">-0.91</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">CME1</td>
 <td style="text-align: left;">soft_tissue</td>
-<td style="text-align: right;">-0.9</td>
+<td style="text-align: right;">-0.89</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">KMS34</td>
+<td style="text-align: left;">plasma_cell</td>
+<td style="text-align: right;">-0.89</td>
 </tr>
 </tbody>
 </table>
@@ -416,7 +409,7 @@ same cell lines. More simply, the cells that care about TP53 deletion
 also care about deletion of these genes, implying a functional
 relationship. In the Dependency Score Example heatmap schematic above,
 TP53 is gene X, and genes with similar patterns would be genes A, B, and
-C. The 195 genes that show a similar genetic dependencies as TP53 and
+C. The 117 genes that show a similar genetic dependencies as TP53 and
 are above 3 standard deviations away from the resampled mean are
 displayed.
 
@@ -437,7 +430,7 @@ displayed.
 <tr class="odd">
 <td style="text-align: left;">TP53BP1</td>
 <td style="text-align: left;">Tumor protein p53 binding protein 1</td>
-<td style="text-align: right;">0.72</td>
+<td style="text-align: right;">0.73</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">CDKN1A</td>
@@ -447,17 +440,17 @@ displayed.
 <tr class="odd">
 <td style="text-align: left;">USP28</td>
 <td style="text-align: left;">Ubiquitin specific peptidase 28</td>
-<td style="text-align: right;">0.66</td>
+<td style="text-align: right;">0.65</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">CHEK2</td>
 <td style="text-align: left;">Checkpoint kinase 2</td>
-<td style="text-align: right;">0.65</td>
+<td style="text-align: right;">0.64</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">ATM</td>
 <td style="text-align: left;">Atm serine/threonine kinase</td>
-<td style="text-align: right;">0.62</td>
+<td style="text-align: right;">0.61</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">XPO7</td>
@@ -467,17 +460,17 @@ displayed.
 </tbody>
 </table>
 
-These 195 genes were queried for gene set enrichment, and the gene sets
+These 117 genes were queried for gene set enrichment, and the gene sets
 and pathways with the strongest statistical significance are shown.
 Simply stated, these are the pathways that best represent the list of
 genes that share similar genetic dependencies, and suggest that the
 query gene is part of these pathways.
 
-<table style="width:61%;">
+<table style="width:72%;">
 <caption>Table continues below</caption>
 <colgroup>
-<col style="width: 40%" />
-<col style="width: 20%" />
+<col style="width: 36%" />
+<col style="width: 36%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -487,44 +480,44 @@ query gene is part of these pathways.
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Chromosome Location hg19</td>
-<td style="text-align: left;">chr17</td>
+<td style="text-align: left;">KEA 2015</td>
+<td style="text-align: left;">ATM</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Jensen COMPARTMENTS</td>
-<td style="text-align: left;">Nucleoplasm</td>
+<td style="text-align: left;">Jensen DISEASES</td>
+<td style="text-align: left;">Ataxia telangiectasia</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">GO Biological Process 2018</td>
-<td style="text-align: left;">signal transduction involved in mitotic G1 DNA damage checkpoint (<a href="GO:0072431" class="uri">GO:0072431</a>)</td>
+<td style="text-align: left;">WikiPathways 2019 Human</td>
+<td style="text-align: left;">Integrated Cancer Pathway WP1971</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Transcription Factor PPIs</td>
-<td style="text-align: left;">EP300</td>
+<td style="text-align: left;">WikiPathways 2019 Human</td>
+<td style="text-align: left;">ATM Signaling Pathway WP2516</td>
 </tr>
 <tr class="odd">
+<td style="text-align: left;">SubCell BarCode</td>
+<td style="text-align: left;">HCC827 Nuclear N4 30609389</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Jensen DISEASES</td>
+<td style="text-align: left;">Nijmegen breakage syndrome</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BioCarta 2016</td>
+<td style="text-align: left;">RB Tumor Suppressor/Checkpoint Signaling in response to DNA damage Homo sapiens h rbPathway</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">KEA 2015</td>
+<td style="text-align: left;">MAPK8</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SysMyo Muscle Gene Sets</td>
+<td style="text-align: left;">MGS440 Human left ventricle idiopathic cardiomyopathy v healthy GSE1145 down</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">SILAC Phosphoproteomics</td>
 <td style="text-align: left;">down 5nM dasatinib vs ctrl K562 (Human) [19651622]</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Transcription Factor PPIs</td>
-<td style="text-align: left;">E2F1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Transcription Factor PPIs</td>
-<td style="text-align: left;">BRCA1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">GO Biological Process 2018</td>
-<td style="text-align: left;">DNA damage response, signal transduction by p53 class mediator resulting in cell cycle arrest (<a href="GO:0006977" class="uri">GO:0006977</a>)</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">PPI Hub Proteins</td>
-<td style="text-align: left;">BRCA1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">SILAC Phosphoproteomics</td>
-<td style="text-align: left;">down 50nM dasatinib vs ctrl K562 (Human) [19651622]</td>
 </tr>
 </tbody>
 </table>
@@ -540,34 +533,34 @@ query gene is part of these pathways.
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: right;">37/1529</td>
+<td style="text-align: right;">11/161</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">60/2930</td>
+<td style="text-align: right;">6/30</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">9/64</td>
+<td style="text-align: right;">6/44</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">19/473</td>
+<td style="text-align: right;">6/40</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">16/352</td>
+<td style="text-align: right;">20/981</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">10/126</td>
+<td style="text-align: right;">5/22</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">18/418</td>
+<td style="text-align: right;">4/13</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">9/63</td>
+<td style="text-align: right;">10/225</td>
 </tr>
 <tr class="odd">
-<td style="text-align: right;">13/216</td>
+<td style="text-align: right;">11/239</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">17/451</td>
+<td style="text-align: right;">11/352</td>
 </tr>
 </tbody>
 </table>
@@ -580,7 +573,7 @@ that is, genes that have an inverse correlation of dependences. Simply
 stated, the cells that care about TP53 deletion *do not* care about
 deletion of these genes, implying an inverse or opposing relationship.
 In the Dependency Score Example heatmap schematic above, TP53 is gene X,
-and genes with dissimilar patterns would be genes D, E, and F. The 301
+and genes with dissimilar patterns would be genes D, E, and F. The 181
 genes that show inverse genetic dependencies to TP53 and are below 3
 standard deviations away from the resampled mean are:
 
@@ -606,17 +599,17 @@ standard deviations away from the resampled mean are:
 <tr class="even">
 <td style="text-align: left;">PPM1D</td>
 <td style="text-align: left;">Protein phosphatase, mg2+/mn2+ dependent 1d</td>
-<td style="text-align: right;">-0.61</td>
+<td style="text-align: right;">-0.59</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">MDM4</td>
 <td style="text-align: left;">Mdm4 regulator of p53</td>
-<td style="text-align: right;">-0.51</td>
+<td style="text-align: right;">-0.47</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">USP7</td>
 <td style="text-align: left;">Ubiquitin specific peptidase 7</td>
-<td style="text-align: right;">-0.43</td>
+<td style="text-align: right;">-0.45</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">PPM1G</td>
@@ -624,23 +617,23 @@ standard deviations away from the resampled mean are:
 <td style="text-align: right;">-0.43</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">WDR89</td>
-<td style="text-align: left;">Wd repeat domain 89</td>
+<td style="text-align: left;">TERF1</td>
+<td style="text-align: left;">Telomeric repeat binding factor 1</td>
 <td style="text-align: right;">-0.38</td>
 </tr>
 </tbody>
 </table>
 
-These 301 genes were also queried for gene set enrichment, and the gene
+These 181 genes were also queried for gene set enrichment, and the gene
 sets and pathways with the strongest statistical significance are shown.
 Simply stated, these are the pathways that best represent the list of
 genes that have inverse genetic dependencies.
 
-<table style="width:88%;">
+<table>
 <colgroup>
 <col style="width: 23%" />
-<col style="width: 48%" />
-<col style="width: 15%" />
+<col style="width: 63%" />
+<col style="width: 12%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -651,79 +644,79 @@ genes that have inverse genetic dependencies.
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPL5</td>
-<td style="text-align: right;">30/137</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPL8</td>
-<td style="text-align: right;">26/98</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPS6</td>
-<td style="text-align: right;">26/108</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPL4</td>
-<td style="text-align: right;">25/96</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPL19</td>
-<td style="text-align: right;">27/123</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPS26</td>
-<td style="text-align: right;">22/67</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPL32</td>
-<td style="text-align: right;">25/102</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPLP1</td>
-<td style="text-align: right;">23/79</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPS16</td>
-<td style="text-align: right;">26/114</td>
+<td style="text-align: left;">TF Perturbations Followed by Expression</td>
+<td style="text-align: left;">ADAR OE HEK293 HUMAN GSE87198 RNASEQ UP</td>
+<td style="text-align: right;">20/276</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Jensen TISSUES</td>
 <td style="text-align: left;">Cervical carcinoma cell</td>
-<td style="text-align: right;">154/4876</td>
+<td style="text-align: right;">88/4876</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPS2</td>
-<td style="text-align: right;">26/123</td>
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-S95S-0002-SM-3NM8K blood male 60-69 years</td>
+<td style="text-align: right;">77/3958</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">GO Biological Process 2018</td>
-<td style="text-align: left;">ribosome biogenesis (<a href="GO:0042254" class="uri">GO:0042254</a>)</td>
-<td style="text-align: right;">34/227</td>
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-XUYS-0002-SM-47JXL blood male 50-59 years</td>
+<td style="text-align: right;">75/3854</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">huMAP</td>
-<td style="text-align: left;">RPS18</td>
-<td style="text-align: right;">24/102</td>
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-UPK5-0003-SM-3NMDI blood male 40-49 years</td>
+<td style="text-align: right;">77/4003</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">MSigDB Computational</td>
-<td style="text-align: left;">GNF2 EIF3S6</td>
-<td style="text-align: right;">26/121</td>
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-T6MN-0002-SM-3NMAH blood male 50-59 years</td>
+<td style="text-align: right;">78/4038</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">GO Cellular Component 2018</td>
-<td style="text-align: left;">cytosolic ribosome (<a href="GO:0022626" class="uri">GO:0022626</a>)</td>
-<td style="text-align: right;">26/125</td>
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-UPIC-0002-SM-3NMDC blood female 20-29 years</td>
+<td style="text-align: right;">75/3954</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-U3ZH-0002-SM-3NMDD blood male 30-39 years</td>
+<td style="text-align: right;">75/4012</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-X638-0003-SM-47JZ1 blood female 70-79 years</td>
+<td style="text-align: right;">73/3894</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-SIU7-0001-SM-3NMAW blood male 50-59 years</td>
+<td style="text-align: right;">71/3711</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-UPJH-0001-SM-3NMDE blood male 50-59 years</td>
+<td style="text-align: right;">73/3891</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">huMAP</td>
+<td style="text-align: left;">RPL5</td>
+<td style="text-align: right;">14/137</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Enrichr Submissions TF-Gene Coocurrence</td>
+<td style="text-align: left;">RAD51</td>
+<td style="text-align: right;">19/299</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">RNA-Seq Disease Gene and Drug Signatures from GEO</td>
+<td style="text-align: left;">PRMT9 HeLa knockdown GSE63953 down</td>
+<td style="text-align: right;">24/498</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GTEx Tissue Sample Gene Expression Profiles up</td>
+<td style="text-align: left;">GTEX-V1D1-0003-SM-3NMDP blood male 50-59 years</td>
+<td style="text-align: right;">69/3617</td>
 </tr>
 </tbody>
 </table>
@@ -733,16 +726,12 @@ positively correlated genes and pathways. In some cases, a negative
 regulator of a gene has a negative correlation with that gene, such as
 in this example with TP53 and its negative regulator MDM2. In other
 cases, opposing *pathways* are shown, contrasting the TP53 enriched
-pathway term “DNA damage response, signal transduction by p53 class
-mediator resulting in cell cycle arrest
-(<a href="GO:0006977" class="uri">GO:0006977</a>)” with the dissimilar
-enriched pathway term “ribosome biogenesis
-(<a href="GO:0042254" class="uri">GO:0042254</a>)”, revealing two
-opposing biological pathways.
+pathway term “MAPK8” with the dissimilar enriched pathway term “RPL5”,
+revealing two opposing biological pathways.
 
 #### 5. Graph
 
-Identifying genes that share similar patterns of depenendy to a queried
+Identifying genes that share similar patterns of dependency to a queried
 unknown gene generates strong hypotheses about new functional
 annotations and maps to new pathways. However, the strength of the
 hypothesis cannot be fully inferred from single gene list. If a new gene
@@ -764,9 +753,9 @@ Where do I get more information?
 
 Code is available on the Hirschey Lab github account, including links to
 download the raw data, and run the analyses in R from scratch.
-Furthermore, the Broad Institute has a lot of informaiton on their
+Furthermore, the Broad Institute has a lot of information on their
 [website](http://www.broadinstitute.org) and the website dedicated to
-the [Depedencey Map project](http://www.depmap.org) about how the raw
+the [Dependency Map project](http://www.depmap.org) about how the raw
 data were generated. They also provide a list of references, which are
 appended below.
 
@@ -902,4 +891,4 @@ in human prostate tumorigenesis. Nature Genetics 2015
 Nov;47(11):1346-51. doi: 10.1038/ng.3419. Epub 2015 Oct 12. PMCID:
 PMC4707683.
 
-Methods updated December 11, 2019
+Methods updated December 20, 2019
