@@ -15,7 +15,6 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  feather \
  tidygraph \
  cowplot \
- ggplotly \
  digest \
  patchwork \
  viridis \
