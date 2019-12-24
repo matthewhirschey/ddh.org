@@ -351,8 +351,6 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
   rmarkdown::render("report_dummy_depmap.rmd", output_file = file)
 }
 
-outputDir <- "responses"
-
 # Define the fields we want to save from the form
 fields <- c("first_name", "last_name", "email")
 
@@ -375,7 +373,7 @@ saveData <- function(input) {
   # Write the file to the local system
   saveRDS(
     object = data,
-    file = file.path(outputDir, fileName)
+    file = file.path(here::here("data", "users"), fileName)
   )
 }
 
