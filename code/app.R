@@ -342,13 +342,13 @@ render_complete_report <- function (file, gene_symbol, tmp.env) { #how to levera
   dep_bottom <- make_bottom_table(gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(gene_symbol)
-  rmarkdown::render("report_depmap_app.rmd", output_file = file)
+  rmarkdown::render("report_depmap_app.Rmd", output_file = file)
 
 }
 render_dummy_report <- function (file, gene_symbol, tmp.env) {
   fav_gene_summary <- tmp.env$gene_summary %>%
     filter(approved_symbol == gene_symbol)
-  rmarkdown::render("report_dummy_depmap.rmd", output_file = file)
+  rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
 }
 
 # Define the fields we want to save from the form
