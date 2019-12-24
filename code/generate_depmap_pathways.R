@@ -154,14 +154,12 @@ create_pathway_subset_file <- function(pathways_type, subset_file_idx, num_subse
 
 main <- function () {
   opt <- dpu_parse_command_line(include_idx=TRUE)
-  start_time <- Sys.time()
+  time_begin_pathways <- Sys.time()
   create_pathway_subset_file(opt$pathways_type, opt$subset_file_idx, opt$num_subset_files)
-  end_time <- Sys.time()
-  message("Elapsed time ", (end_time - start_time))
+  time_end_pathways <- Sys.time()
+  message("Elapsed time ", (time_end_pathways - time_begin_pathways))
 }
 
 if(!interactive()) {
   main()
 }
-
-
