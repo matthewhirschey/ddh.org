@@ -354,26 +354,25 @@ render_dummy_report <- function (file, gene_symbol, tmp.env) {
 # Define the fields we want to save from the form
 fields <- c("first_name", "last_name", "email")
 
-saveData <- function(input) {
+save_data <- function(input) {
   # put variables in a data frame
   data <- data.frame(matrix(nrow=1,ncol=0))
   for (x in fields) {
-    var <- input[[x]]
-    data[[x]] <- var
+    data[[x]] <- input[[x]]
   }
   data$submit_time <- date()
   
   # Create a unique file name
-  fileName <- sprintf(
+  file_name <- sprintf(
     "%s_%s.rds", 
     as.integer(Sys.time()), 
-    digest::digest(data)
+    digest::digest(data) #gives it a unique name
   )
   
   # Write the file to the local system
   saveRDS(
     object = data,
-    file = file.path(here::here("data", "users"), fileName)
+    file = file.path(here::here("data", "users"), file_name)
   )
 }
 
@@ -471,7 +470,7 @@ server <- function(input, output, session) {
   
   # When the Submit button is clicked, save the form data
   observeEvent(input$submit, {
-    saveData(input)
+    save_data(input)
   })
 
   output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", data())})
@@ -516,8 +515,9 @@ server <- function(input, output, session) {
     # create pdf report
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
-      render_report_to_file(file, data())
-    }
+      withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
+      render_report_to_file(file, data())}
+    )}
   )
 }
 
