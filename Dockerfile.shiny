@@ -19,6 +19,7 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  patchwork \
  viridis \
  pander \
+ DT \
  ggraph
 
 COPY ./shiny/shiny-server.conf /etc/shiny-server/shiny-server.conf
