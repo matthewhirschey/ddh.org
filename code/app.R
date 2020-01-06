@@ -13,12 +13,13 @@ library(ggraph)
 library(viridis)
 library(cowplot)
 library(plotly)
+library(DT)
 
 #LOAD DATA-----
 #read current release information
 source(here::here("code", "current_release.R"))
 
-#read data from creat_gene_summary.R
+#read data from create_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
