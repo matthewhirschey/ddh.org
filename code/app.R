@@ -114,7 +114,7 @@ make_achilles_table <- function(gene_symbol) {
     dplyr::rename(dep_score = gene_symbol) %>%
     dplyr::select(cell_line, lineage, dep_score) %>%
     dplyr::mutate(dep_score = round(dep_score, 3)) %>% 
-    dplyr:: arrange(dep_score) %>%
+    dplyr::arrange(dep_score) %>%
     dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
   return(target_achilles)
 }
