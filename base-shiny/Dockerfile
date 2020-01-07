@@ -12,8 +12,13 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  networkD3 \
  feather \
  tidygraph \
- ggraph \
- cowplot
+ cowplot \
+ digest \
+ patchwork \
+ viridis \
+ pander \
+ DT \
+ ggraph
 
 COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /var/lib/shiny-server/

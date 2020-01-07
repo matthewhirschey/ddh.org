@@ -7,10 +7,15 @@ library(corrr)
 library(enrichR)
 
 #rm(list=ls()) 
-start_time <- Sys.time()
+time_begin_pathways <- Sys.time()
 
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
+
+cast_term_to_character <- function (df) {
+  df$Term <- as.character(df$Term);
+  df
+}
 
 #define pathway enrichment analysis loop function
 enrichr_loop <- function(gene_list, databases){
@@ -20,6 +25,7 @@ enrichr_loop <- function(gene_list, databases){
   } else {
     flat_complete <- as_tibble()
     enriched <- enrichr(gene_list, databases)
+    enriched <- lapply(enriched, cast_term_to_character)
     flat_complete <- bind_rows(enriched, .id = "enrichr")
     flat_complete <- flat_complete %>% 
       arrange(Adjusted.P.value) 
@@ -50,7 +56,9 @@ master_negative <- tibble(
 )
 
 #define list and make sub groups
-sample <- sample(names(achilles_cor), size = 2) #comment this out
+random_sample <- sample(names(achilles_cor), size = 2) #comment this out
+sample <- c("TP53", "SIRT4")
+
 r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 deciles <- full %>%
@@ -127,4 +135,4 @@ save(master_positive, file=here::here("data", "master_positive.RData")) #change 
 save(master_negative, file=here::here("data", "master_negative.RData")) #change file name to include decX
 
 #how long
-end_time <- Sys.time()
+time_end_pathways <- Sys.time()

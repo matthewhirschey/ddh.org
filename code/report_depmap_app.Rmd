@@ -12,13 +12,17 @@ library(here)
 library(knitr)
 library(pander)
 library(patchwork)
+source(here::here("code", "current_release.R"))
 ```
 
 ## Report for `r fav_gene_summary$approved_symbol`: `r fav_gene_summary$approved_name`  
 ### from datadrivenhypothesis.org  
 `r lubridate::stamp("Report generated December 31, 1979")(now())`  
   
-## Summary  
+## Project Summary  
+Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across various measures, in order to discover new novel genes in established processes or new processes for well-studied genes.  This project leverages several high-quality publically available datasets, including release `r release` of the [Dependency Map](www.depmap.org) from the [Broad Institute](www.broadinstitute.org).  
+  
+## Query Summary  
 **Gene**: `r fav_gene_summary$approved_symbol`  
 **Name**: `r fav_gene_summary$approved_name`  
 **aka**: `r fav_gene_summary$aka`  
