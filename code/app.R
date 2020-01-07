@@ -81,38 +81,41 @@ gene_summary_ui <- function(gene_symbol) {
 make_top_table <- function(gene_symbol) {
   master_top_table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
-    unnest(data) %>%
-    select(-fav_gene) %>%
-    arrange(desc(r2)) %>%
-    rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
+    tidyr::unnest(data) %>%
+    dplyr::select(-fav_gene) %>%
+    dplyr::mutate(r2 = round(r2, 3)) %>% 
+    dplyr::arrange(desc(r2)) %>%
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
 }
 
 make_bottom_table <- function(gene_symbol) {
   master_bottom_table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
-    unnest(data) %>%
-    select(-fav_gene) %>%
-    arrange(r2) %>%
-    rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
+    tidyr::unnest(data) %>%
+    dplyr::select(-fav_gene) %>%
+    dplyr::mutate(r2 = round(r2, 3)) %>% 
+    dplyr::arrange(r2) %>%
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
 }
 
 make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
   table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
-    unnest(data) %>%
-    select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
-    arrange(Adjusted.P.value) %>%
-    rename("Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
+    tidyr::unnest(data) %>%
+    dplyr::select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
+    dplyr::arrange(Adjusted.P.value) %>%
+    dplyr::rename("Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
 }
 
 make_achilles_table <- function(gene_symbol) {
   target_achilles <- achilles %>%
-    select(X1, gene_symbol) %>%
-    left_join(expression_join, by = "X1") %>%
-    rename(dep_score = gene_symbol) %>%
-    select(cell_line, lineage, dep_score) %>%
-    arrange(dep_score) %>%
-    rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
+    dplyr::select(X1, gene_symbol) %>%
+    dplyr::left_join(expression_join, by = "X1") %>%
+    dplyr::rename(dep_score = gene_symbol) %>%
+    dplyr::select(cell_line, lineage, dep_score) %>%
+    dplyr::mutate(dep_score = round(dep_score, 3)) %>% 
+    dplyr:: arrange(dep_score) %>%
+    dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
   return(target_achilles)
 }
 
