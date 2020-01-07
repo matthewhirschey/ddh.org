@@ -13,12 +13,13 @@ library(ggraph)
 library(viridis)
 library(cowplot)
 library(plotly)
+library(DT)
 
 #LOAD DATA-----
 #read current release information
 source(here::here("code", "current_release.R"))
 
-#read data from creat_gene_summary.R
+#read data from create_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
@@ -342,13 +343,13 @@ render_complete_report <- function (file, gene_symbol, tmp.env) { #how to levera
   dep_bottom <- make_bottom_table(gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(gene_symbol)
-  rmarkdown::render("report_depmap_app.rmd", output_file = file)
+  rmarkdown::render("report_depmap_app.Rmd", output_file = file)
 
 }
 render_dummy_report <- function (file, gene_symbol, tmp.env) {
   fav_gene_summary <- tmp.env$gene_summary %>%
     filter(approved_symbol == gene_symbol)
-  rmarkdown::render("report_dummy_depmap.rmd", output_file = file)
+  rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
 }
 
 # Define the fields we want to save from the form
