@@ -12,6 +12,11 @@ time_begin_pathways <- Sys.time()
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
 
+cast_term_to_character <- function (df) {
+  df$Term <- as.character(df$Term);
+  df
+}
+
 #define pathway enrichment analysis loop function
 enrichr_loop <- function(gene_list, databases){
   if(is_empty(gene_list)){
@@ -20,6 +25,7 @@ enrichr_loop <- function(gene_list, databases){
   } else {
     flat_complete <- as_tibble()
     enriched <- enrichr(gene_list, databases)
+    enriched <- lapply(enriched, cast_term_to_character)
     flat_complete <- bind_rows(enriched, .id = "enrichr")
     flat_complete <- flat_complete %>% 
       arrange(Adjusted.P.value) 
