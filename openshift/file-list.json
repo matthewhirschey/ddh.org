@@ -1,18 +1,18 @@
 {
     "items": [
         {
-            "dest": "/data/19Q3_achilles_cor.RData",
-            "source": "54985131-d8a4-4dd4-aa4e-9e4c81f74194",
+            "dest": "/data/19Q4_achilles_cor.RData",
+            "source": "57a1b833-ae01-4a1c-9d43-b2b672417891",
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q3_expression.RData",
-            "source": "e5ab32f4-0b4f-4bdc-a3df-f54a5843c111",
+            "dest": "/data/19Q4_expression.RData",
+            "source": "9e0eeec7-f22f-4297-919b-6aad8c07f2ed",
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q3_achilles.RData",
-            "source": "73aae91e-e554-4141-947c-4bf90320da2d",
+            "dest": "/data/19Q4_achilles.RData",
+            "source": "d287d655-8d6d-4fb5-bbe6-61ee5f971ef1",
             "type": "DukeDS"
         },
         {
@@ -26,18 +26,13 @@
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q3_expression_id.RData",
-            "source": "8200b861-f1d4-4655-87b2-a71c5939f559",
-            "type": "DukeDS"
-        },
-        {
             "dest": "/data/achilles_lower.Rds",
             "source": "67dfea2e-9732-44c1-94db-879055c9cfb1",
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q3_expression_join.RData",
-            "source": "fcdd0600-093d-459b-8967-c3c3116bac3c",
+            "dest": "/data/19Q4_expression_join.RData",
+            "source": "aa585a4f-04ee-475e-ae30-67b72bd4aee0",
             "type": "DukeDS"
         },
         {
