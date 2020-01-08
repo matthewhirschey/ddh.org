@@ -491,10 +491,12 @@ server <- function(input, output, session) {
     gene_summary_ui(data())
   })
   output$dep_top <- renderDataTable(
-    make_top_table(data())
+    make_top_table(data()),
+    options = list(pageLength = 25)
   )
   output$dep_bottom <- renderDataTable(
-    make_bottom_table(data())
+    make_bottom_table(data()),
+    options = list(pageLength = 25)
   )
   output$cell_deps <- renderPlotly(
     ggplotly(make_celldeps(data()), tooltip = "text")
@@ -503,14 +505,15 @@ server <- function(input, output, session) {
     ggplotly(make_cellbins(data()))
   )
   output$target_achilles <- renderDataTable(
-    make_achilles_table(data()),
-    options = list(pageLength = 12)
+    make_achilles_table(data())
   )
   output$pos_enrich <- renderDataTable(
-    make_enrichment_table(master_positive, data())
+    make_enrichment_table(master_positive, data()),
+    options = list(pageLength = 25)
   )
   output$neg_enrich <- renderDataTable(
-    make_enrichment_table(master_negative, data())
+    make_enrichment_table(master_negative, data()),
+    options = list(pageLength = 25)
   )
   output$graph <- renderForceNetwork({
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
