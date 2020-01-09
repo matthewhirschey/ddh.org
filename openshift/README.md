@@ -1,22 +1,39 @@
-depmap-shiny
-============
+ddh-app
+=======
 
-Openshift deployment of Depmap application using shiny-server
+Openshift deployment of ddh application using shiny server
 
 ## Contents
 
-- application.yaml: Tweaked output of `process-template.sh`
-- process-template.sh: Script using [juhahu/shiny-openshift](https://github.com/juhahu/shiny-openshift/) to bootstrap Openshift resources in `application.yaml`
-- params: Parameters used in the template, named in `process-template.sh`
+- Build.yaml: Build configurations and image streams for base image and application image
+- Deployment.yaml: Deployment configuration to run application pods
+- DownloadDDHDataJob.yaml: Batch Job for downloading data from DDS
+- Storage.yaml: Configuration for requesting persistent storage to house data
+- file-list.json: List of files to fetch from DDS
+- make-file-list.py: Script to produce `file-list.json` using DukeDSClient
 
 ## Deployment
 
-1. Create Openshift objects (BuildConfig, DeploymentConfig, Route, Service, PersistentVolumeClaim): `oc create -f application.yaml`
-2. Wait for build to complete and deployment to start
-3. Place data files on the PersistentVolume: e.g. `oc cp ./data/gene_summary.RData depmap-shiny-1-xxxxx:/srv/data/`
-4. Visit the public route at http://depmap-shiny.apps.cloud.duke.edu to verify application is running
+1. Create shared storage `oc create -f Storage.yaml`
+2. Download data sets from DukeDS:
+    1. Create a [ddsclient config file](https://github.com/Duke-GCB/DukeDSClient/wiki/Agent-User-Keys-(setup)) if you don't have one already
+    2. Create a secret with your credentials: `oc create secret generic ddsclient-config-secret --from-file=ddsclient-config=$HOME/.ddsclient`
+    3. Create a config map with the list of files to download: `oc create configmap ddh-data-file-list --from-file=file-list.json`
+    4. Create the job to download data: `oc create -f DownloadJob.yaml`
+    5. Wait for the download to complete `oc get job download-ddh-data`
+3. Create Build and image configurations `oc create -f Build.yaml`
+4. Deploy application: `oc create -f Deployment.yaml`
+5. Ask openshift for the application route: `oc get route ddh-shiny-route`
 
-## Notes / TODOs
+## Development
 
-- The template is a good way to get shiny server up and running, but includes examples and packages we do not need
-- The shiny application is built from Dockerfile.shiny, but the template does not allow for customization of the `dockerfilePath`, so this has been manually added to the BuildConfig in `application.yaml`.
+The build/deployment is organized into two Docker images:
+
+1. A **base** image with R, shiny-server, and packages installed: [base-shiny/Dockerfile](../base-shiny/Dockerfile)
+2. An **application** image that builds _from_ the base but just adds the ddh code: [Dockerfile.ddh-shiny-app](../Dockerfile.ddh-shiny-app)
+
+The base image takes about 25 minutes to build, and the application image builds much more quickly (just a few seconds). So we've configured code changes to just rebuild the application image to speed up the deployment process.
+
+If additional Linux or R packages are needed, they should be added to the base image, since they are unlikely to change very often.
+
+Note that the application image build is linked to the base image, so rebuilding the base will trigger a rebuild of the application.

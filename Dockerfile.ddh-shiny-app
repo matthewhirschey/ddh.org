@@ -1,0 +1,7 @@
+FROM base-shiny:latest
+LABEL maintainer="Dan Leehr <dan.leehr@duke.edu>"
+
+COPY ./code /srv/code
+RUN touch /srv/.here
+RUN chown -R shiny /srv/
+WORKDIR /srv
