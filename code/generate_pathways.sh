@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# Creates a negative or positive pathway file.
+# This is done by creating subset files in parallel and then merging them together.
+# Environment variables:
+# PATHWAY_TYPE determines the pathway file to be created:
+#  "positive" ->  master_positive.RData
+#  "negative" ->  master_negative.RData
+# RSCRIPT_CMD specifies RScript to run
+# NUM_SUBSET_FILES specifies number of subset files to create
 set -e
 
 if [ -z "$RSCRIPT_CMD" ]; then
@@ -19,6 +27,7 @@ fi
 echo "Starting" $NUM_SUBSET_FILES "processes for" $PATHWAY_TYPE "pathway subsets."
 for IDX in $(seq $NUM_SUBSET_FILES)
 do
+  # runs Rscript in the background
   $RSCRIPT_CMD code/generate_depmap_pathways.R --type $PATHWAY_TYPE --num-subset-files $NUM_SUBSET_FILES --idx $IDX &
 done
 
