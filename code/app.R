@@ -386,7 +386,8 @@ save_data <- function(input) {
 
 #UI------
 ui <- fluidPage(
-  tags$head(includeHTML("gtag.html")),
+  tags$head(includeHTML("gtag.html"), 
+            includeScript("returnClick.js")),
   navbarPage(
     title = "Data-Driven Hypothesis",
     tabPanel("Home",
