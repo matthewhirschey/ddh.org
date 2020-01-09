@@ -1,14 +1,14 @@
 # Data-driven Hypothesis
 
-Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across various measures, in order to discover new novel genes in established processes or new processes for well-studied genes.
+Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](http://www.hirscheylab.org). A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across various measures, in order to discover new novel genes in established processes or new processes for well-studied genes.
 
 ## Querying Data
 
-Visit [www.datadrivenhypothesis.org](www.datadrivenhypothesis.org) to query genes, generate data, and download reports.
+Visit [www.datadrivenhypothesis.org](http://www.datadrivenhypothesis.org) to query genes, generate data, and download reports.
 
 ## Methods
 
-Visit [www.datadrivenhypothesis.org](www.datadrivenhypothesis.org) to view detailed methods for this project. Alternatively, after generating data files, knit `code/methods.Rmd` for the complete methods summary.
+Visit [www.datadrivenhypothesis.org](http://www.datadrivenhypothesis.org) to view detailed methods for this project. Alternatively, after generating data files, knit `code/methods.Rmd` for the complete methods summary.
 
 ## Generating/Recreating Data
 

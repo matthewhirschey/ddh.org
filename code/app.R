@@ -13,12 +13,13 @@ library(ggraph)
 library(viridis)
 library(cowplot)
 library(plotly)
+library(DT)
 
 #LOAD DATA-----
 #read current release information
 source(here::here("code", "current_release.R"))
 
-#read data from creat_gene_summary.R
+#read data from create_gene_summary.R
 read_gene_summary_into_environment <- function(tmp.env) {
   # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
   load(here::here("data", "gene_summary.RData"), envir=tmp.env)
@@ -80,38 +81,41 @@ gene_summary_ui <- function(gene_symbol) {
 make_top_table <- function(gene_symbol) {
   master_top_table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
-    unnest(data) %>%
-    select(-fav_gene) %>%
-    arrange(desc(r2)) %>%
-    rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
+    tidyr::unnest(data) %>%
+    dplyr::select(-fav_gene) %>%
+    dplyr::mutate(r2 = round(r2, 3)) %>% 
+    dplyr::arrange(desc(r2)) %>%
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
 }
 
 make_bottom_table <- function(gene_symbol) {
   master_bottom_table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
-    unnest(data) %>%
-    select(-fav_gene) %>%
-    arrange(r2) %>%
-    rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
+    tidyr::unnest(data) %>%
+    dplyr::select(-fav_gene) %>%
+    dplyr::mutate(r2 = round(r2, 3)) %>% 
+    dplyr::arrange(r2) %>%
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
 }
 
 make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
   table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
-    unnest(data) %>%
-    select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
-    arrange(Adjusted.P.value) %>%
-    rename("Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
+    tidyr::unnest(data) %>%
+    dplyr::select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
+    dplyr::arrange(Adjusted.P.value) %>%
+    dplyr::rename("Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
 }
 
 make_achilles_table <- function(gene_symbol) {
   target_achilles <- achilles %>%
-    select(X1, gene_symbol) %>%
-    left_join(expression_join, by = "X1") %>%
-    rename(dep_score = gene_symbol) %>%
-    select(cell_line, lineage, dep_score) %>%
-    arrange(dep_score) %>%
-    rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
+    dplyr::select(X1, gene_symbol) %>%
+    dplyr::left_join(expression_join, by = "X1") %>%
+    dplyr::rename(dep_score = gene_symbol) %>%
+    dplyr::select(cell_line, lineage, dep_score) %>%
+    dplyr::mutate(dep_score = round(dep_score, 3)) %>% 
+    dplyr::arrange(dep_score) %>%
+    dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
   return(target_achilles)
 }
 
@@ -342,13 +346,13 @@ render_complete_report <- function (file, gene_symbol, tmp.env) { #how to levera
   dep_bottom <- make_bottom_table(gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(gene_symbol)
-  rmarkdown::render("report_depmap_app.rmd", output_file = file)
+  rmarkdown::render("report_depmap_app.Rmd", output_file = file)
 
 }
 render_dummy_report <- function (file, gene_symbol, tmp.env) {
   fav_gene_summary <- tmp.env$gene_summary %>%
     filter(approved_symbol == gene_symbol)
-  rmarkdown::render("report_dummy_depmap.rmd", output_file = file)
+  rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
 }
 
 # Define the fields we want to save from the form
