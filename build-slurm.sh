@@ -9,5 +9,4 @@ mkdir -p ${SINGULARITY_TMPDIR} ${SINGULARITY_CACHEDIR} ${SINGULARITY_IMAGEDIR}
 
 make container_image
 export RSCRIPT_CMD="singularity exec singularity/images/depmap.sif Rscript"
-make gene_summary depmap_data depmap_stats depmap_tables
-make -j 10 depmap_pathways
+make
