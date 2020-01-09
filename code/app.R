@@ -386,11 +386,12 @@ save_data <- function(input) {
 
 #UI------
 ui <- fluidPage(
-  tags$head(includeHTML("gtag.html")),
+  tags$head(includeHTML("gtag.html"), 
+            includeScript("returnClick.js")),
   navbarPage(
     title = "Data-Driven Hypothesis",
     tabPanel("Home",
-             "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover new novel genes in established processes or new funtions for well-studied genes.",
+             "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.",
              hr(),
              textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
              actionButton(inputId = "go", label = "Generate"),
@@ -491,26 +492,31 @@ server <- function(input, output, session) {
     gene_summary_ui(data())
   })
   output$dep_top <- renderDataTable(
-    make_top_table(data())
+    make_top_table(data()),
+    options = list(pageLength = 25)
   )
   output$dep_bottom <- renderDataTable(
-    make_bottom_table(data())
+    make_bottom_table(data()),
+    options = list(pageLength = 25)
   )
-  output$cell_deps <- renderPlotly(
-    ggplotly(make_celldeps(data()), tooltip = "text")
-  )
+  output$cell_deps <- renderPlotly({
+    withProgress(message = 'Wait for it...', value = 1, {
+      ggplotly(make_celldeps(data()), tooltip = "text")
+    })
+  })
   output$cell_bins <- renderPlotly(
     ggplotly(make_cellbins(data()))
   )
   output$target_achilles <- renderDataTable(
-    make_achilles_table(data()),
-    options = list(pageLength = 12)
+    make_achilles_table(data())
   )
   output$pos_enrich <- renderDataTable(
-    make_enrichment_table(master_positive, data())
+    make_enrichment_table(master_positive, data()),
+    options = list(pageLength = 25)
   )
   output$neg_enrich <- renderDataTable(
-    make_enrichment_table(master_negative, data())
+    make_enrichment_table(master_negative, data()),
+    options = list(pageLength = 25)
   )
   output$graph <- renderForceNetwork({
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
