@@ -56,7 +56,7 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
   gene_summary$locus_type <- str_replace(gene_summary$locus_type, "Rna", "RNA")
   gene_summary$approved_name <- str_to_sentence(gene_summary$approved_name)
   gene_summary %>%
-    unite("aka", previous_symbols:synonyms, sep = ", ", na.rm = TRUE)
+    unite("aka", previous_symbols:alias_symbols, sep = ", ", na.rm = TRUE)
 }
 
 create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_path) {
