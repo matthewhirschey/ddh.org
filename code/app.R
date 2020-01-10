@@ -455,6 +455,9 @@ ui <- fluidPage(
              includeMarkdown("methods.md")
              ),
     tabPanel("Download Report",
+             conditionalPanel(condition = 'input.go == 0',
+                              "Enter a gene symbol to generate reports"),
+             conditionalPanel(condition = 'input.go != 0',
              h2("Report Generator"),
              conditionalPanel(condition = 'input.submit == 0',
                               "Please enter your name and email address to download a report", 
@@ -466,7 +469,7 @@ ui <- fluidPage(
              conditionalPanel(condition = 'input.submit != 0', 
              "To generate a report, click on the button below",
              br(),
-             downloadButton(outputId = "report", label = "Download report")))
+             downloadButton(outputId = "report", label = "Download report"))))
   )
 )
 
