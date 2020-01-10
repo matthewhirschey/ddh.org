@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --mem=32G
+#SBATCH --cpus-per-task=10
 #SBATCH --output=logs/ddh-%j.out
 
 source config.sh

@@ -4,6 +4,10 @@
 # singularity exec singularity/depmap.sif RScript
 RSCRIPT_CMD ?= Rscript
 
+# Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
+# Changing this number requires an update to the data/master_positive.RData and data/master_negative.RData rules below.
+NUM_SUBSET_FILES ?= 10
+
 # The first target is the default, it makes "all" the data. Does not include container_image
 all: gene_summary depmap_data depmap_stats depmap_tables depmap_pathways
 
@@ -46,6 +50,11 @@ data/master_top_table.RData data/master_bottom_table.RData: code/generate_depmap
 	@echo "Creating depmap tables"
 	$(RSCRIPT_CMD) code/generate_depmap_tables.R
 
-data/master_positive.RData data/master_negative.RData: code/generate_depmap_pathways.R data/gene_summary.RData data/gene_summary.RData data/19Q4_achilles_cor.RData data/achilles_lower.Rds data/achilles_upper.Rds
-	@echo "Creating depmap pathways"
-	$(RSCRIPT_CMD) code/generate_depmap_pathways.R
+data/master_positive.RData: code/generate_pathways.sh code/generate_depmap_pathways.R code/merge_depmap_pathways.R
+	@echo "Creating positive pathways data"
+	RSCRIPT_CMD=$(RSCRIPT_CMD) PATHWAY_TYPE=positive NUM_SUBSET_FILES=$(NUM_SUBSET_FILES) ./code/generate_pathways.sh
+
+data/master_negative.RData: code/generate_pathways.sh code/generate_depmap_pathways.R code/merge_depmap_pathways.R
+	@echo "Creating negative pathways data"
+	RSCRIPT_CMD=$(RSCRIPT_CMD) PATHWAY_TYPE=negative NUM_SUBSET_FILES=$(NUM_SUBSET_FILES) ./code/generate_pathways.sh
+
