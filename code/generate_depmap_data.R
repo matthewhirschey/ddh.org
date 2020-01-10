@@ -15,6 +15,11 @@ time_begin_data <- Sys.time()
 ##BROAD
 achilles <- read_csv(achilles_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+
+#add cleaning step
+source(here::here("code", "fix_names.R"))
+clean_colnames(achilles)
+
 save(achilles, file = here::here("data", paste0(release, "_achilles.RData")))
 
 achilles_long <- achilles %>% 
@@ -23,6 +28,10 @@ achilles_long <- achilles %>%
 #EXPRESSION(BROAD)
 expression <- read_csv(ccle_url, col_names = TRUE) %>% 
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+
+#repeat cleaning step for expression
+clean_colnames(expression)
+
 save(expression, file = here::here("data", paste0(release, "_expression.RData")))
 
 expression_join <- read_csv(cclemeta_url, col_names = TRUE) %>% 
