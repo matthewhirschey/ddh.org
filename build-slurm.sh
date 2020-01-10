@@ -8,5 +8,4 @@ export SINGULARITY_TMPDIR SINGULARITY_CACHEDIR ENTREZ_KEY DOCKER_IMG
 mkdir -p ${SINGULARITY_TMPDIR} ${SINGULARITY_CACHEDIR} ${SINGULARITY_IMAGEDIR}
 
 make container_image
-export RSCRIPT_CMD="singularity exec singularity/images/depmap.sif Rscript"
-make
+RSCRIPT_CMD="singularity exec singularity/images/depmap.sif Rscript" make
