@@ -57,9 +57,8 @@ code/generate_depmap_pathways.R --type positive --num-subset-files 4 --idx 1 &
 code/generate_depmap_pathways.R --type positive --num-subset-files 4 --idx 2 &
 code/generate_depmap_pathways.R --type positive --num-subset-files 4 --idx 3 & 
 code/generate_depmap_pathways.R --type positive --num-subset-files 4 --idx 4 &
-wait
 ```
-Afterwards you should merge these files into master_positive.RData by running:
+After these processes finish you should merge these files into master_positive.RData by running:
 ```
 code/merge_depmap_pathways.R --type positive --num-subset-files 4
 ```
