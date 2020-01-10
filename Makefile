@@ -8,6 +8,9 @@ RSCRIPT_CMD ?= Rscript
 # Changing this number requires an update to the data/master_positive.RData and data/master_negative.RData rules below.
 NUM_SUBSET_FILES ?= 10
 
+# Disable parallel build to handle code that creates multiple targets
+.NOTPARALLEL:
+
 # The first target is the default, it makes "all" the data. Does not include container_image
 all: gene_summary depmap_data depmap_stats depmap_tables depmap_pathways
 
