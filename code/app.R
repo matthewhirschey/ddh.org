@@ -67,8 +67,8 @@ gene_summary_ui <- function(gene_symbol) {
     gene_summary_row <- tmp.env$gene_summary %>%
       filter(approved_symbol == gene_symbol)
     if (dim(gene_summary_row)[1] == 0) {
-      ifelse(sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))) > 0,
-             result <- tagList(h4(paste0("Found ", sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))), " entries. Make sure to use the 'Official' gene symbol."))),
+      ifelse(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0,
+             result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "? Make sure to use the 'Official' gene symbol."))),
              result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias."))))
     } else {
       title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
