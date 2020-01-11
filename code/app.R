@@ -458,18 +458,18 @@ ui <- fluidPage(
              conditionalPanel(condition = 'input.go == 0',
                               "Enter a gene symbol to generate reports"),
              conditionalPanel(condition = 'input.go != 0',
-             h2("Report Generator"),
-             conditionalPanel(condition = 'input.submit == 0',
-                              "Please enter your name and email address to download a report", 
-                              textInput("first_name", "First Name", ""), 
-                              textInput("last_name", "Last Name", ""), 
-                              textInput("email", "Email Address", ""), 
-                              actionButton(inputId = "submit", 
-                                           label = "Enter")),
-             conditionalPanel(condition = 'input.submit != 0', 
-             "To generate a report, click on the button below",
-             br(),
-             downloadButton(outputId = "report", label = "Download report"))))
+                              h2("Report Generator"),
+                              conditionalPanel(condition = 'input.submit == 0',
+                                               "Please enter your name and email address to download a report", 
+                                               textInput("first_name", "First Name", ""), 
+                                               textInput("last_name", "Last Name", ""), 
+                                               textInput("email", "Email Address", ""), 
+                                               actionButton(inputId = "submit", 
+                                                            label = "Enter")),
+                              conditionalPanel(condition = 'input.submit != 0', 
+                                               "To generate a report, click on the button below",
+                                               br(),
+                                               downloadButton(outputId = "report", label = "Download report"))))
   )
 )
 
