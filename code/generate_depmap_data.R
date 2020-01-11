@@ -17,6 +17,7 @@ achilles <- read_csv(achilles_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 #add cleaning step
+load(file = here::here("data", "gene_summary.RData"))
 source(here::here("code", "fix_names.R"))
 clean_colnames(achilles)
 
