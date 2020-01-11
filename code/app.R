@@ -58,6 +58,15 @@ gene_summary_details <- function(gene_summary) {
   )
 }
 
+gene_summary_not_found <- function(gene_symbol) {
+  if(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0) {
+    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "? Make sure to use the 'Official' gene symbol.")))
+  } else {
+    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias.")))
+  }  
+  return(result)
+}
+
 # renders 'not found' or details about gene
 gene_summary_ui <- function(gene_symbol) {
   result <- tagList()
@@ -67,9 +76,7 @@ gene_summary_ui <- function(gene_symbol) {
     gene_summary_row <- tmp.env$gene_summary %>%
       filter(approved_symbol == gene_symbol)
     if (dim(gene_summary_row)[1] == 0) {
-      ifelse(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0,
-             result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "? Make sure to use the 'Official' gene symbol."))),
-             result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias."))))
+      result <- gene_summary_not_found(gene_symbol)
     } else {
       title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
       result <- gene_summary_details(gene_summary_row)
