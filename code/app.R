@@ -26,7 +26,6 @@ read_gene_summary_into_environment <- function(tmp.env) {
 }
 #read data from generate_depmap_data.R
 load(file=here::here("data", paste0(release, "_achilles.RData")))
-load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
 load(file=here::here("data", paste0(release, "_expression_join.RData")))
 
 #read data from generate_depmap_stats.R
@@ -181,23 +180,17 @@ make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
     message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "pos") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
-
-    dep_bottom_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "neg") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
+    dep_top_related <- make_top_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
+    
+    dep_bottom_related <- make_bottom_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
 
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>%
@@ -260,23 +253,17 @@ make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
     message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "pos") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
+    dep_top_related <- make_top_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
     
-    dep_bottom_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "neg") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
+    dep_bottom_related <- make_bottom_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
     
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>%
