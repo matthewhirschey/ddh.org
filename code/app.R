@@ -20,13 +20,10 @@ library(DT)
 source(here::here("code", "current_release.R"))
 
 #read data from create_gene_summary.R
-read_gene_summary_into_environment <- function(tmp.env) {
-  # Read gene_summary saved as RData using: save(gene_summary, file=here::here("data", "gene_summary.RData"))
-  load(here::here("data", "gene_summary.RData"), envir=tmp.env)
-}
+load(here::here("data", "gene_summary.RData"))
+     
 #read data from generate_depmap_data.R
 load(file=here::here("data", paste0(release, "_achilles.RData")))
-load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
 load(file=here::here("data", paste0(release, "_expression_join.RData")))
 
 #read data from generate_depmap_stats.R
@@ -58,18 +55,23 @@ gene_summary_details <- function(gene_summary) {
   )
 }
 
+gene_summary_not_found <- function(gene_symbol) {
+  if(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0) {
+    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Make sure to use the 'Official' gene symbol. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "?")))
+  } else {
+    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias.")))
+  }  
+  return(result)
+}
+
 # renders 'not found' or details about gene
 gene_summary_ui <- function(gene_symbol) {
   result <- tagList()
   if (gene_symbol != '') {
-    tmp.env <- environment()
-    read_gene_summary_into_environment(tmp.env)
-    gene_summary_row <- tmp.env$gene_summary %>%
+    gene_summary_row <- gene_summary %>%
       filter(approved_symbol == gene_symbol)
     if (dim(gene_summary_row)[1] == 0) {
-      ifelse(sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))) > 0,
-             result <- tagList(h4(paste0("Found ", sum(str_detect(gene_summary$aka, paste0("^", gene_symbol))), " entries. Make sure to use the 'Official' gene symbol."))),
-             result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias."))))
+      result <- gene_summary_not_found(gene_symbol)
     } else {
       title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
       result <- gene_summary_details(gene_summary_row)
@@ -174,23 +176,17 @@ make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
     message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "pos") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
-
-    dep_bottom_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "neg") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
+    dep_top_related <- make_top_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
+    
+    dep_bottom_related <- make_bottom_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
 
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>%
@@ -253,23 +249,17 @@ make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
     message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "pos") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
+    dep_top_related <- make_top_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
     
-    dep_bottom_related <- achilles_cor %>%
-      focus(i) %>%
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i, origin = "neg") %>%
-      rename(y = rowname, r2 = i) %>%
-      select(x, y, r2, origin) %>%
-      slice(1:threshold) #limit for visualization?
+    dep_bottom_related <- make_bottom_table(i) %>% 
+      slice(1:threshold) %>% 
+      mutate(x = i, origin = "pos") %>% 
+      rename(y = Gene, r2 = `R^2`) %>%
+      select(x, y, r2, origin)
     
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>%
@@ -319,8 +309,6 @@ make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
 }
 
 render_report_to_file <- function(file, gene_symbol) {
-  tmp.env <- environment()
-  read_gene_summary_into_environment(tmp.env)
   src <- normalizePath('report_depmap_app.Rmd')
 
   # temporarily switch to the temp dir, in case you do not have write
@@ -330,12 +318,12 @@ render_report_to_file <- function(file, gene_symbol) {
   on.exit(setwd(owd))
 
   file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
-  out <- render_complete_report(file, gene_symbol, tmp.env)
+  out <- render_complete_report(file, gene_symbol)
   file.rename(out, file)
 }
 
-render_complete_report <- function (file, gene_symbol, tmp.env) { #how to leverage tmp.env?
-  fav_gene_summary <- tmp.env$gene_summary %>%
+render_complete_report <- function (file, gene_symbol) {
+  fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
   p1 <- make_celldeps(gene_symbol)
   p2 <- make_cellbins(gene_symbol)
@@ -349,8 +337,8 @@ render_complete_report <- function (file, gene_symbol, tmp.env) { #how to levera
   rmarkdown::render("report_depmap_app.Rmd", output_file = file)
 
 }
-render_dummy_report <- function (file, gene_symbol, tmp.env) {
-  fav_gene_summary <- tmp.env$gene_summary %>%
+render_dummy_report <- function (file, gene_symbol) {
+  fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
   rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
 }
@@ -455,18 +443,21 @@ ui <- fluidPage(
              includeMarkdown("methods.md")
              ),
     tabPanel("Download Report",
-             h2("Report Generator"),
-             conditionalPanel(condition = 'input.submit == 0',
-                              "Please enter your name and email address to download a report", 
-                              textInput("first_name", "First Name", ""), 
-                              textInput("last_name", "Last Name", ""), 
-                              textInput("email", "Email Address", ""), 
-                              actionButton(inputId = "submit", 
-                                           label = "Enter")),
-             conditionalPanel(condition = 'input.submit != 0', 
-             "To generate a report, click on the button below",
-             br(),
-             downloadButton(outputId = "report", label = "Download report")))
+             conditionalPanel(condition = 'input.go == 0',
+                              "Enter a gene symbol to generate reports"),
+             conditionalPanel(condition = 'input.go != 0',
+                              h2("Report Generator"),
+                              conditionalPanel(condition = 'input.submit == 0',
+                                               "Please enter your name and email address to download a report", 
+                                               textInput("first_name", "First Name", ""), 
+                                               textInput("last_name", "Last Name", ""), 
+                                               textInput("email", "Email Address", ""), 
+                                               actionButton(inputId = "submit", 
+                                                            label = "Enter")),
+                              conditionalPanel(condition = 'input.submit != 0', 
+                                               "To generate a report, click on the button below",
+                                               br(),
+                                               downloadButton(outputId = "report", label = "Download report"))))
   )
 )
 
