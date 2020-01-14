@@ -464,7 +464,7 @@ ui <- fluidPage(
 #SERVER-----
 server <- function(input, output, session) {
   data <- eventReactive(input$go, {
-    str_to_upper(input$gene_symbol)})
+    if_else(str_detect(input$gene_symbol, "orf"), input$gene_symbol, str_to_upper(input$gene_symbol))})
   
   # When the Submit button is clicked, save the form data
   observeEvent(input$submit, {
