@@ -9,9 +9,9 @@ jobs:
     - name: Build the Docker image
       run: docker build . -t ddh:${GITHUB_SHA}
     - name: Tag as latest
-      run: docker tag ddh:${GITHUB_SHA} docker.pkg.github.com/Duke-GCB/ddh/ddh:latest
+      run: docker tag ddh:${GITHUB_SHA} docker.pkg.github.com/${GITHUB_REPOSITORY}/ddh:latest
     - name: Authenticate to GitHub Docker Registry
       run: docker login -u ${GITHUB_ACTOR} -p ${GITHUB_TOKEN} docker.pkg.github.com 
     - name: Publish the Docker image
-      run: docker push docker.pkg.github.com/Duke-GCB/ddh/ddh:latest
+      run: docker push docker.pkg.github.com/${GITHUB_REPOSITORY}/ddh:latest
       
