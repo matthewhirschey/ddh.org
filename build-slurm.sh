@@ -9,4 +9,4 @@ mkdir -p ${SINGULARITY_TMPDIR} ${SINGULARITY_CACHEDIR} ${SINGULARITY_IMAGEDIR}
 
 # Build the singularity image if necessary
 make container_image
-RSCRIPT_CMD="singularity exec singularity/images/depmap.sif Rscript" make
+RSCRIPT_CMD="singularity exec singularity/images/ddh.sif Rscript" make
