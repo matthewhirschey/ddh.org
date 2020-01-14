@@ -1,4 +1,4 @@
-name: Build and publish ddh Docker image
+name: Publish Docker Image
 on: [push]
 jobs:
   build:
@@ -13,12 +13,10 @@ jobs:
     - name: Format the target docker image repo name (must be lowercase)
       run: |
         echo "::set-env name=DOCKER_REPOSITORY::docker.pkg.github.com/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]')/ddh:latest"
-    - name: Print the built repo name
-      run: echo "Building to ${DOCKER_REPOSITORY}"
     - uses: actions/checkout@v2
-    - name: Build the Docker image
+    - name: Build Docker image
       run: docker build . -t ddh:${GITHUB_SHA}
     - name: Tag as latest
       run: docker tag ddh:${GITHUB_SHA} ${DOCKER_REPOSITORY}
-    - name: Publish the Docker image
+    - name: Push Docker image
       run: docker push ${DOCKER_REPOSITORY}
