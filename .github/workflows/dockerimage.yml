@@ -15,7 +15,7 @@ jobs:
         echo "::set-env name=DOCKER_REPOSITORY::docker.pkg.github.com/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]')/ddh:latest"
     - name: Print the built repo name
       run: echo "Building to ${DOCKER_REPOSITORY}"
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Build the Docker image
       run: docker build . -t ddh:${GITHUB_SHA}
     - name: Tag as latest
