@@ -6,7 +6,7 @@ RSCRIPT_CMD ?= Rscript
 
 # Default container image registry/repository to use when making the local singularity container
 # image file
-DOCKER_IMG ?= docker.pkg.github.com/Duke-GCB/ddh/ddh:latest
+DOCKER_IMG ?= dukegcb/ddh:latest
 
 # Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
 # Changing this number requires an update to the data/master_positive.RData and data/master_negative.RData rules below.
