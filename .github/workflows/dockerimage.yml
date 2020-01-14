@@ -4,8 +4,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Authenticate to GitHub Docker Registry
-      run: docker login -u ${GITHUB_ACTOR} -p ${GITHUB_TOKEN} docker.pkg.github.com
+    - name: Docker Login
+      uses: azure/docker-login@v1
+      with:
+        login-server: docker.pkg.github.com
+        username: $GITHUB_ACTOR
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Format the target docker image repo name (must be lowercase)
       run: |
         echo "::set-env name=DOCKER_REPOSITORY::docker.pkg.github.com/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]')/ddh:latest"
