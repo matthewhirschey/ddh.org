@@ -4,8 +4,9 @@
 #SBATCH --output=logs/ddh-%j.out
 
 source config.sh
-export SINGULARITY_TMPDIR SINGULARITY_CACHEDIR ENTREZ_KEY DOCKER_IMG
+export SINGULARITY_TMPDIR SINGULARITY_CACHEDIR ENTREZ_KEY
 mkdir -p ${SINGULARITY_TMPDIR} ${SINGULARITY_CACHEDIR} ${SINGULARITY_IMAGEDIR}
 
+# Build the singularity image if necessary
 make container_image
-RSCRIPT_CMD="singularity exec singularity/images/depmap.sif Rscript" make
+RSCRIPT_CMD="singularity exec singularity/images/ddh.sif Rscript" make

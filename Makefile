@@ -1,8 +1,12 @@
 .PHONY = dirs
 
 # Default command to use for Rscript shall simply be Rscript. When running under a container, this may be
-# singularity exec singularity/depmap.sif RScript
+# singularity exec singularity/ddh.sif RScript
 RSCRIPT_CMD ?= Rscript
+
+# Default container image registry/repository to use when making the local singularity container
+# image file
+DOCKER_IMG ?= docker://dukegcb/ddh:latest
 
 # Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
 # Changing this number requires an update to the data/master_positive.RData and data/master_negative.RData rules below.
@@ -22,7 +26,7 @@ clean_container:
 	rm -r singularity/*
 
 # Map simple target names to the files on which they depend
-container_image: singularity/depmap.sif
+container_image: singularity/ddh.sif
 gene_summary: data/gene_summary.RData
 depmap_data: data/19Q4_achilles_cor.RData data/19Q4_achilles.RData data/19Q4_expression.RData data/19Q4_expression.RData data/19Q4_expression_join.RData
 depmap_stats: data/sd_threshold.Rds data/achilles_lower.Rds data/achilles_upper.Rds data/mean_virtual_achilles.Rds data/sd_virtual_achilles.Rds
@@ -33,9 +37,9 @@ dirs:
 	mkdir -p data
 	mkdir -p singularity
 
-singularity/depmap.sif:
+singularity/ddh.sif:
 	@echo "Pulling container image"
-	singularity pull singularity/images/depmap.sif ${DOCKER_IMG}
+	singularity pull singularity/images/ddh.sif $(DOCKER_IMG)
 
 data/gene_summary.RData: code/create_gene_summary.R
 	@echo "Creating gene summary"

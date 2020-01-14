@@ -31,13 +31,15 @@ make data/sd_threshold.rds
 
 To remove all data files, use `make clean`
 
-### Singularity
+#### Singularity
 
-This project also supports using a container runtime like [singularity](https://sylabs.io/singularity/) to run `Rscript`. To run under Singularity, set the `RSCRIPT_CMD` environment variable as noted in [build-slurm.sh](build-slurm.sh). This scripts expects site-specific environment variables to be exported from a `config.sh` file. This file is not included in the repo, as it
+On systems that support the [singularity](https://sylabs.io/singularity/) container runtime, we recommend using our container image to run the data-generating R scripts with the required dependencies.
 
-The [Makefile](Makefile) also includes a `container_image` target that will download the docker image named in the `DOCKER_IMG` variable and prepare it for singularity.
+The [Makefile](Makefile) includes a `container_image` target that will download the docker image and convert it into singularity format. See the [build-slurm.sh](build-slurm.sh) script for examples.
 
-### Data file generation
+Generating data under singularity is also demonstrated in the [build-slurm.sh](build-slurm.sh). It sets the `RSCRIPT_CMD` environment variable so that `make` will run `singularity ... Rscript` instead of simply `Rscript`. `build-slurm.sh` is designed to be submitted as an `sbatch` job. It sources site-specific variables and secrets (such as `ENTREZ_KEY`) from a `config.sh` file, which you may need to create.
+
+### Manual Data Generation
 
 Alternatively, you can run the scripts manually:
 
