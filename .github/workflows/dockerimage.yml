@@ -21,4 +21,4 @@ jobs:
     - name: Tag as latest
       run: docker tag ddh:${GITHUB_SHA} ${DOCKER_REPOSITORY}
     - name: Publish the Docker image
-      run: docker push DOCKER_REPOSITORY
+      run: docker push ${DOCKER_REPOSITORY}
