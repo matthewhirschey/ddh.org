@@ -5,12 +5,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' # Running this job only for master branch
     steps:
+    - name: Authenticate to GitHub Docker Registry
+      run: docker login -u ${GITHUB_ACTOR} -p ${GITHUB_TOKEN} docker.pkg.github.com
+    - name: Format the target docker image repo name (must be lowercase)
+      run: |
+        echo "::set-env name=DOCKER_REPOSITORY::docker.pkg.github.com/$(echo ${GITHUB_REPOSITORY} | tr '[:upper:]' '[:lower:]')/ddh:latest"
+    - name: Print the built repo name
+      run: echo "Building to ${DOCKER_REPOSITORY}"
     - uses: actions/checkout@v1
     - name: Build the Docker image
       run: docker build . -t ddh:${GITHUB_SHA}
     - name: Tag as latest
-      run: docker tag ddh:${GITHUB_SHA} docker.pkg.github.com/${GITHUB_REPOSITORY}/ddh:latest
-    - name: Authenticate to GitHub Docker Registry
-      run: docker login -u ${GITHUB_ACTOR} -p ${GITHUB_TOKEN} docker.pkg.github.com
+      run: docker tag ddh:${GITHUB_SHA} ${DOCKER_REPOSITORY}
     - name: Publish the Docker image
-      run: docker push docker.pkg.github.com/${GITHUB_REPOSITORY}/ddh:latest
+      run: docker push DOCKER_REPOSITORY
