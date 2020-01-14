@@ -80,7 +80,7 @@ achilles_cor_long <- achilles_cor %>%
 #EXPRESSION(BROAD), need this to get cell line names
 expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
 
-load(file=here::here("data", "expression_join.RData"))
+load(file=here::here("data", paste0(params$release, "_expression_join.RData")))
 
 gene_summary <- read_feather(path = here::here("data", "gene_summary.feather"))
 ```

@@ -1,0 +1,101 @@
+---
+title: "mitocarta validation ideas"
+output: html_notebook
+---
+
+```{r setup}
+library(tidyverse)
+library(mitocarta)
+library(proteins)
+#devtools::install_github("hirscheylab/omim")
+library(omim)
+library(RISmed) #Load the RISmed package to access pubmed api
+#library(assertive)
+library(xml2)
+library(vroom)
+load(here::here("data", "gene_summary.RData"))
+```
+
+```{r}
+mitocarta <- mitocarta %>% 
+  filter(mcarta2_list == 1) %>% 
+  arrange(desc(mcarta2_score))
+
+mitocarta_orf <- mitocarta %>% 
+  filter(str_detect(symbol, "orf"))
+
+#omim
+
+```
+
+```{r pubmed}
+pubmed_gene_count_ris <- function(gene) {
+  gene <- as.character(gene)
+  search_query <- EUtilsSummary(gene, type='esearch', db='pubmed', retmax = 25000)
+  count <- as.character(QueryCount(search_query))
+  Sys.sleep(1)
+  return(count)
+}
+
+pubmed_gene_count_ris("PYURF")
+pubmed_gene_count_ris("TP53")
+genes <- mitocarta$symbol
+genes_short <- genes[1:10]
+genes_tmp <- c("TP53", "PYURF")
+
+k <- NULL
+l <- NULL
+for (i in genes) {
+  j <- pubmed_gene_count_ris(i)
+  k <- c(k, j)
+  l <- c(l, i)
+}
+#cbind (k, )
+bind <- cbind(k, l)
+
+```
+
+#remake fun() because other one kept failing
+```{r}
+url <- 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=SIRT4&retmax=25000'
+readLines(url)
+tmp <- read_xml(url)
+xml_attrs(xml_child(tmp, 1))
+xml_name(tmp)
+list <- as_list(tmp)
+list[["eSearchResult"]][["Count"]][[1]]
+
+pubmed_gene_count <- function(gene) {
+  gene <- as.character(gene)
+  #search_query <- EUtilsSummary(gene, type='esearch', db='pubmed', retmax = 25000)
+  #count <- as.character(QueryCount(search_query))
+  url <- paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=", gene, "&retmax=25000&email=matthew.hirschey@duke.edu&api_key=c02d48a6960a0c40134e33436870410fe107")
+  tmp <- read_xml(url)
+  list <- as_list(tmp)
+  count <- list[["eSearchResult"]][["Count"]][[1]]
+  #Sys.sleep(1)
+  return(count)
+}
+
+#just use gene_summary instead!!!
+pubmed_symbol_lookup <- function(id) {
+  id <- as.character(id)
+  url <- paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=gene&id=", id, "&rettype=docsum&retmode=text&api_key=c02d48a6960a0c40134e33436870410fe107")
+  tmp <- vroom::vroom(url, col_names = FALSE) %>% 
+    separate(X1, into = c("a", "b"), sep = "[:punct:]") %>% 
+    select(b) %>% 
+    slice(1) %>% 
+    pull()
+  }
+```
+
+```{r}
+mitocarta_orf <- mitocarta %>% 
+  filter(mcarta2_list == 1, 
+         str_detect(symbol, "orf")) %>% 
+  left_join(gene_summary, by = c("human_gene_id" ="ncbi_gene_id")) %>% 
+  mutate(pubmed = map_chr(approved_symbol, pubmed_gene_count)) %>% 
+  select(symbol, approved_symbol, approved_name, mcarta2_score, mcarta2_fdr, mcarta2_evidence, pubmed, entrez_summary, aka, synonyms, protein_length, coexpression_gnf_n50_score, pgc_induction_score, human_gene_id, ensembl_gene_id, hgnc_id, omim_id_supplied_by_omim, uni_prot_id_supplied_by_uni_prot) %>% 
+  arrange(desc(mcarta2_score))
+```
+

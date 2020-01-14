@@ -130,7 +130,7 @@ ggplot(achilles_cor_min, aes(min)) +
 ```
 
 #Permutation tests
-A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationshipe between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses
+A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we will break the relationship between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means). This will give a better idea of where to draw a threshold of a "signficiant correlation" for these analyses
 
 Can I do this for one gene, sampling from the entire correlation matrix, and getting a distribution of correlated means for a single gene 1000x?
 
@@ -284,7 +284,7 @@ ashley <- c("NMNAT1", "NMNAT2", "NMNAT3", "PNP")
 
 #EDA to get gene lists for focused targets
 ```{r pull_genes}
-gene <- c("IDH3G")
+gene <- c("SIRT4")
 
 achilles_cor %>% 
   focus(gene) %>% 
@@ -478,6 +478,105 @@ ggsave(here::here("results", "expression_v_dep2.png"), plot = last_plot(), dpi =
 
 #difference between is high v. low
 #value (avg) is high v. low
+```
+
+#differential analysis
+```{r}
+source(here::here("code", "current_release.R"))
+
+#import raw data
+load(file=here::here("data", paste0(release, "_achilles.RData")))
+#import presaved corr data
+load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
+#make long
+achilles_cor_long <- achilles_cor %>% 
+  stretch()
+
+#make cor matrix from original data
+achilles_cor_original <- achilles %>% #not clean
+  select(-X1) %>% 
+  correlate()
+
+achilles_cor_original_long <- achilles_cor_original %>% 
+  stretch()
+
+joined <- achilles_cor_original_long %>% 
+  left_join(achilles_cor_long, by = c("x" = "x", "y" = "y"))
+
+```
+
+#look at concordance between achilles gene names and official gene names
+```{r eval=FALSE, include=FALSE}
+source(here::here("code", "current_release.R"))
+
+load(file=here::here("data", paste0(release, "_achilles.RData")))
+load(here::here("data", "gene_summary.RData"))
+
+names <- names(achilles)
+head(names)
+names <- names[-1]
+head(names)
+
+head(gene_summary)
+
+sum(!(names(achilles) %in% gene_summary$approved_symbol)) #first column name is X1
+
+wrong_name <- names(achilles)[(!(names(achilles) %in% gene_summary$approved_symbol)) == TRUE]
+wrong_name <- wrong_name[-1]
+wrong_name
+
+fix_names <- function(wrong_name) {
+var <- str_which(gene_summary$aka, paste0("(?<![:alnum:])", wrong_name, "(?![:alnum:]|\\-)")) #finds index
+df <- gene_summary[var,]
+right_name <- df$approved_symbol
+if (length(var) == 1) {
+  return(right_name)
+} else {
+  return(wrong_name)
+}
+#fixes 251, leaves 11
+}
+
+wrong_name_df <- as_tibble(wrong_name)
+right_name_df <- wrong_name_df %>% 
+  mutate(right_name = map(value, fix_names), 
+         match = if_else(value == right_name, TRUE, FALSE)) 
+  
+sum(right_name_df$match)
+
+
+str_which(gene_summary$aka, "(?<![:alnum:])AAED1(?![:alnum:]|\\-)")
+gene_summary[25614,]
+
+#fix_names
+for (name in names(achilles_skinny)) {
+  if (name %in% gene_summary$approved_symbol == FALSE){
+  names(achilles_skinny)[names(achilles_skinny) == name] <- fix_names(name)
+} else {
+  name
+}
+}
+achilles_skinny <- achilles %>% select(1:16)
+name <- "AAED1"
+
+#it works
+for (name in names(achilles)) {
+  if (name %in% gene_summary$approved_symbol == FALSE){
+  names(achilles)[names(achilles) == name] <- fix_names(name)
+} else {
+  name
+}
+}
+sum(!(names(achilles) %in% gene_summary$approved_symbol)) #first column name is X1
+
+
+#use code to display more info if unapproved/aka gene entered
+paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)")
+
+str_detect(gene_summary$aka, paste0("(?<![:alnum:])", PPAR, "(?![:alnum:]|\\-)"))
+
+str_c(pull(gene_summary[str_which(gene_summary$aka, "PPAR"), 2]), collapse = ", ")
+
 ```
 
 
