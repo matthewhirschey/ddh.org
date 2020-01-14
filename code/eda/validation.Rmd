@@ -10,7 +10,6 @@ library(proteins)
 #devtools::install_github("hirscheylab/omim")
 library(omim)
 library(RISmed) #Load the RISmed package to access pubmed api
-#library(assertive)
 library(xml2)
 library(vroom)
 load(here::here("data", "gene_summary.RData"))
@@ -28,6 +27,10 @@ mitocarta_orf <- mitocarta %>%
 
 ```
 
+#functions
+This is the first attempt, using the function from the RISmed package
+It works for a single instance, but then when I try to loop through, it fails. 
+Some of the data are returned as lists, not as values. 
 ```{r pubmed}
 pubmed_gene_count_ris <- function(gene) {
   gene <- as.character(gene)
@@ -56,7 +59,9 @@ bind <- cbind(k, l)
 ```
 
 #remake fun() because other one kept failing
+Re-writing the function will give me better control over the output, and what to do if it fails. 
 ```{r}
+#dev code
 url <- 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=SIRT4&retmax=25000'
 readLines(url)
 tmp <- read_xml(url)
@@ -65,6 +70,7 @@ xml_name(tmp)
 list <- as_list(tmp)
 list[["eSearchResult"]][["Count"]][[1]]
 
+#working function
 pubmed_gene_count <- function(gene) {
   gene <- as.character(gene)
   #search_query <- EUtilsSummary(gene, type='esearch', db='pubmed', retmax = 25000)
@@ -77,7 +83,7 @@ pubmed_gene_count <- function(gene) {
   return(count)
 }
 
-#just use gene_summary instead!!!
+#started writing fun() to align ncbi gene id with gene name, but then I realized I could just use gene_summary instead!!!
 pubmed_symbol_lookup <- function(id) {
   id <- as.character(id)
   url <- paste0("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=gene&id=", id, "&rettype=docsum&retmode=text&api_key=c02d48a6960a0c40134e33436870410fe107")
@@ -94,8 +100,23 @@ mitocarta_orf <- mitocarta %>%
   filter(mcarta2_list == 1, 
          str_detect(symbol, "orf")) %>% 
   left_join(gene_summary, by = c("human_gene_id" ="ncbi_gene_id")) %>% 
-  mutate(pubmed = map_chr(approved_symbol, pubmed_gene_count)) %>% 
+  mutate(pubmed_approved = map_chr(approved_symbol, pubmed_gene_count), 
+         pubmed_symbol = map_chr(symbol, pubmed_gene_count), 
+         pubmed = if_else(pubmed_approved != pubmed_symbol, as.numeric(pubmed_approved) + as.numeric(pubmed_symbol), as.numeric(pubmed_approved))) %>% 
   select(symbol, approved_symbol, approved_name, mcarta2_score, mcarta2_fdr, mcarta2_evidence, pubmed, entrez_summary, aka, synonyms, protein_length, coexpression_gnf_n50_score, pgc_induction_score, human_gene_id, ensembl_gene_id, hgnc_id, omim_id_supplied_by_omim, uni_prot_id_supplied_by_uni_prot) %>% 
-  arrange(desc(mcarta2_score))
+  arrange(desc(mcarta2_score)) #%>% 
+  #filter(str_detect(approved_symbol, "orf"))
+
+write_csv(mitocarta_orf, here::here("data", "mitocarta_orf.csv"))
+```
+
+#integrate with table data for correlations
+```{r}
+load(file=here::here("data", "master_bottom_table.RData"))
+load(file=here::here("data", "master_top_table.RData"))
+
+mitocarta_orf_final <- mitocarta_orf %>%
+  left_join(master_top_table, by = c("approved_symbol" = "fav_gene")) %>% 
+  left_join(master_bottom_table, by = c("approved_symbol" = "fav_gene"), suffix = c("_top", "_bottom"))
 ```
 
