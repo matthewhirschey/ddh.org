@@ -362,11 +362,12 @@ save_data <- function(input) {
   )
   
   #create dir
-  dir.create(file.path(here::here("data", "users")), showWarnings = FALSE)
+  directory_path <- here::here("user-data")
+  dir.create(file.path(directory_path), showWarnings = FALSE)
   # Write the file to the local system
   saveRDS(
     object = data,
-    file = file.path(here::here("data", "users"), file_name)
+    file = file.path(directory_path, file_name)
   )
 }
 
