@@ -356,7 +356,7 @@ save_data <- function(input) {
   
   # Create a unique file name
   file_name <- sprintf(
-    "%s_%s.rds", 
+    "%s_%s.csv",
     as.integer(Sys.time()), 
     digest::digest(data) #gives it a unique name
   )
@@ -364,11 +364,8 @@ save_data <- function(input) {
   #create dir
   directory_path <- here::here("user-data")
   dir.create(file.path(directory_path), showWarnings = FALSE)
-  # Write the file to the local system
-  saveRDS(
-    object = data,
-    file = file.path(directory_path, file_name)
-  )
+  # Write the file to the local system as csv without column headers for ease of use
+  write_csv(data, path=file.path(directory_path, file_name), col_names=FALSE)
 }
 
 
