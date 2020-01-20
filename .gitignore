@@ -9,6 +9,7 @@ misc/
 results/
 tmp/
 data/
+user-data/
 validation/
 doc/
 singularity/

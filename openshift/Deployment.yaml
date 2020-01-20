@@ -38,14 +38,20 @@ items:
             timeoutSeconds: 30
           resources:
             requests:
-              memory: 3G
+              memory: 2G
           volumeMounts:
           - mountPath: /srv/data
             name: ddh-data
+          - mountPath: /srv/user-data
+            name: ddh-user-data
         volumes:
         - name: ddh-data
+          readOnly: true
           persistentVolumeClaim:
             claimName: ddh-data-pvc
+        - name: ddh-user-data
+          persistentVolumeClaim:
+            claimName: ddh-user-data-pvc
     triggers:
     - imageChangeParams:
         automatic: true
