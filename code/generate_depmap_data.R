@@ -19,7 +19,7 @@ achilles <- read_csv(achilles_url, col_names = TRUE) %>%
 #add cleaning step
 load(file = here::here("data", "gene_summary.RData"))
 source(here::here("code", "fix_names.R"))
-clean_colnames(achilles)
+achilles <- clean_colnames(achilles)
 
 save(achilles, file = here::here("data", paste0(release, "_achilles.RData")))
 
@@ -31,7 +31,7 @@ expression <- read_csv(ccle_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 #repeat cleaning step for expression
-clean_colnames(expression)
+expression <- clean_colnames(expression)
 
 save(expression, file = here::here("data", paste0(release, "_expression.RData")))
 
