@@ -59,9 +59,9 @@ data/master_top_table.RData data/master_bottom_table.RData: code/generate_depmap
 
 data/master_positive.RData: code/generate_pathways.sh code/generate_depmap_pathways.R code/merge_depmap_pathways.R
 	@echo "Creating positive pathways data"
-	RSCRIPT_CMD=$(RSCRIPT_CMD) PATHWAY_TYPE=positive NUM_SUBSET_FILES=$(NUM_SUBSET_FILES) ./code/generate_pathways.sh
+	RSCRIPT_CMD="$(RSCRIPT_CMD)" PATHWAY_TYPE=positive NUM_SUBSET_FILES=$(NUM_SUBSET_FILES) ./code/generate_pathways.sh
 
 data/master_negative.RData: code/generate_pathways.sh code/generate_depmap_pathways.R code/merge_depmap_pathways.R
 	@echo "Creating negative pathways data"
-	RSCRIPT_CMD=$(RSCRIPT_CMD) PATHWAY_TYPE=negative NUM_SUBSET_FILES=$(NUM_SUBSET_FILES) ./code/generate_pathways.sh
+	RSCRIPT_CMD="$(RSCRIPT_CMD)" PATHWAY_TYPE=negative NUM_SUBSET_FILES=$(NUM_SUBSET_FILES) ./code/generate_pathways.sh
 
