@@ -12,10 +12,12 @@ fix_names <- function(wrong_name) {
 
 clean_colnames <- function(dataset) {
   for (name in names(dataset)) {
-    if (name %in% gene_summary$approved_symbol == FALSE){
-      names(dataset)[names(dataset) == name] <- fix_names(name)
-    } else {
-      name
+    if (name %in% gene_summary$approved_symbol == FALSE) {
+      fixed_name <- fix_names(name)
+      if (fixed_name %in% names(dataset) == FALSE) {
+        names(dataset)[names(dataset) == name] <- fixed_name 
+      }
     }
   }
+  return(dataset)
 }
