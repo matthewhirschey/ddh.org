@@ -543,9 +543,7 @@ server <- function(input, output, session) {
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
       withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
-      ifelse(input$gene_symbol %in% colnames(achilles), render_report_to_file(file, data()), render_dummy_report(file, data())
-      )
-        }
+      render_report_to_file(file, data())}
     )}
   )
 }
