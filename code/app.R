@@ -309,17 +309,31 @@ make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
 }
 
 render_report_to_file <- function(file, gene_symbol) {
-  src <- normalizePath('report_depmap_app.Rmd')
-
-  # temporarily switch to the temp dir, in case you do not have write
-  # permission to the current working directory
-
-  owd <- setwd(tempdir())
-  on.exit(setwd(owd))
-
-  file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
-  out <- render_complete_report(file, gene_symbol)
-  file.rename(out, file)
+  if (gene_symbol %in% colnames(achilles)) {
+    src <- normalizePath('report_depmap_app.Rmd')
+    
+    # temporarily switch to the temp dir, in case you do not have write
+    # permission to the current working directory
+    
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
+    out <- render_complete_report(file, gene_symbol)
+    file.rename(out, file)
+  } else {
+    src <- normalizePath('report_dummy_depmap.Rmd')
+    
+    # temporarily switch to the temp dir, in case you do not have write
+    # permission to the current working directory
+    
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_dummy_depmap.Rmd', overwrite = TRUE)
+    out <- render_dummy_report(file, gene_symbol)
+    file.rename(out, file)
+  }
 }
 
 render_complete_report <- function (file, gene_symbol) {
