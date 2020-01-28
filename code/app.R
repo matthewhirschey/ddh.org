@@ -309,17 +309,31 @@ make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
 }
 
 render_report_to_file <- function(file, gene_symbol) {
-  src <- normalizePath('report_depmap_app.Rmd')
-
-  # temporarily switch to the temp dir, in case you do not have write
-  # permission to the current working directory
-
-  owd <- setwd(tempdir())
-  on.exit(setwd(owd))
-
-  file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
-  out <- render_complete_report(file, gene_symbol)
-  file.rename(out, file)
+  if (gene_symbol %in% colnames(achilles)) {
+    src <- normalizePath('report_depmap_app.Rmd')
+    
+    # temporarily switch to the temp dir, in case you do not have write
+    # permission to the current working directory
+    
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
+    out <- render_complete_report(file, gene_symbol)
+    file.rename(out, file)
+  } else {
+    src <- normalizePath('report_dummy_depmap.Rmd')
+    
+    # temporarily switch to the temp dir, in case you do not have write
+    # permission to the current working directory
+    
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_dummy_depmap.Rmd', overwrite = TRUE)
+    out <- render_dummy_report(file, gene_symbol)
+    file.rename(out, file)
+  }
 }
 
 render_complete_report <- function (file, gene_symbol) {
@@ -392,7 +406,8 @@ ui <- fluidPage(
                                          fluidRow(splitLayout(cellWidths = c("50%", "50%"),
                                                               plotlyOutput(outputId = "cell_deps"),
                                                               plotlyOutput(outputId = "cell_bins"))),
-                                         HTML("<p></p><p><b>Left:</b> Cell Line Dependency Curve. Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essentail within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out. <b>Right:</b> Histogram of Binned Dependency Scores. Dependency scores across all cell lines for queried gene partitioned into 0.25 unit bins. Shape of the histogram curve reveals overall influence of queried gene on cellular fitness</p>"))),
+                                         fluidRow(htmlOutput(outputId = "plot_text"))
+                                         )),
                tabPanel("Table",
                         conditionalPanel(condition = 'input.go == 0',
                                          "Enter a gene symbol to generate a table of dependent cell line"),
@@ -480,34 +495,59 @@ server <- function(input, output, session) {
     # render details about the gene symbol user entered
     gene_summary_ui(data())
   })
-  output$dep_top <- renderDataTable(
-    make_top_table(data()),
-    options = list(pageLength = 25)
-  )
-  output$dep_bottom <- renderDataTable(
-    make_bottom_table(data()),
-    options = list(pageLength = 25)
-  )
+  output$dep_top <- DT::renderDataTable({
+    validate(
+      need(input$gene_symbol %in% master_top_table$fav_gene, "No data found for this gene."))
+    DT::datatable(
+      make_top_table(data()), 
+      options = list(pageLength = 25))
+  })
+  output$dep_bottom <- DT::renderDataTable({
+    validate(
+      need(input$gene_symbol %in% master_bottom_table$fav_gene, "No data found for this gene."))
+    DT::datatable(
+      make_bottom_table(data()),
+    options = list(pageLength = 25))
+  })
   output$cell_deps <- renderPlotly({
+    validate(
+      need(input$gene_symbol %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
       ggplotly(make_celldeps(data()), tooltip = "text")
     })
   })
-  output$cell_bins <- renderPlotly(
+  output$cell_bins <- renderPlotly({
+    validate(
+      need(input$gene_symbol %in% colnames(achilles), "")) #""left blank
     ggplotly(make_cellbins(data()))
-  )
-  output$target_achilles <- renderDataTable(
+  })
+  output$plot_text <- renderUI({
+    validate(
+      need(input$gene_symbol %in% colnames(achilles), "")) #""left blank
+    HTML("<p></p><p><b>Left:</b> Cell Line Dependency Curve. Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essentail within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out. <b>Right:</b> Histogram of Binned Dependency Scores. Dependency scores across all cell lines for queried gene partitioned into 0.25 unit bins. Shape of the histogram curve reveals overall influence of queried gene on cellular fitness</p>")
+    })
+  output$target_achilles <- DT::renderDataTable({
+    validate(
+      need(input$gene_symbol %in% colnames(achilles), "No data found for this gene."))
     make_achilles_table(data())
-  )
-  output$pos_enrich <- renderDataTable(
-    make_enrichment_table(master_positive, data()),
-    options = list(pageLength = 25)
-  )
-  output$neg_enrich <- renderDataTable(
-    make_enrichment_table(master_negative, data()),
-    options = list(pageLength = 25)
-  )
+  })
+  output$pos_enrich <- DT::renderDataTable({
+    validate(
+      need(input$gene_symbol %in% master_positive$fav_gene, "No data found for this gene."))
+    DT::datatable(
+      make_enrichment_table(master_positive, data()),
+    options = list(pageLength = 25))
+  })
+  output$neg_enrich <- DT::renderDataTable({
+    validate(
+      need(input$gene_symbol %in% master_negative$fav_gene, "No data found for this gene."))
+    DT::datatable(
+      make_enrichment_table(master_negative, data()),
+      options = list(pageLength = 25))
+  })
   output$graph <- renderForceNetwork({
+    validate(
+      need(input$gene_symbol %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
     make_graph(data())
     })
