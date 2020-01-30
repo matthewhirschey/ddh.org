@@ -579,6 +579,28 @@ str_c(pull(gene_summary[str_which(gene_summary$aka, "PPAR"), 2]), collapse = ", 
 
 ```
 
+#relationship between max r^2 and number of genes in list
+```{r}
+master_top_small <- master_top_table %>% 
+  slice(1:10)
+
+count_v_max <- master_top_table %>% 
+  unnest(data) %>% 
+  group_by(fav_gene) %>% 
+  summarize(count = n(), 
+            max = max(r2))
+
+ggplot(count_v_max) +
+  geom_point(aes(x = max, y = count), alpha = 0.2)
+
+ggplot(count_v_max) +
+  geom_point(aes(x = max, y = log2(count)), alpha = 0.2)
+
+ggplot(count_v_max) + 
+  geom_histogram(aes(count), binwidth = 50, color = "gray") + 
+  scale_x_continuous(breaks = seq(0, 2000, by = 100))
+```
+
 
 #print Session information for provenance and reproducibility
 ```{r}
