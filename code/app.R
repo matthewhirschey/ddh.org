@@ -497,57 +497,57 @@ server <- function(input, output, session) {
   })
   output$dep_top <- DT::renderDataTable({
     validate(
-      need(input$gene_symbol %in% master_top_table$fav_gene, "No data found for this gene."))
+      need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_top_table(data()), 
       options = list(pageLength = 25))
   })
   output$dep_bottom <- DT::renderDataTable({
     validate(
-      need(input$gene_symbol %in% master_bottom_table$fav_gene, "No data found for this gene."))
+      need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_bottom_table(data()),
     options = list(pageLength = 25))
   })
   output$cell_deps <- renderPlotly({
     validate(
-      need(input$gene_symbol %in% colnames(achilles), "No data found for this gene."))
+      need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
       ggplotly(make_celldeps(data()), tooltip = "text")
     })
   })
   output$cell_bins <- renderPlotly({
     validate(
-      need(input$gene_symbol %in% colnames(achilles), "")) #""left blank
+      need(data() %in% colnames(achilles), "")) #""left blank
     ggplotly(make_cellbins(data()))
   })
   output$plot_text <- renderUI({
     validate(
-      need(input$gene_symbol %in% colnames(achilles), "")) #""left blank
+      need(data() %in% colnames(achilles), "")) #""left blank
     HTML("<p></p><p><b>Left:</b> Cell Line Dependency Curve. Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essentail within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out. <b>Right:</b> Histogram of Binned Dependency Scores. Dependency scores across all cell lines for queried gene partitioned into 0.25 unit bins. Shape of the histogram curve reveals overall influence of queried gene on cellular fitness</p>")
     })
   output$target_achilles <- DT::renderDataTable({
     validate(
-      need(input$gene_symbol %in% colnames(achilles), "No data found for this gene."))
+      need(data() %in% colnames(achilles), "No data found for this gene."))
     make_achilles_table(data())
   })
   output$pos_enrich <- DT::renderDataTable({
     validate(
-      need(input$gene_symbol %in% master_positive$fav_gene, "No data found for this gene."))
+      need(data() %in% master_positive$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_enrichment_table(master_positive, data()),
     options = list(pageLength = 25))
   })
   output$neg_enrich <- DT::renderDataTable({
     validate(
-      need(input$gene_symbol %in% master_negative$fav_gene, "No data found for this gene."))
+      need(data() %in% master_negative$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_enrichment_table(master_negative, data()),
       options = list(pageLength = 25))
   })
   output$graph <- renderForceNetwork({
     validate(
-      need(input$gene_symbol %in% colnames(achilles), "No data found for this gene."))
+      need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
     make_graph(data())
     })
