@@ -6,7 +6,7 @@ library(rentrez)
 library(feather)
 
 gene_names_url <- "https://www.genenames.org/cgi-bin/download/custom?col=gd_hgnc_id&col=gd_app_sym&col=gd_app_name&col=gd_prev_sym&col=gd_aliases&col=gd_pub_chrom_map&col=gd_pub_refseq_ids&col=md_eg_id&col=gd_locus_type&col=md_mim_id&col=md_prot_id&status=Approved&hgnc_dbtag=on&order_by=gd_app_sym_sort&format=text&submit=submit"
-gene_summary_output_filename <- "gene_summary.RData"
+gene_summary_output_filename <- "gene_summary.Rds"
 fetch_batch_size <- 100   # batch size of 500 was too high. 200 worked, using 100 as reasonable default
 
 # returns a data frame based on gene_names_url and summaries from entrez "gene" database.
@@ -61,7 +61,7 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
 
 create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_path) {
   gene_summary = build_gene_summary(gene_names_url, entrez_key)
-  save(gene_summary, file = gene_summary_output_path)
+  saveRDS(gene_summary, file = gene_summary_output_path)
 }
 
 # Command line argument parser that will let a user optionally specify:

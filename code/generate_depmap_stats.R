@@ -11,7 +11,7 @@ time_begin_stats <- Sys.time()
 source(here::here("code", "current_release.R"))
 
 #LOAD data 
-load(file = here::here("data", paste0(release, "_achilles_cor.RData")))
+achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 
 #convert cor
 class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")

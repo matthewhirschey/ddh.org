@@ -50,8 +50,8 @@ get_gene_names_to_process <- function(subset_file_idx, num_subset_files, achille
 }
 
 read_input_data <- function() {
-  load(file = here::here("data", "gene_summary.RData"))
-  load(file = here::here("data", paste0(release, "_achilles_cor.RData")))
+  gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
+  achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
   achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
   achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
   

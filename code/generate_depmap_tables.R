@@ -12,8 +12,8 @@ time_begin_tables <- Sys.time()
 source(here::here("code", "current_release.R"))
 
 #LOAD data 
-load(file = here::here("data", "gene_summary.RData"))
-load(file = here::here("data", paste0(release, "_achilles_cor.RData")))
+gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
+achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
 achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
 
@@ -80,8 +80,8 @@ for (fav_gene in gene_group) {
 }
 
 #save
-save(master_top_table, file=here::here("data", "master_top_table.RData"))
-save(master_bottom_table, file=here::here("data", "master_bottom_table.RData"))
+saveRDS(master_top_table, file=here::here("data", "master_top_table.Rds"))
+saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table.Rds"))
 
 #how long
 time_end_tables <- Sys.time()
