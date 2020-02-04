@@ -3,8 +3,8 @@
 # This is done by creating subset files in parallel and then merging them together.
 # Environment variables:
 # PATHWAY_TYPE determines the pathway file to be created:
-#  "positive" ->  master_positive.RData
-#  "negative" ->  master_negative.RData
+#  "positive" ->  master_positive.Rds
+#  "negative" ->  master_negative.Rds
 # RSCRIPT_CMD specifies RScript to run
 # NUM_SUBSET_FILES specifies number of subset files to create
 set -e
