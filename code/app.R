@@ -14,6 +14,8 @@ library(viridis)
 library(cowplot)
 library(plotly)
 library(DT)
+library(future)
+plan(multiprocess)
 
 #LOAD DATA-----
 #read current release information
@@ -557,7 +559,15 @@ server <- function(input, output, session) {
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
       withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
-      render_report_to_file(file, data())}
+        gene_symbol <- data() # reactive data must be read outside of a future
+        future({
+          # Reload current_release to prevent error in `setup` block in report_*.Rmd
+          # the Rmd files cannot locate the code directory due to them being run in a temp directory
+          # I think the current version just happens to work since this file is loaded and cached in memory.
+          source(here::here("code", "current_release.R"), local=TRUE)
+          render_report_to_file(file, gene_symbol)
+        })
+        }
     )}
   )
 }
