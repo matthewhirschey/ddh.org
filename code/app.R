@@ -565,10 +565,6 @@ server <- function(input, output, session) {
       withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
         if (render_report_in_background) {
           future({
-            # Reload current_release to prevent error in `setup` block in report_*.Rmd
-            # the Rmd files cannot locate the code directory due to them being run in a temp directory
-            # I think the current version just happens to work since this file is loaded and cached in memory.
-            source(here::here("code", "current_release.R"), local=TRUE)
             render_report_to_file(file, gene_symbol)
           })
         } else {
