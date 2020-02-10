@@ -15,7 +15,11 @@ library(cowplot)
 library(plotly)
 library(DT)
 library(future)
-plan(multiprocess)
+render_report_in_background <- FALSE
+if (future::supportsMulticore()) {
+  plan(multicore)
+  render_report_in_background <- TRUE
+}
 
 #LOAD DATA-----
 #read current release information
@@ -351,8 +355,8 @@ render_complete_report <- function (file, gene_symbol) {
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(gene_symbol)
   rmarkdown::render("report_depmap_app.Rmd", output_file = file)
-
 }
+
 render_dummy_report <- function (file, gene_symbol) {
   fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
@@ -383,7 +387,6 @@ save_data <- function(input) {
   # Write the file to the local system as csv without column headers for ease of use
   write_csv(data, path=file.path(directory_path, file_name), col_names=FALSE)
 }
-
 
 
 #UI------
@@ -558,17 +561,21 @@ server <- function(input, output, session) {
     # create pdf report
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
+      gene_symbol <- data() # reactive data must be read outside of a future
       withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
-        gene_symbol <- data() # reactive data must be read outside of a future
-        future({
-          # Reload current_release to prevent error in `setup` block in report_*.Rmd
-          # the Rmd files cannot locate the code directory due to them being run in a temp directory
-          # I think the current version just happens to work since this file is loaded and cached in memory.
-          source(here::here("code", "current_release.R"), local=TRUE)
+        if (render_report_in_background) {
+          future({
+            # Reload current_release to prevent error in `setup` block in report_*.Rmd
+            # the Rmd files cannot locate the code directory due to them being run in a temp directory
+            # I think the current version just happens to work since this file is loaded and cached in memory.
+            source(here::here("code", "current_release.R"), local=TRUE)
+            render_report_to_file(file, gene_symbol)
+          })
+        } else {
           render_report_to_file(file, gene_symbol)
-        })
         }
-    )}
+      })
+    }
   )
 }
 
