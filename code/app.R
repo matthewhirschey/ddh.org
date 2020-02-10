@@ -15,6 +15,8 @@ library(cowplot)
 library(plotly)
 library(DT)
 library(future)
+library(promises)
+
 render_report_in_background <- FALSE
 if (future::supportsMulticore()) {
   plan(multicore)
@@ -562,15 +564,19 @@ server <- function(input, output, session) {
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
       gene_symbol <- data() # reactive data must be read outside of a future
-      withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
-        if (render_report_in_background) {
-          future({
-            render_report_to_file(file, gene_symbol)
-          })
-        } else {
+      progress_bar <- Progress$new()
+      progress_bar$set(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1)
+      if (render_report_in_background) {
+        result <- future({
           render_report_to_file(file, gene_symbol)
-        }
-      })
+        })
+        finally(result, function(){
+          progress_bar$close()
+        })
+      } else {
+        render_report_to_file(file, gene_symbol)
+        progress_bar$close()
+      }
     }
   )
 }
