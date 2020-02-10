@@ -18,7 +18,7 @@ library(future)
 library(promises)
 
 render_report_in_background <- FALSE
-if (future::supportsMulticore()) {
+if (supportsMulticore()) {
   plan(multicore)
   render_report_in_background <- TRUE
 }
