@@ -357,8 +357,8 @@ render_complete_report <- function (file, gene_symbol) {
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(gene_symbol)
   rmarkdown::render("report_depmap_app.Rmd", output_file = file)
-}
 
+}
 render_dummy_report <- function (file, gene_symbol) {
   fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
@@ -389,6 +389,7 @@ save_data <- function(input) {
   # Write the file to the local system as csv without column headers for ease of use
   write_csv(data, path=file.path(directory_path, file_name), col_names=FALSE)
 }
+
 
 
 #UI------
