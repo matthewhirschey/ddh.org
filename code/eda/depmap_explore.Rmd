@@ -27,6 +27,7 @@ library(knitr)
 library(pander)
 library(vroom)
 library(beepr) #long analysis; get some coffee, and comeback when ready
+library(cowplot)
 
 #clear environment
 #rm(list=ls()) 
@@ -488,20 +489,57 @@ source(here::here("code", "current_release.R"))
 load(file=here::here("data", paste0(release, "_achilles.RData")))
 #import presaved corr data
 load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
-#make long
+
+#generate cor matrix from raw data
+#achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>% 
+#  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+load(file = here::here("data", "gene_summary.RData"))
+#source(here::here("code", "fix_names.R"))
+#achilles <- clean_colnames(achilles_raw)
+#achilles_cor_raw <- achilles_raw %>% 
+#  select(-X1) %>% 
+#  correlate() 
+#save(achilles_cor_raw, file = here::here("data", paste0(release, "_achilles_cor_raw.RData")))
+#load from saved steps
+load(file=here::here("data", paste0(release, "_achilles_cor_raw.RData")))
+
+
+###
+joined <- full_join(achilles_cor, achilles_cor_raw, by = "rowname")
+
+diff <- joined[, grepl("*\\.x$",names(joined))] - joined[,grepl("*\\.y$",names(joined))]
+difference <- cbind(joined[,1,drop=FALSE], diff) #puts col 1 back on
+
+difference_long <- difference %>% 
+  pivot_longer(-rowname, names_to = "gene", values_to = "diff")
+
+#p <- ggplot(difference_long) +
+#  geom_histogram(aes(diff), binwidth = 0.1, color = "gray") +
+#  labs(title = "Effect of data cleaning", subtitle = "Difference between raw and cleaned data", x = "Difference in R^2 values", y = "Count") +
+#  theme_cowplot()
+
+#p 
+#p + 
+#  scale_y_log10() +
+#  labs(y = "LOG count")
+
+difference_long %>% 
+  slice(1:10) %>% 
+  filter(!is.na(diff)) %>% 
+  dplyr::group_by(rowname) %>% 
+  range(diff)
+
 achilles_cor_long <- achilles_cor %>% 
-  stretch()
+  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_cor")
 
-#make cor matrix from original data
-achilles_cor_original <- achilles %>% #not clean
-  select(-X1) %>% 
-  correlate()
+achilles_cor_raw_long <- achilles_cor_raw %>% 
+  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_cor_raw")
 
-achilles_cor_original_long <- achilles_cor_original %>% 
-  stretch()
+achilles_joined <- achilles_cor_raw_long %>% 
+  left_join(achilles_cor_long, by = "achilles_gene")
 
-joined <- achilles_cor_original_long %>% 
-  left_join(achilles_cor_long, by = c("x" = "x", "y" = "y"))
+head(achilles_joined)
+  
 
 ```
 
