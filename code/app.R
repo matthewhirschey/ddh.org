@@ -14,17 +14,25 @@ library(viridis)
 library(cowplot)
 library(plotly)
 library(DT)
+library(future)
+library(promises)
+
+render_report_in_background <- FALSE
+if (supportsMulticore()) {
+  plan(multicore)
+  render_report_in_background <- TRUE
+}
 
 #LOAD DATA-----
 #read current release information
 source(here::here("code", "current_release.R"))
 
 #read data from create_gene_summary.R
-load(here::here("data", "gene_summary.RData"))
+gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
      
 #read data from generate_depmap_data.R
-load(file=here::here("data", paste0(release, "_achilles.RData")))
-load(file=here::here("data", paste0(release, "_expression_join.RData")))
+achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
+expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
 
 #read data from generate_depmap_stats.R
 sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
@@ -34,10 +42,10 @@ mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achille
 sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
 
 #read data from generate_depmap_pathways.R
-load(file=here::here("data", "master_bottom_table.RData"))
-load(file=here::here("data", "master_top_table.RData"))
-load(file=here::here("data", "master_positive.RData"))
-load(file=here::here("data", "master_negative.RData"))
+master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
+master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
+master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
+master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
 
 #FUNCTIONS-----
 gene_summary_details <- function(gene_summary) {
@@ -556,9 +564,21 @@ server <- function(input, output, session) {
     # create pdf report
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
-      withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
-      render_report_to_file(file, data())}
-    )}
+      gene_symbol <- data() # reactive data must be read outside of a future
+      progress_bar <- Progress$new()
+      progress_bar$set(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1)
+      if (render_report_in_background) {
+        result <- future({
+          render_report_to_file(file, gene_symbol)
+        })
+        finally(result, function(){
+          progress_bar$close()
+        })
+      } else {
+        render_report_to_file(file, gene_symbol)
+        progress_bar$close()
+      }
+    }
   )
 }
 

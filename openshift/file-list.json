@@ -1,18 +1,48 @@
 {
     "items": [
         {
-            "dest": "/data/19Q4_achilles_cor.RData",
-            "source": "57a1b833-ae01-4a1c-9d43-b2b672417891",
+            "dest": "/data/19Q4_achilles_cor.Rds",
+            "source": "e2318956-edcf-46fa-8e7e-4b8161c0fade",
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q4_expression.RData",
-            "source": "9e0eeec7-f22f-4297-919b-6aad8c07f2ed",
+            "dest": "/data/19Q4_expression.Rds",
+            "source": "57512718-6f6c-4e7b-b699-d962e1216cca",
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q4_achilles.RData",
-            "source": "d287d655-8d6d-4fb5-bbe6-61ee5f971ef1",
+            "dest": "/data/master_positive.Rds",
+            "source": "f963994c-b9ee-4690-bc09-a6054a359138",
+            "type": "DukeDS"
+        },
+        {
+            "dest": "/data/19Q4_achilles.Rds",
+            "source": "e2871707-a8f9-4777-9d20-c9165830ed2c",
+            "type": "DukeDS"
+        },
+        {
+            "dest": "/data/master_negative.Rds",
+            "source": "bc7a307f-6456-40d7-aac2-34537e891543",
+            "type": "DukeDS"
+        },
+        {
+            "dest": "/data/master_top_table.Rds",
+            "source": "e55c8a0d-0a4a-484a-a94e-146d3000ddec",
+            "type": "DukeDS"
+        },
+        {
+            "dest": "/data/master_bottom_table.Rds",
+            "source": "c751bfac-12f9-497f-b251-44036916b37e",
+            "type": "DukeDS"
+        },
+        {
+            "dest": "/data/gene_summary.Rds",
+            "source": "83c56891-777a-40a4-8085-3e003e45b1ed",
+            "type": "DukeDS"
+        },
+        {
+            "dest": "/data/19Q4_expression_join.Rds",
+            "source": "c03335d5-f5d5-48f7-bce1-6def9329d248",
             "type": "DukeDS"
         },
         {
@@ -31,11 +61,6 @@
             "type": "DukeDS"
         },
         {
-            "dest": "/data/19Q4_expression_join.RData",
-            "source": "aa585a4f-04ee-475e-ae30-67b72bd4aee0",
-            "type": "DukeDS"
-        },
-        {
             "dest": "/data/sd_threshold.Rds",
             "source": "326d3b10-f880-4529-9ce5-8d68a3ace90e",
             "type": "DukeDS"
@@ -43,31 +68,6 @@
         {
             "dest": "/data/sd_virtual_achilles.Rds",
             "source": "46b04d14-9701-4a7b-a413-2da59ad408ac",
-            "type": "DukeDS"
-        },
-        {
-            "dest": "/data/master_top_table.RData",
-            "source": "3b007985-bc67-4d0c-98a7-f4f6657309d5",
-            "type": "DukeDS"
-        },
-        {
-            "dest": "/data/master_bottom_table.RData",
-            "source": "6dabd507-f39c-46a9-8297-42bfe53817d6",
-            "type": "DukeDS"
-        },
-        {
-            "dest": "/data/gene_summary.RData",
-            "source": "9cf0eecd-ddec-4632-b7e5-3b59eec2e33a",
-            "type": "DukeDS"
-        },
-        {
-            "dest": "/data/master_negative.RData",
-            "source": "0cb3ac94-2237-4727-a4e5-fd8ec7c7b0fd",
-            "type": "DukeDS"
-        },
-        {
-            "dest": "/data/master_positive.RData",
-            "source": "a915b160-1eae-4b3a-a34b-2bcb8c9e9ff9",
             "type": "DukeDS"
         }
     ]

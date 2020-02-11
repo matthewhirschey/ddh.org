@@ -17,7 +17,7 @@ achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 #add name cleaning step
-load(file = here::here("data", "gene_summary.RData"))
+gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
 source(here::here("code", "fix_names.R"))
 achilles <- clean_colnames(achilles_raw)
 
@@ -69,10 +69,10 @@ achilles_cor <- achilles %>%
   correlate() #(diagonal = 0) set to 0 so easy to summarize, but should be NA; so added na.rm = TRUE to fun() in EDA
 
 #save files
-save(achilles, file = here::here("data", paste0(release, "_achilles.RData")))
-save(expression, file = here::here("data", paste0(release, "_expression.RData")))
-save(expression_join, file = here::here("data", paste0(release, "_expression_join.RData")))
-save(achilles_cor, file = here::here("data", paste0(release, "_achilles_cor.RData")))
+saveRDS(achilles, file = here::here("data", paste0(release, "_achilles.Rds")))
+saveRDS(expression, file = here::here("data", paste0(release, "_expression.Rds")))
+saveRDS(expression_join, file = here::here("data", paste0(release, "_expression_join.Rds")))
+saveRDS(achilles_cor, file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 
 #how long
 time_end_data <- Sys.time()

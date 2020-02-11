@@ -38,7 +38,7 @@ items:
             timeoutSeconds: 30
           resources:
             requests:
-              memory: 2G
+              memory: 1G
           volumeMounts:
           - mountPath: /srv/data
             name: ddh-data

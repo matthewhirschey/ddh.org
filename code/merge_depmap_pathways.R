@@ -11,8 +11,8 @@ library(optparse)
 #read dpu_* methods for getting subset filenames and parsing command line parameters
 source(here::here("code", "depmap_pathways_util.R"))
 
-master_positive_filename <- "master_positive.RData"
-master_negative_filename <- "master_negative.RData"
+master_positive_filename <- "master_positive.Rds"
+master_negative_filename <- "master_negative.Rds"
 
 merge_pathways_rds_files <- function(subset_filepaths) {
   merged_data <- tibble(
@@ -30,13 +30,13 @@ merge_pathways_rds_files <- function(subset_filepaths) {
 save_master_positive <- function(subset_filepaths) {
   master_positive <- merge_pathways_rds_files(subset_filepaths)
   message("Saving master_positive to ", master_positive_filename)
-  save(master_positive, file=here::here("data", master_positive_filename))
+  saveRDS(master_positive, file=here::here("data", master_positive_filename))
 }
 
 save_master_negative <- function(subset_filepaths) {
   master_negative <- merge_pathways_rds_files(subset_filepaths)
   message("Saving master_negative to ", master_negative_filename)
-  save(master_negative, file=here::here("data", master_negative_filename))
+  saveRDS(master_negative, file=here::here("data", master_negative_filename))
 }
 
 main <- function() {
