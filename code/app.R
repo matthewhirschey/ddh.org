@@ -14,6 +14,14 @@ library(viridis)
 library(cowplot)
 library(plotly)
 library(DT)
+library(future)
+library(promises)
+
+render_report_in_background <- FALSE
+if (supportsMulticore()) {
+  plan(multicore)
+  render_report_in_background <- TRUE
+}
 
 #LOAD DATA-----
 #read current release information
@@ -556,9 +564,21 @@ server <- function(input, output, session) {
     # create pdf report
     filename = function() {paste0(data(), "_ddh.pdf")},
     content = function(file) {
-      withProgress(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1, {
-      render_report_to_file(file, data())}
-    )}
+      gene_symbol <- data() # reactive data must be read outside of a future
+      progress_bar <- Progress$new()
+      progress_bar$set(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1)
+      if (render_report_in_background) {
+        result <- future({
+          render_report_to_file(file, gene_symbol)
+        })
+        finally(result, function(){
+          progress_bar$close()
+        })
+      } else {
+        render_report_to_file(file, gene_symbol)
+        progress_bar$close()
+      }
+    }
   )
 }
 

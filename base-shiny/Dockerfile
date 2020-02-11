@@ -18,7 +18,9 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  viridis \
  pander \
  DT \
- ggraph
+ ggraph \
+ future \
+ promises
 
 COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /var/lib/shiny-server/
