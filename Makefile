@@ -8,8 +8,8 @@ RSCRIPT_CMD ?= Rscript
 # image file
 DOCKER_IMG ?= docker://dukegcb/ddh:latest
 
-# Version of depmap data we are building data using. This should match the value of the release field 
-# in code/current_release.R.
+# Version of depmap we are using. This value is used in some filenames in this Makefile. 
+# The value should match the value of the release field in code/current_release.R.
 DMVER ?= 19Q4
 
 # Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
