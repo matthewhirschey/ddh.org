@@ -8,6 +8,10 @@ RSCRIPT_CMD ?= Rscript
 # image file
 DOCKER_IMG ?= docker://dukegcb/ddh:latest
 
+# Version of depmap data we are building data using. This should match the value of the release field 
+# in code/current_release.R.
+DMVER ?= 19Q4
+
 # Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
 # Changing this number requires an update to the data/master_positive.Rds and data/master_negative.Rds rules below.
 NUM_SUBSET_FILES ?= 10
@@ -28,7 +32,7 @@ clean_container:
 # Map simple target names to the files on which they depend
 container_image: singularity/ddh.sif
 gene_summary: data/gene_summary.Rds
-depmap_data: data/19Q4_achilles_cor.Rds data/19Q4_achilles.Rds data/19Q4_expression.Rds data/19Q4_expression.Rds data/19Q4_expression_join.Rds
+depmap_data: data/$(DMVER)_achilles_cor.Rds data/$(DMVER)_achilles.Rds data/$(DMVER)_expression.Rds data/$(DMVER)_expression.Rds data/$(DMVER)_expression_join.Rds
 depmap_stats: data/sd_threshold.Rds data/achilles_lower.Rds data/achilles_upper.Rds data/mean_virtual_achilles.Rds data/sd_virtual_achilles.Rds
 depmap_tables: data/master_top_table.Rds data/master_bottom_table.Rds
 depmap_pathways: data/master_positive.Rds data/master_negative.Rds
@@ -45,15 +49,15 @@ data/gene_summary.Rds: code/create_gene_summary.R
 	@echo "Creating gene summary"
 	$(RSCRIPT_CMD) code/create_gene_summary.R --entrezkey ${ENTREZ_KEY}
 
-data/19Q4_achilles_cor.Rds data/19Q4_achilles.Rds data/19Q4_expression.Rds data/19Q4_expression_join.Rds: code/generate_depmap_data.R
+data/$(DMVER)_achilles_cor.Rds data/$(DMVER)_achilles.Rds data/$(DMVER)_expression.Rds data/$(DMVER)_expression_join.Rds: code/generate_depmap_data.R
 	@echo "Creating depmap data"
 	$(RSCRIPT_CMD) code/generate_depmap_data.R
 
-data/sd_threshold.Rds data/achilles_lower.Rds data/achilles_upper.Rds data/mean_virtual_achilles.Rds data/sd_virtual_achilles.Rds: data/19Q4_achilles_cor.Rds code/generate_depmap_stats.R
+data/sd_threshold.Rds data/achilles_lower.Rds data/achilles_upper.Rds data/mean_virtual_achilles.Rds data/sd_virtual_achilles.Rds: data/$(DMVER)_achilles_cor.Rds code/generate_depmap_stats.R
 	@echo "Creating depmap stats"
 	$(RSCRIPT_CMD) code/generate_depmap_stats.R
 
-data/master_top_table.Rds data/master_bottom_table.Rds: code/generate_depmap_tables.R data/gene_summary.Rds data/19Q4_achilles_cor.Rds data/achilles_lower.Rds data/achilles_upper.Rds
+data/master_top_table.Rds data/master_bottom_table.Rds: code/generate_depmap_tables.R data/gene_summary.Rds data/$(DMVER)_achilles_cor.Rds data/achilles_lower.Rds data/achilles_upper.Rds
 	@echo "Creating depmap tables"
 	$(RSCRIPT_CMD) code/generate_depmap_tables.R
 
