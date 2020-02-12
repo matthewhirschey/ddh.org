@@ -6,6 +6,7 @@ output: md_document
 
 ```{r setup, include=FALSE}
 ###knit this documet to generate methods.md, which then is served by the Shiny app###
+#upon each release, run generate_depmat_data.R & generate_depmap_stats.R, then knit
 knitr::opts_chunk$set(echo = TRUE)
 library(lubridate)
 library(tidyverse)
