@@ -10,7 +10,7 @@ DOCKER_IMG ?= docker://dukegcb/ddh:latest
 
 # Version of depmap we are using. This value is used in some filenames in this Makefile. 
 # The value should match the value of the release field in code/current_release.R.
-DMVER ?= 19Q4
+DMVER ?= 20Q1
 
 # Defines the number intermediate pathway data files that will be created. This allow generating the pathway data in parallel.
 # Changing this number requires an update to the data/master_positive.Rds and data/master_negative.Rds rules below.
