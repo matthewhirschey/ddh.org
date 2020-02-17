@@ -8,7 +8,7 @@ RSCRIPT_CMD ?= Rscript
 # image file
 DOCKER_IMG ?= docker://dukegcb/ddh:latest
 
-# Version of depmap we are using. This value is used in some filenames in this Makefile. 
+# Version of depmap we are using. This value is used in some filenames in this Makefile.
 # The value should match the value of the release field in code/current_release.R.
 DMVER ?= 20Q1
 
@@ -20,7 +20,7 @@ NUM_SUBSET_FILES ?= 10
 .NOTPARALLEL:
 
 # The first target is the default, it makes "all" the data. Does not include container_image
-all: gene_summary depmap_data depmap_stats depmap_tables depmap_pathways
+all: dirs gene_summary depmap_data depmap_stats depmap_tables depmap_pathways
 
 # The clean target removes all the files in data/
 clean:
