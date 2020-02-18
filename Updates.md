@@ -83,6 +83,9 @@ Create a new stage data job:
 oc create -f DownloadJob.yaml 
 ```
 
+Once the download job finishes redeploy the website using the okd application console: 
+depmap -> Applications -> ddh-shiny-app -> Click Deploy.
+
 ## Save file-list.json
 Commit/PR/Merge changes to `file-list.json`.
 
