@@ -39,7 +39,7 @@ depmap_pathways: data/master_positive.Rds data/master_negative.Rds
 
 dirs:
 	mkdir -p data
-	mkdir -p singularity
+	mkdir -p singularity/images
 
 singularity/ddh.sif:
 	@echo "Pulling container image"
