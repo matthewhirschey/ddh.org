@@ -20,4 +20,4 @@ ddh_files = [
 
 for ddh_file in ddh_files:
   print(ddh_file)
-  DukeDS.download_file('ddh-data', '/data/{}'.format(ddh_file))
+  DukeDS.download_file('ddh-data', 'data/{}'.format(ddh_file))
