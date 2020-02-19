@@ -61,11 +61,11 @@ From the `OpenShift Web Console` where the project is deployed do the following:
 - Click `Create`.
 This will create a job that will run a pod to stage the data.
 
-You can monitor the pod by looking for it in the Applications -> Pods window.
+You can monitor the pod by looking for it in the `Applications` -> `Pods` window.
 
 Once the job that is downloading data is complete re-deploy the application by:
 
-Navigating to Applications -> Deployments -> ddh-shiny-app then click `Deploy`.
+Navigating to `Applications` -> `Deployments` -> `ddh-shiny-app` then click `Deploy`.
 
 
 
