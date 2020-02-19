@@ -45,8 +45,11 @@ sbatch upload-slurm.sh
 You can now delete the ddh directory from the slurm cluster.
 
 ## Deploy Data
-To deploy the files requires access to the openshift okd console.
-Make sure you are on the `depmap` project.
+Data is deployed into an OpenShift volume from a DukeDS project by running a job.
+There is an OpenShift Template to simplify creating these jobs for new releases.
+
+From the `OpenShift Web Console` where the project is deployed do the following:
+- Make sure you have the `depmap` project selected.
 - Click `Add to Project v` in the top right corner of the screen.
 - Choose `Select from Project`
 - Select the `download-job-template`, Click `Next`, and Click `Next` again.
@@ -57,6 +60,7 @@ This will create a job that will run a pod to stage the data.
 You can monitor the pod by looking for it in the Applications -> Pods window.
 
 Once the pod is complete re-deploy the application by:
+
 Navigating to Applications -> Deployments -> ddh-shiny-app then click `Deploy`.
 
 
