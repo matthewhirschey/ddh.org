@@ -45,52 +45,19 @@ sbatch upload-slurm.sh
 You can now delete the ddh directory from the slurm cluster.
 
 ## Deploy Data
-To deploy the files requires access to the openshift okd console and a terminal environment with the [openshift oc command installed](https://docs.okd.io/latest/cli_reference/get_started_cli.html).
+To deploy the files requires access to the openshift okd console.
+Make sure you are on the `depmap` project.
+Click `Add to Project v` in the top right corner of the screen.
+Choose `Select from Project`
+Select the `download-job-template` and Click `Next`.
+Click `Next` again.
+Enter the name of the quarterly release matching the same case used in the filenames.
+Click `Create`.
+This will create a job that will run a pod to stage the data.
 
-They should be done from within the `openshift` directory of a clone of this repository.
-
-Update the [list of files to upload](https://github.com/hirscheylab/ddh/blob/master/openshift/file-list.json) by running:
-```
-python make-file-list.py > file-list.json
-```
-_You may want to edit the file-list.json to include just those needed as this currently includes all versions of all files in the DukeDS project._
-
-Use the `Copy login command` option in the top right corner of the openshift okd web console.
-Paste the copied command to setup `oc` to connect to the openshift cluster.
-
-Switch `oc` to point at the depmap project.
-```
-oc project depmap
-```
-
-Delete the old list of files from openshift depmap.
-```
-oc delete configmap ddh-data-file-list
-```
-
-Create the new list of files from openshift depmap.
-```
-oc create configmap ddh-data-file-list --from-file=file-list.json
-```
-
-Delete the old stage data job:
-```
-oc delete job download-ddh-data
-```
-
-Create a new stage data job:
-```
-oc create -f DownloadJob.yaml 
-```
-
-
-Once the download job finishes redeploy the website: 
-```
-oc rollout latest dc/ddh-shiny-app
-```
-
-## Save file-list.json
-Commit/PR/Merge changes to `file-list.json`.
+You can monitor the pod by looking for it in the Applications->Pods window.
+Once the pod is complete re-deploy the application by:
+Navigating to Applications -> Deployments -> ddh-shiny-app then click `Deploy`.
 
 
 
