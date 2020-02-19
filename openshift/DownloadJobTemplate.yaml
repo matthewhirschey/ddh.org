@@ -10,7 +10,7 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    name: "download-ddh-data-quarter"
+    name: "download-ddh-data-quarter-${JOB_SUFFIX}"
   spec:
     template:
       spec:
@@ -51,3 +51,7 @@ objects:
 parameters:
 - description: Quarterly release of data (e.g. 19Q4)
   name: DDH_QUARTER
+- description: Unique job suffix
+  from: '[a-z0-9]{5}'
+  generate: expression
+  name: JOB_SUFFIX
