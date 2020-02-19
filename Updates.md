@@ -53,9 +53,10 @@ Update the [list of files to upload](https://github.com/hirscheylab/ddh/blob/mas
 ```
 python make-file-list.py > file-list.json
 ```
+_You may want to edit the file-list.json to include just those needed as this currently includes all versions of all files in the DukeDS project._
 
-Use the `Copy login command` option in the top right corner of the openshift okd console.
-Open a terminal and paste the copied command to setup `oc` to connect to the openshift cluster.
+Use the `Copy login command` option in the top right corner of the openshift okd web console.
+Paste the copied command to setup `oc` to connect to the openshift cluster.
 
 Switch `oc` to point at the depmap project.
 ```
