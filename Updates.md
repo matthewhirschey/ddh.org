@@ -45,8 +45,8 @@ sbatch upload-slurm.sh
 You can now delete the ddh directory from the slurm cluster.
 
 ## Deploy Data
-Data is deployed into an OpenShift volume from a DukeDS project by running a job.
-There is an OpenShift Template to simplify creating these jobs for new releases.
+New data is downloaded into an volume used by the app by running an OpenShift job.
+To simplify creating these jobs there is an OpenShift Template.
 
 From the `OpenShift Web Console` where the project is deployed do the following:
 - Make sure you have the `depmap` project selected.
