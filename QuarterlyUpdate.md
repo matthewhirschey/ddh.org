@@ -1,4 +1,4 @@
-# Steps to apply quarterly update
+# Quarterly Update Process
 
 ## Initial code changes
 - Update release name, urls, and na_cutoff in [code/current_release.R]( https://github.com/hirscheylab/ddh/blob/master/code/current_release.R)
