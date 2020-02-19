@@ -59,7 +59,7 @@ This will create a job that will run a pod to stage the data.
 
 You can monitor the pod by looking for it in the Applications -> Pods window.
 
-Once the pod is complete re-deploy the application by:
+Once the job that is downloading data is complete re-deploy the application by:
 
 Navigating to Applications -> Deployments -> ddh-shiny-app then click `Deploy`.
 
