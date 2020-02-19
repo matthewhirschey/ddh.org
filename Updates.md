@@ -71,7 +71,6 @@ Create the new list of files from openshift depmap.
 ```
 oc create configmap ddh-data-file-list --from-file=file-list.json
 ```
-TODO: Test the above command to see if it works
 
 Delete the old stage data job:
 ```
