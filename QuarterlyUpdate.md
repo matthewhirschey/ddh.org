@@ -11,9 +11,10 @@ NOTE: If the dependencies used for data generation have changed you will need to
 ## Generate Data
 All these steps are done on a Slurm cluster.
 
-You will need at least 4G of storage to run these steps.
+You will need:
+- At least 4G of storage to run these steps.
 
-You will need to setup a [ddsclient config file](https://github.com/Duke-GCB/DukeDSClient/wiki/Agent-User-Keys-(setup)) to upload the data to DukeDS.
+- A [ddsclient config file](https://github.com/Duke-GCB/DukeDSClient/wiki/Agent-User-Keys-(setup)) to provide credentials to upload the data to a DukeDS project.
 
 Clone this repo, change into the directory and create a directory to hold slurm logs:
 ```
