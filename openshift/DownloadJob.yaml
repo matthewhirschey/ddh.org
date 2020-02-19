@@ -14,22 +14,21 @@ spec:
         env:
         - name: DDSCLIENT_CONF
           value: "/etc/ddsclient/ddsclient-config"
+        - name: DDH_QUARTER
+          value: 20Q1
         command:
         - "python"
-        - "-m"
-        - "lando_util.stagedata"
-        - "/etc/file-list.json"
-        - "/data/download.log"
+        - "/etc/download-ddh-data.py"
         volumeMounts:
         - name: ddh-data
           mountPath: "/data"
         - name: ddsclient-config
           mountPath: "/etc/ddsclient"
           readOnly: true
-        - name: file-list
-          mountPath: "/etc/file-list.json"
+        - name: download-ddh-data
+          mountPath: "/etc/download-ddh-data.py"
           readOnly: true
-          subPath: "file-list.json"
+          subPath: "download-ddh-data.py"
       restartPolicy: OnFailure
       volumes:
       - name: ddh-data
@@ -38,7 +37,7 @@ spec:
       - name: ddsclient-config
         secret:
           secretName: ddsclient-config-secret
-      - name: file-list
+      - name: download-ddh-data
         configMap:
-          name: ddh-data-file-list
+          name: download-ddh-data
 
