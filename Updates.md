@@ -47,15 +47,15 @@ You can now delete the ddh directory from the slurm cluster.
 ## Deploy Data
 To deploy the files requires access to the openshift okd console.
 Make sure you are on the `depmap` project.
-Click `Add to Project v` in the top right corner of the screen.
-Choose `Select from Project`
-Select the `download-job-template` and Click `Next`.
-Click `Next` again.
-Enter the name of the quarterly release matching the same case used in the filenames.
-Click `Create`.
+- Click `Add to Project v` in the top right corner of the screen.
+- Choose `Select from Project`
+- Select the `download-job-template`, Click `Next`, and Click `Next` again.
+- Enter the name of the quarterly release. This value must match the same case used in the filenames.
+- Click `Create`.
 This will create a job that will run a pod to stage the data.
 
-You can monitor the pod by looking for it in the Applications->Pods window.
+You can monitor the pod by looking for it in the Applications -> Pods window.
+
 Once the pod is complete re-deploy the application by:
 Navigating to Applications -> Deployments -> ddh-shiny-app then click `Deploy`.
 
