@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: download-job-template
+  annotations:
+    description: "Template for downloading a quarterly release of ddh data"
+    iconClass: "icon-beaker"
+    tags: "ddh,data"
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: "download-ddh-data-quarter-${JOB_SUFFIX}"
+  spec:
+    template:
+      spec:
+        initContainers:
+        containers:
+        - name: download-ddh-data
+          image: dukegcb/lando-util:0.5.4
+          workingDir: /data
+          env:
+          - name: DDSCLIENT_CONF
+            value: "/etc/ddsclient/ddsclient-config"
+          - name: DDH_QUARTER
+            value: ${DDH_QUARTER}
+          command:
+          - "python"
+          - "/etc/download-ddh-data.py"
+          volumeMounts:
+          - name: ddh-data
+            mountPath: "/data"
+          - name: ddsclient-config
+            mountPath: "/etc/ddsclient"
+            readOnly: true
+          - name: download-ddh-data
+            mountPath: "/etc/download-ddh-data.py"
+            readOnly: true
+            subPath: "download-ddh-data.py"
+        restartPolicy: OnFailure
+        volumes:
+        - name: ddh-data
+          persistentVolumeClaim:
+            claimName: ddh-data-pvc
+        - name: ddsclient-config
+          secret:
+            secretName: ddsclient-config-secret
+        - name: download-ddh-data
+          configMap:
+            name: download-ddh-data
+parameters:
+- description: Quarterly release of data (e.g. 19Q4)
+  name: DDH_QUARTER
+- description: Unique job suffix
+  from: '[a-z0-9]{5}'
+  generate: expression
+  name: JOB_SUFFIX
