@@ -12,8 +12,13 @@ library(omim)
 library(RISmed) #Load the RISmed package to access pubmed api
 library(xml2)
 library(vroom)
-load(here::here("data", "gene_summary.RData"))
 ```
+
+#load data
+```{r}
+gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
+```
+
 
 ```{r}
 mitocarta <- mitocarta %>% 

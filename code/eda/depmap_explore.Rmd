@@ -4,7 +4,7 @@ output:
   pdf_document:
     toc: TRUE
 params:
-  release: "19Q3"
+  release: "20Q1"
 ---
 Overall goal of this project is to generate a correlation matrix from Broad Dependency Map data, to look at 'dependency signatures'. This will allow us to infer a functional relationship between genes, based on similar changes in cellular fitness. Chose to get data from Broad, as they have previous made available dependency correlation data on www.depmap.org. Will use Sanger to try to validate some of the findings; unfortunatley, Sanger lists only binary scores.
 
@@ -39,16 +39,38 @@ library(cowplot)
 ##import
 Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
 ```{r import}
-##BROAD
-achilles <- read_feather(here::here("data", paste0(params$release, "_achilles.feather")))
-achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
-achilles_cor <- read_feather(here::here("data", paste0(params$release, "_achilles_cor.feather"))) 
-class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
-achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
 
+#LOAD DATA-----
+#read current release information
+source(here::here("code", "current_release.R"))
+
+#read data from create_gene_summary.R
+gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
+     
+#read data from generate_depmap_data.R
+achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
+achilles_cor <- readRDS(file=here::here("data", paste0(release, "_achilles_cor.Rds")))
+expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
+
+#read data from generate_depmap_stats.R
+sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
+achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
+achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
+mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
+sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
+
+#read data from generate_depmap_pathways.R
+master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
+master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
+master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
+master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
+
+
+##BROAD
+achilles_long <- achilles %>% gather("gene", "dep_score", -X1)
+#achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_achilles_cor_long.feather")))
 #achilles_cor_small <- achilles_cor %>% slice(1:1000) %>% select(1:1000) #to optimize code
 #achilles_long_small <- achilles_long %>% sample_n(1000)
-
 
 ##SANGER
 #data from: https://score.depmap.sanger.ac.uk/downloads
@@ -57,17 +79,17 @@ achilles_cor_long <- read_feather(here::here("data", paste0(params$release, "_ac
 #I downloaded the "Fitness/Non-fitness Binary Matrix", but this binary information was less rich than Dep Map. Perhaps try "Copy Number Bias Corrected Fold Change Values"? 
 
 #EXPRESSION(BROAD)
-expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
-expression_long <- expression %>% gather("gene", "gene_expression", -X1) %>% arrange(desc(gene_expression))
-expression_cor <- read_feather(here::here("data", paste0(params$release, "_expression_cor.feather"))) 
-class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
-expression_cor_long <- read_feather(here::here("data", paste0(params$release, "_expression_cor_long.feather")))
+#expression <- read_feather(here::here("data", paste0(params$release, "_expression.feather")))
+#expression_long <- expression %>% gather("gene", "gene_expression", -X1) %>% arrange(desc(gene_expression))
+#expression_cor <- read_feather(here::here("data", paste0(params$release, "_expression_cor.feather"))) 
+#class(expression_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") #define class so functions (eg focus) can work on reloaded df
+#expression_cor_long <- read_feather(here::here("data", paste0(params$release, "_expression_cor_long.feather")))
 
-expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
+#expression_id <- read_feather(here::here("data", paste0(params$release, "_expression_id.feather"))) 
 
-expression_join <- expression_id %>% 
-  rename(X1 = dep_map_id) %>% 
-  select(X1, stripped_cell_line_name, lineage)
+#expression_join <- expression_id %>% 
+#  rename(X1 = dep_map_id) %>% 
+#  select(X1, stripped_cell_line_name, lineage)
 
 #expression_cor_small <- expression_cor %>% 
 #  select(1:10) %>%  #to optimize code
@@ -483,25 +505,23 @@ ggsave(here::here("results", "expression_v_dep2.png"), plot = last_plot(), dpi =
 
 #differential analysis
 ```{r}
-source(here::here("code", "current_release.R"))
-
 #import raw data
-load(file=here::here("data", paste0(release, "_achilles.RData")))
+#load(file=here::here("data", paste0(release, "_achilles.RData")))
 #import presaved corr data
-load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
+#load(file=here::here("data", paste0(release, "_achilles_cor.RData")))
 
 #generate cor matrix from raw data
-#achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>% 
-#  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
-load(file = here::here("data", "gene_summary.RData"))
-#source(here::here("code", "fix_names.R"))
-#achilles <- clean_colnames(achilles_raw)
-#achilles_cor_raw <- achilles_raw %>% 
-#  select(-X1) %>% 
-#  correlate() 
-#save(achilles_cor_raw, file = here::here("data", paste0(release, "_achilles_cor_raw.RData")))
+achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>% 
+  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+
+source(here::here("code", "fix_names.R"))
+achilles <- clean_colnames(achilles_raw)
+achilles_cor_raw <- achilles_raw %>% 
+  select(-X1) %>% 
+  correlate() 
+save(achilles_cor_raw, file = here::here("data", paste0(release, "_achilles_cor_raw.RData")))
 #load from saved steps
-load(file=here::here("data", paste0(release, "_achilles_cor_raw.RData")))
+#load(file=here::here("data", paste0(release, "_achilles_cor_raw.RData")))
 
 
 ###
@@ -529,17 +549,44 @@ difference_long %>%
   dplyr::group_by(rowname) %>% 
   range(diff)
 
-achilles_cor_long <- achilles_cor %>% 
+#different approach
+achilles_cor <- shave(achilles_cor)
+achilles_cor_raw <- shave(achilles_cor_raw)
+
+achilles_cor <- achilles_cor %>% 
   pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_cor")
 
-achilles_cor_raw_long <- achilles_cor_raw %>% 
+achilles_cor_raw <- achilles_cor_raw %>% 
   pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_cor_raw")
 
-achilles_joined <- achilles_cor_raw_long %>% 
-  left_join(achilles_cor_long, by = "achilles_gene")
+#achilles_cor <- achilles_cor %>% filter(!is.na(achilles_cor))
+achilles_joined <- achilles_cor_raw %>% 
+  #slice(1:1000000) %>% 
+  left_join((achilles_cor), by = c("rowname", "achilles_gene"))
 
-head(achilles_joined)
-  
+#open from saved 3GB file
+#achilles_joined <- readRDS(here::here("data", "achilles_joined.Rds"))
+#head(achilles_joined)
+
+log_breaks <- c(0, 1, 10, 100, 1000, 10000, 100000, 1000000)
+log_labels <- c("0", "1", "10", "100", "1000", "10,000", "100,000", "1,000,000")
+achilles_joined %>% 
+  #sample_n(1000000) %>% 
+  ggplot() +
+  geom_abline(intercept = 0, slope = 1, color = "gray") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  geom_hex(aes(x = achilles_cor_raw, y = achilles_cor), 
+           bins = 120, na.rm = TRUE, size = 0.2, color = "black") +
+  scale_fill_viridis_c(option = "C", name = "Count", trans = "log10", breaks = log_breaks, labels = log_labels) +
+  labs(x = "Raw Correlation", y = "Corrected Correlation") +  
+  coord_fixed(ratio = 1, xlim = c(-1, 1), ylim = c(-1, 1)) +
+  theme_minimal()
+
+#achilles_joined %>% 
+#  filter(achilles_cor_raw < achilles_upper, 
+#         achilles_cor > achilles_upper) %>% 
+#  arrange(desc(achilles_cor))
 
 ```
 
@@ -637,6 +684,61 @@ ggplot(count_v_max) +
 ggplot(count_v_max) + 
   geom_histogram(aes(count), binwidth = 50, color = "gray") + 
   scale_x_continuous(breaks = seq(0, 2000, by = 100))
+
+#look at number of cell lines that drive gene correlation
+#need achilles_no0_plot data from methods.Rmd
+master_top_table <- readRDS(file = here::here("data", "master_top_table.Rds"))
+
+#THIS ONE IS FROM FINAL
+count_v_max_final <- master_top_table %>% 
+  unnest(data) %>% 
+  group_by(fav_gene) %>% 
+  summarize(count = n(), 
+            max = max(r2)) %>% 
+  left_join(achilles_no0_plot, by = c("fav_gene" = "gene"))
+
+#VS THIS ONE IS FROM RAW
+count_v_max <- achilles_cor_raw_long %>% 
+  #slice(1:100000) %>% 
+  filter(achilles_correlation_raw > achilles_upper) %>%  #| achilles_correlation_raw < achilles_lower) %>% 
+  dplyr::group_by(rowname) %>% 
+  summarize(count = n(), 
+            max = max(achilles_correlation_raw)) %>% 
+  left_join(achilles_no0_plot, by = c("rowname" = "gene")) %>% 
+  arrange(pos)
+
+#VS THIS ONE IS FROM NO ZEROS
+  count_v_max_no0 <- achilles_no0 %>% 
+    select(-X1) %>% 
+    correlate() 
+  count_v_max_no0 <- count_v_max_no0 %>% 
+    pivot_longer(-rowname, names_to = "genes_no0", values_to = "correlations_no0") %>% 
+    filter(correlations_no0 > achilles_upper) %>%  #| achilles_correlation_raw < achilles_lower) %>% 
+    dplyr::group_by(rowname) %>% 
+    summarize(count = n(), 
+              max = max(correlations_no0)) %>% 
+    left_join(achilles_no0_plot, by = c("rowname" = "gene")) %>% 
+    arrange(pos)
+
+na_cutoff_tmp <- count_v_max_no0 %>% 
+  top_frac(-.05, pos) %>% 
+  arrange(pos) %>% 
+  pull(NAs) %>% 
+  min(.)
+
+#506 using no_0 data
+#506 using final data
+
+threshold_plot <- count_v_max_final %>% 
+  ggplot() +
+  geom_point(aes(x = pos, y = count), alpha = 0.2) +
+  geom_vline(xintercept = nrow(achilles_clean) - na_cutoff, color = "red") +
+  geom_vline(xintercept = nrow(achilles_clean) - na_cutoff_tmp, color = "red", linetype="dashed") +
+  labs(y = "# of genes correlated w/ target", x = "# of cell lines expressing target gene", title = "Sampling too few cells weakens predictions") +
+  annotate("text", x = sum(achilles$X1 %in% expression$X1)-na_cutoff + 10, y = 10, size = 3, color = "red", hjust = 0, fontface = "bold",
+           label = glue::glue("Threshold")) +
+  theme_cowplot()
+
 ```
 
 
