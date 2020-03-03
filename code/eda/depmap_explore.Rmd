@@ -684,20 +684,18 @@ ggplot(count_v_max) +
 ggplot(count_v_max) + 
   geom_histogram(aes(count), binwidth = 50, color = "gray") + 
   scale_x_continuous(breaks = seq(0, 2000, by = 100))
+```
 
 #look at number of cell lines that drive gene correlation
-#need achilles_no0_plot data from methods.Rmd
-master_top_table <- readRDS(file = here::here("data", "master_top_table.Rds"))
+```{r}
+#need achilles_no0_plot data from methods.Rmd to count NAs in corrected dataframe
+achilles_no0_plot <- achilles_no0 %>% 
+  summarise_all(list(~sum(is.na(.)))) %>% 
+  gather(gene, NAs) %>% 
+  arrange(desc(NAs)) %>% 
+  mutate(pos = sum(achilles$X1 %in% expression$X1)-NAs)
 
-#THIS ONE IS FROM FINAL
-count_v_max_final <- master_top_table %>% 
-  unnest(data) %>% 
-  group_by(fav_gene) %>% 
-  summarize(count = n(), 
-            max = max(r2)) %>% 
-  left_join(achilles_no0_plot, by = c("fav_gene" = "gene"))
-
-#VS THIS ONE IS FROM RAW
+#THIS ONE CALCULATES FROM RAW
 count_v_max <- achilles_cor_raw_long %>% 
   #slice(1:100000) %>% 
   filter(achilles_correlation_raw > achilles_upper) %>%  #| achilles_correlation_raw < achilles_lower) %>% 
@@ -720,6 +718,16 @@ count_v_max <- achilles_cor_raw_long %>%
     left_join(achilles_no0_plot, by = c("rowname" = "gene")) %>% 
     arrange(pos)
 
+#THIS ONE IS FROM FINAL
+master_top_table <- readRDS(file = here::here("data", "master_top_table.Rds")) 
+
+count_v_max_final <- master_top_table %>% 
+  unnest(data) %>% 
+  group_by(fav_gene) %>% 
+  summarize(count = n(), 
+            max = max(r2)) %>% 
+  left_join(achilles_no0_plot, by = c("fav_gene" = "gene"))
+
 na_cutoff_tmp <- count_v_max_no0 %>% 
   top_frac(-.05, pos) %>% 
   arrange(pos) %>% 
@@ -741,6 +749,14 @@ threshold_plot <- count_v_max_final %>%
 
 ```
 
+#FIND THRESHOLD
+Raw data core
+No zeros
+bootstrap to find mean
+Plot no zeros vs. pos genes (and neg)
+Then set threshold
+Then plot final with threshold/na_cutoff
+```
 
 #print Session information for provenance and reproducibility
 ```{r}
