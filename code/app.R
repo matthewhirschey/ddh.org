@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyWidgets)
 library(tidyverse)
 library(plotly)
 library(networkD3)
@@ -31,21 +32,21 @@ source(here::here("code", "current_release.R"))
 gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
      
 #read data from generate_depmap_data.R
-achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
-expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
-
-#read data from generate_depmap_stats.R
-sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
-mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
-sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
-
-#read data from generate_depmap_pathways.R
-master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
-master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
-master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
-master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
+# achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
+# expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
+# 
+# #read data from generate_depmap_stats.R
+# sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
+# achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
+# achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
+# mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
+# sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
+# 
+# #read data from generate_depmap_pathways.R
+# master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
+# master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
+# master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
+# master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
 
 #FUNCTIONS-----
 gene_summary_details <- function(gene_summary) {
@@ -60,6 +61,18 @@ gene_summary_details <- function(gene_summary) {
       tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id),
       tags$dt("Gene Summary"), tags$dd(gene_summary$entrez_summary)
     )
+  )
+}
+
+gene_search_results <- function(gene_summary_row) {
+  title <- paste0(gene_summary_row["approved_symbol"], ": ", gene_summary_row["approved_name"])
+  list(
+    div(
+      tags$a(title, href=paste0("?show=gene&symbol=", gene_summary_row["approved_symbol"]))
+      ),
+    div(tags$strong("Aka:"), gene_summary_row["aka"]),
+    div(tags$strong("Entrez ID:"), gene_summary_row["ncbi_gene_id"]),
+    hr()
   )
 }
 
@@ -390,21 +403,83 @@ save_data <- function(input) {
   write_csv(data, path=file.path(directory_path, file_name), col_names=FALSE)
 }
 
+search_panel <- function() {
+  searchInput(
+    inputId = "gene_or_pathway",
+    placeholder = "TP53 or BRCA1",
+    btnSearch = icon("search")
+  )
+}
 
+handle_search <- function(search_string) {
+  if (search_string != "") {
+    if (searching_for_known_gene_symbol(search_string)) {
+      change_page(paste0("?symbol=", search_string, "#/gene"))
+    } else {
+      change_page(paste0("?q=", search_string, "#/search"))
+    }
+  }
+}
+
+searching_for_known_gene_symbol <- function(search_text) {
+  # returns TRUE if search_text contains a gene symbol that exists in gene_summary
+  gene_summary %>%
+    filter(approved_symbol == search_text) %>%
+    count() == 1
+}
+
+head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
+
+main_title <- "Data-Driven Hypothesis"
+
+search_tab_panel <- div(
+  search_panel()
+)
+
+home_page <- tagList(
+  head_tags,
+  #navbarPage(title = main_title),
+  h4("Enter gene symbols"),
+  search_panel(),
+  p("Enter a gene symbol")
+)
+
+search_page <- tagList(
+  head_tags,
+  #navbarPage(title = main_title),
+  div(search_panel(), style="float: right"),
+  h3(textOutput("search_title")),
+  div(div(h3("Gene", class="panel-title"), class="panel-heading"),
+      div(uiOutput("genes_search_result"), class="panel-body"),
+      class="bg-info panel panel-default"
+  )
+)
+
+
+
+
+nogene_page <- div(
+  head_tags,
+  navbarPage(title = main_title),
+  div(search_panel(), style="float: right"),
+  h3("Gene Details"),
+  textOutput("msg")
+)
 
 #UI------
-ui <- fluidPage(
-  tags$head(includeHTML("gtag.html"), 
-            includeScript("returnClick.js")),
+gene_page <- fluidPage(
+  head_tags,
   navbarPage(
-    title = "Data-Driven Hypothesis",
+    title = main_title,
     tabPanel("Home",
              "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.",
              hr(),
-             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
-             actionButton(inputId = "go", label = "Generate"),
-             hr(),
-             uiOutput("gene_summary")),
+             #textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
+             #actionButton(inputId = "go", label = "Generate"),
+             #hr(),
+             uiOutput("gene_summary"),
+             div(search_panel(), style="float: right")
+    ),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
                         conditionalPanel(condition = 'input.go == 0',
@@ -483,10 +558,12 @@ ui <- fluidPage(
 )
 
 #SERVER-----
-server <- function(input, output, session) {
-  data <- eventReactive(input$go, {
-    if_else(str_detect(input$gene_symbol, "orf"), input$gene_symbol, str_to_upper(input$gene_symbol))})
-  
+gene_callback <- function(input, output, session) {
+  data <- reactive({
+    gene_symbol <- getQueryString()$symbol
+    if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
+  })
+
   # When the Submit button is clicked, save the form data
   observeEvent(input$submit, {
     save_data(input)
@@ -581,5 +658,56 @@ server <- function(input, output, session) {
     }
   )
 }
+
+# Creat output for our router in main UI of Shiny app.
+ui <- shinyUI(
+  fluidPage(
+    uiOutput("pageContent")
+  )
+)
+
+pages_ui <- list(
+  home=home_page,
+  search=search_page,
+  gene=gene_page
+)
+
+search_callback <- function(input, output, session) {
+  output$search_title <- renderText({
+    query <- getQueryString()
+    paste("Search results for", query$query)
+  })
+  output$genes_search_result <- renderUI({
+    query <- getQueryString()
+    # only show resutls when on "search" page
+    if (!is.null(query$query)) {
+      selected_genes <- gene_summary %>%
+        filter(str_detect(approved_symbol, paste0("^", query$query)))
+      apply(selected_genes, 1, gene_search_results)
+    } else {
+      "please enter more data"
+    }
+  })
+}
+
+server <- shinyServer(function(input, output, session) {
+  output$pageContent <- renderUI({
+    query <- getQueryString()
+    show_page <- query$show
+    if (is.null(show_page)) {
+      show_page <- "home"
+    }
+    message("show", show_page)
+    pages_ui[show_page]
+  })
+  
+  observeEvent(input$gene_or_pathway_search, { 
+    updateQueryString(paste0("?show=search&query=", input$gene_or_pathway), mode="push")
+  })
+  
+  # the below item is problematic for the back button
+  search_callback(input, output, session)
+  #gene_callback(input, output, session)
+})
 
 shinyApp(ui, server)
