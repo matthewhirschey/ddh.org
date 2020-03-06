@@ -49,7 +49,6 @@ master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
 master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
 
 #FUNCTIONS-----
-
 gene_summary_details <- function(gene_summary) {
   title <- paste0(gene_summary$approved_symbol, ": ", gene_summary$approved_name)
   tagList(
@@ -412,13 +411,6 @@ search_panel <- function() {
   )
 }
 
-searching_for_known_gene_symbol <- function(search_text) {
-  # returns TRUE if search_text contains a gene symbol that exists in gene_summary
-  gene_summary %>%
-    filter(approved_symbol == search_text) %>%
-    count() == 1
-}
-
 head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
 
 main_title <- "Data-Driven Hypothesis"
@@ -430,7 +422,7 @@ search_tab_panel <- div(
 home_page <- tagList(
   head_tags,
   navbarPage(title = main_title),
-  h4("Enter gene symbols"),
+  h4("Enter gene symbol"),
   search_panel(),
 )
 
