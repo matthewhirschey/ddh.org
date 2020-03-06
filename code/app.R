@@ -49,58 +49,6 @@ master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
 master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
 
 #FUNCTIONS-----
-search_panel <- function() {
-  searchInput(
-    inputId = "gene_or_pathway",
-    placeholder = "TP53",
-    btnSearch = icon("search")
-  )
-}
-
-split_search_string <- function(search_string) {
-  # return list of search strings by spliting on spaces, commas, or commas followed by spaces
-  unlist(strsplit(search_string, ' +|,|, +'))
-}
-
-searching_for_single_known_gene <- function(search_string) {
-  # returns TRUE if the user is searching for a single gene that exists in gene_summary
-  if (length(split_search_string(search_string)) == 1) {
-    gene_summary %>%
-      filter(approved_symbol == search_string) %>%
-      count() == 1
-  } else {
-    FALSE
-  }
-}
-
-searching_for_multiple_known_genes <- function(search_string) {
-  # returns TRUE if the user is searching for a list of genes that all exist in gene_summary  
-  search_terms <- split_search_string(search_string)
-  if (length(search_terms) > 1) {
-    gene_summary %>%
-      filter(approved_symbol %in% search_terms) %>%
-      count() == length(search_terms)
-  } else {
-    FALSE
-  }
-}
-
-home_callback <- function(input, output, session) {
-  observeEvent(input$gene_or_pathway_search, {
-    search_string <- input$gene_or_pathway
-    if (search_string != "") {
-      if (searching_for_single_known_gene(search_string)) {
-        change_page(paste0("?gene=", search_string, "#gene"))
-      } else {
-        if (searching_for_multiple_known_genes(search_string)) {
-          change_page(paste0("?genes=", search_string, "#pathway"))
-        } else {
-          change_page(paste0("?q=", search_string, "#search"))
-        }
-      }
-    }
-  })
-}
 
 gene_summary_details <- function(gene_summary) {
   title <- paste0(gene_summary$approved_symbol, ": ", gene_summary$approved_name)
@@ -459,7 +407,7 @@ save_data <- function(input) {
 search_panel <- function() {
   searchInput(
     inputId = "gene_or_pathway",
-    placeholder = "TP53 or BRCA1",
+    placeholder = "TP53",
     btnSearch = icon("search")
   )
 }
