@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyWidgets)
 library(tidyverse)
 library(plotly)
 library(networkD3)
@@ -60,6 +61,18 @@ gene_summary_details <- function(gene_summary) {
       tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id),
       tags$dt("Gene Summary"), tags$dd(gene_summary$entrez_summary)
     )
+  )
+}
+
+gene_search_results <- function(gene_summary_row) {
+  title <- paste0(gene_summary_row["approved_symbol"], ": ", gene_summary_row["approved_name"])
+  list(
+    div(
+      tags$a(title, href=paste0("?show=gene&symbol=", gene_summary_row["approved_symbol"]))
+      ),
+    div(tags$strong("Aka:"), gene_summary_row["aka"]),
+    div(tags$strong("Entrez ID:"), gene_summary_row["ncbi_gene_id"]),
+    hr()
   )
 }
 
@@ -390,103 +403,112 @@ save_data <- function(input) {
   write_csv(data, path=file.path(directory_path, file_name), col_names=FALSE)
 }
 
+search_panel <- function() {
+  searchInput(
+    inputId = "gene_or_pathway",
+    placeholder = "TP53",
+    btnSearch = icon("search")
+  )
+}
+
+head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
+
+main_title <- "Data-Driven Hypothesis"
+
+search_tab_panel <- div(
+  search_panel()
+)
+
+home_page <- tagList(
+  head_tags,
+  navbarPage(title = main_title),
+  h4("Enter gene symbol"),
+  search_panel(),
+)
+
+search_page <- tagList(
+  head_tags,
+  navbarPage(title = main_title),
+  div(search_panel(), style="float: right"),
+  h3(textOutput("search_title")),
+  div(div(h3("Gene", class="panel-title"), class="panel-heading"),
+      div(uiOutput("genes_search_result"), class="panel-body"),
+      class="bg-info panel panel-default"
+  )
+)
 
 
 #UI------
-ui <- fluidPage(
-  tags$head(includeHTML("gtag.html"), 
-            includeScript("returnClick.js")),
+gene_page <- fluidPage(
+  head_tags,
   navbarPage(
-    title = "Data-Driven Hypothesis",
+    title = main_title,
     tabPanel("Home",
              "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.",
              hr(),
-             textInput(inputId = "gene_symbol", label = "Enter gene symbol", value ='TP53'),
-             actionButton(inputId = "go", label = "Generate"),
-             hr(),
-             uiOutput("gene_summary")),
+             uiOutput("gene_summary"),
+             div(search_panel(), style="float: right")
+    ),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
-                        conditionalPanel(condition = 'input.go == 0',
-                                         "Enter a gene symbol to generate dependency plots"),
-                        conditionalPanel(condition = 'input.go != 0', 
-                                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
-                                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                                              plotlyOutput(outputId = "cell_deps"),
-                                                              plotlyOutput(outputId = "cell_bins"))),
-                                         fluidRow(htmlOutput(outputId = "plot_text"))
-                                         )),
+                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
+                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
+                                              plotlyOutput(outputId = "cell_deps"),
+                                              plotlyOutput(outputId = "cell_bins"))),
+                         fluidRow(htmlOutput(outputId = "plot_text"))),
                tabPanel("Table",
-                        conditionalPanel(condition = 'input.go == 0',
-                                         "Enter a gene symbol to generate a table of dependent cell line"),
-                        conditionalPanel(condition = 'input.go != 0', 
-                                         fluidRow(h4(textOutput("text_cell_dep_table"))),
-                                         fluidRow(dataTableOutput(outputId = "target_achilles"))))
+                        fluidRow(h4(textOutput("text_cell_dep_table"))),
+                        fluidRow(dataTableOutput(outputId = "target_achilles")))
     ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
-                        conditionalPanel(condition = 'input.go == 0',
-                                         "Enter a gene symbol to generate a table of similar genes"),
-                        conditionalPanel(condition = 'input.go != 0', 
-                                         fluidRow(h4(textOutput("text_dep_top"))),
-                                         fluidRow(dataTableOutput(outputId = "dep_top")))),
+                        fluidRow(h4(textOutput("text_dep_top"))),
+                        fluidRow(dataTableOutput(outputId = "dep_top"))),
                tabPanel("Pathways",
-                        conditionalPanel(condition = 'input.go == 0',
-                                         "Enter a gene symbol to generate a table of similar pathways"),
-                        conditionalPanel(condition = 'input.go != 0', 
-                                         fluidRow(h4(textOutput("text_pos_enrich"))),
-                                         fluidRow(dataTableOutput(outputId = "pos_enrich"))))),
+                        fluidRow(h4(textOutput("text_pos_enrich"))),
+                        fluidRow(dataTableOutput(outputId = "pos_enrich")))),
     navbarMenu(title = "Dissimilar",
                tabPanel("Genes",
-                        conditionalPanel(condition = 'input.go == 0',
-                                         "Enter a gene symbol to generate a table of dissimilar genes"),
-                        conditionalPanel(condition = 'input.go != 0', 
-                                         fluidRow(h4(textOutput("text_dep_bottom"))),
-                                         fluidRow(dataTableOutput(outputId = "dep_bottom")))),
+                        fluidRow(h4(textOutput("text_dep_bottom"))),
+                        fluidRow(dataTableOutput(outputId = "dep_bottom"))),
                tabPanel("Pathways",
-                        conditionalPanel(condition = 'input.go == 0',
-                                         "Enter a gene symbol to generate a table of dissimilar pathways"),
-                        conditionalPanel(condition = 'input.go != 0', 
-                                         fluidRow(h4(textOutput("text_neg_enrich"))),
-                                         fluidRow(dataTableOutput(outputId = "neg_enrich"))))),
+                        fluidRow(h4(textOutput("text_neg_enrich"))),
+                        fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph",
              #sidebarLayout( #UNCOMMENT THIS SECTION WHEN input$deg is working
              #sidebarPanel(numericInput(inputId = "deg",
              #label = "Minimum # of Connections",
              #value = 2, min = 1, max = 50)),
-             conditionalPanel(condition = 'input.go == 0',
-                              "Enter a gene symbol to generate a graph"),
-             conditionalPanel(condition = 'input.go != 0', 
-                              mainPanel(forceNetworkOutput(outputId = "graph")))
+             mainPanel(forceNetworkOutput(outputId = "graph"))
              #uncomment this parenthesis)
     ),
     tabPanel("Methods",
              includeMarkdown("methods.md")
              ),
     tabPanel("Download Report",
-             conditionalPanel(condition = 'input.go == 0',
-                              "Enter a gene symbol to generate reports"),
-             conditionalPanel(condition = 'input.go != 0',
-                              h2("Report Generator"),
-                              conditionalPanel(condition = 'input.submit == 0',
-                                               "Please enter your name and email address to download a report", 
-                                               textInput("first_name", "First Name", ""), 
-                                               textInput("last_name", "Last Name", ""), 
-                                               textInput("email", "Email Address", ""), 
-                                               actionButton(inputId = "submit", 
-                                                            label = "Enter")),
-                              conditionalPanel(condition = 'input.submit != 0', 
-                                               "To generate a report, click on the button below",
-                                               br(),
-                                               downloadButton(outputId = "report", label = "Download report"))))
+              h2("Report Generator"),
+              conditionalPanel(condition = 'input.submit == 0',
+                               "Please enter your name and email address to download a report", 
+                               textInput("first_name", "First Name", ""), 
+                               textInput("last_name", "Last Name", ""), 
+                               textInput("email", "Email Address", ""), 
+                               actionButton(inputId = "submit", 
+                                            label = "Enter")),
+              conditionalPanel(condition = 'input.submit != 0', 
+                               "To generate a report, click on the button below",
+                               br(),
+                               downloadButton(outputId = "report", label = "Download report")))
   )
 )
 
 #SERVER-----
-server <- function(input, output, session) {
-  data <- eventReactive(input$go, {
-    if_else(str_detect(input$gene_symbol, "orf"), input$gene_symbol, str_to_upper(input$gene_symbol))})
-  
+
+gene_callback <- function(input, output, session) {
+  data <- reactive({
+    gene_symbol <- getQueryString()$symbol
+    if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
+  })
+
   # When the Submit button is clicked, save the form data
   observeEvent(input$submit, {
     save_data(input)
@@ -581,5 +603,51 @@ server <- function(input, output, session) {
     }
   )
 }
+
+# Creat output for our router in main UI of Shiny app.
+ui <- shinyUI(
+  fluidPage(
+    uiOutput("pageContent")
+  )
+)
+
+pages_ui <- list(
+  home=home_page,
+  search=search_page,
+  gene=gene_page
+)
+
+search_callback <- function(input, output, session) {
+  output$search_title <- renderText({
+    query <- getQueryString()
+    paste("Search results for", query$query)
+  })
+  output$genes_search_result <- renderUI({
+    query <- getQueryString()
+    selected_genes <- gene_summary %>%
+      filter(str_detect(approved_symbol, paste0("^", query$query))) %>%
+      head(10)
+    apply(selected_genes, 1, gene_search_results)
+  })
+}
+
+server <- shinyServer(function(input, output, session) {
+  output$pageContent <- renderUI({
+    query <- getQueryString()
+    show_page <- query$show
+    if (is.null(show_page)) {
+      show_page <- "home"
+    }
+    pages_ui[show_page]
+  })
+  
+  observeEvent(input$gene_or_pathway_search, { 
+    updateQueryString(paste0("?show=search&query=", input$gene_or_pathway), mode="push")
+  })
+  
+  # the below item is problematic for the back button
+  search_callback(input, output, session)
+  gene_callback(input, output, session)
+})
 
 shinyApp(ui, server)
