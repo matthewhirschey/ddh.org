@@ -1,0 +1,75 @@
+---
+title: "gene2pubmed Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(cowplot)
+library(ggrepel)
+```
+
+#import
+Cite: Maglott, Donna, et al. 'Entrez Gene: gene-centered information at NCBI.' Nucleic acids research 33.suppl_1 (2005): D54-D58.
+```{r}
+
+gene2pubmedurl <- "ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2pubmed.gz"
+gene2pubmed_raw <- read_tsv(gene2pubmedurl, col_names = TRUE) %>% 
+  clean_names()
+
+#gene2pubmed_raw <- read_tsv(here::here("data", "gene2pubmed"), col_names = TRUE) %>% 
+#  clean_names()
+
+
+
+#read data from create_gene_summary.R
+load(here::here("data", "gene_summary.RData"))
+
+```
+
+
+#count
+```{r}
+gene2pubmed <- gene2pubmed_raw %>% 
+  filter(number_tax_id == 9606) %>%  #only the rows corresponding to humans (#tax_id = 9606) 
+  group_by(gene_id) %>% 
+  count(sort = TRUE) %>% 
+  left_join(gene_summary, by = c("gene_id" = "ncbi_gene_id")) %>% 
+  select(gene_id, approved_symbol, n, approved_name) %>% 
+  filter(!is.na(approved_symbol))
+
+ggplot() +
+  geom_point(data = gene2pubmed, mapping = aes(x = fct_reorder(approved_symbol, n), y = n), alpha = 0.2) +
+  geom_text_repel(data = subset(gene2pubmed, n > 3000), mapping = aes(x = fct_reorder(approved_symbol, n), y = n, label = approved_symbol)) +
+  labs(x = "Human Gene", y = "Number of Publications", title = "Number of Publications per human gene") +
+  theme_cowplot() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  coord_cartesian(xlim = c(0, 33000))
+
+#ggsave(here::here("results", "pubspergene.png"), plot = last_plot())
+
+#ggplot(gene2pubmed) +
+#  geom_histogram(aes(x = n), bins = 30)
+
+#ggplot(gene2pubmed) +
+#  geom_point(aes(x = fct_reorder(approved_symbol, n), y = log10(n)), alpha = 0.2)
+
+```
+
+#right join
+```{r}
+gene_summary <- gene2pubmed_raw %>% 
+  filter(number_tax_id == 9606) %>%  #only the rows corresponding to humans (#tax_id = 9606) 
+  group_by(gene_id) %>% 
+  count(sort = TRUE) %>% 
+  right_join(gene_summary, by = c("gene_id" = "ncbi_gene_id"))  %>% 
+  rename("ncbi_gene_id" = "gene_id", 
+         "pubmed_count" = "n") %>% 
+  mutate(pubmed_count = replace_na(pubmed_count, 0))
+
+#saveRDS()
+
+```
+
