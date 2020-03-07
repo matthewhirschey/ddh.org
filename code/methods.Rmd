@@ -5,12 +5,11 @@ output: md_document
 ---
 
 ```{r setup, include=FALSE}
-###knit this documet to generate methods.md, which then is served by the Shiny app###
-#upon each release, run generate_depmat_data.R & generate_depmap_stats.R, then knit
+###knit this document to generate methods.md, which then is served by the Shiny app###
+#upon each release, run generate_depmap_data.R & generate_depmap_stats.R, then knit
 knitr::opts_chunk$set(echo = TRUE)
 library(lubridate)
 library(tidyverse)
-library(feather)
 library(knitr)
 library(cowplot)
 library(viridis)
@@ -22,6 +21,11 @@ library(tidygraph)
 library(ggraph)
 library(pander)
 library(patchwork)
+
+#clear environment
+#rm(list=ls()) 
+
+time_begin_data <- Sys.time()
 
 #read current release information 
 source(here::here("code", "current_release.R"))
@@ -49,9 +53,6 @@ achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 achilles_raw <- clean_colnames(achilles_raw)
-
-#clear environment
-#rm(list=ls()) 
 
 #pathway enrichment analysis loop function
 enrichr_loop <- function(gene_list, databases){
@@ -187,14 +188,12 @@ Essential gene data from Project Achilles were downloaded from the DepMap portal
   
 ```{r dep_scores, echo=FALSE}
 #insert summary of scores
-achilles_long <- achilles %>% 
+achilles_raw_long <- achilles_raw %>% 
   pivot_longer(-X1, names_to = "gene", values_to = "dep_score") %>% 
   filter(!is.na(dep_score))
 
-#sample_n(achilles_long, 5000)
-
 ggplot() +
-  geom_histogram(data = achilles_long, aes(x = dep_score), color = "gray", binwidth = 0.1) +
+  geom_histogram(data = achilles_raw_long, aes(x = dep_score), color = "gray", fill = "#02224C", binwidth = 0.1) +
   labs(x = "Dependency Score", y = "Count (Million)", title = paste0("Dependency Score Distribution from DepMap release ", release)) +
   scale_y_continuous(breaks = c(0, 500000, 1000000, 1500000, 2000000), labels = c("0", "0.5", "1", "1.5", "2")) +
   scale_x_continuous(breaks = c(-5:7)) +
@@ -202,15 +201,6 @@ ggplot() +
 ```
   
 #### Predictive analytics by pattern recognition
-```{r raw, echo=FALSE, message=FALSE, warning=FALSE}
-#make raw correlation matrix
-achilles_cor_raw <- achilles_raw %>% 
-  select(-X1) %>% 
-  correlate() 
-
-achilles_cor_raw_long <- achilles_cor_raw %>% 
-  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation_raw")
-```
 To find patterns in gene dependencies across cell lines, we generated a Pearson correlation matrix of all genes by all genes. This analysis generated gene-gene correlation values that matched values published on [depmap.org](https://depmap.org), validating the first step in our analysis. High levels of gene expression are often thought to be indicative of key genes for a given cell type. Thus, we next compared dependency values to gene expression values. The [Cancer Cell Line Encyclopedia](https://portals.broadinstitute.org/ccle/about) project is a collaboration between the Broad Institute, and the Novartis Institutes for Biomedical Research and its Genomics Institute of the Novartis Research Foundation, which together conduct detailed genetic and pharmacologic characterization of a large panel of human cancer models. As of the CCLE 2019 release, `r nrow(expression)` cell lines have been characterized for gene expression. In the `r release` DepMap release, `r sum(expression$X1 %in% achilles$X1 == TRUE)` of the `r nrow(achilles)` cell lines have gene expression data. Using these two datasets, we compared the essentiality of a gene to its expression value.  
   
 ```{r depVexp, echo=FALSE, message=FALSE, warning=FALSE}
@@ -220,7 +210,7 @@ expression_long <- expression %>%
   arrange(desc(gene_expression))
 
 joined <- expression_long %>% 
-  left_join(achilles_long, by = c("gene" = "gene", "X1" = "X1"))
+  left_join(achilles_raw_long, by = c("gene" = "gene", "X1" = "X1"))
 
 log_breaks <- c(1, 10, 100, 1000, 10000, 100000, 1000000)
 log_labels <-c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000")
@@ -228,7 +218,7 @@ joined %>%
   ggplot() +
   geom_hex(aes(x = dep_score, y = gene_expression), 
            bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
-  scale_fill_viridis_c(option = "C", name = "Count", trans = "log10", breaks = log_breaks, labels = log_labels) + #log scale transform legend
+  scale_fill_viridis_c(option = "E", name = "Hex Bin \nCount", trans = "log10", breaks = log_breaks, labels = log_labels, limits = c(1,1000000)) + #log scale transform legend
   labs(x = "Dependency Score", y = "Gene Expression", title = "Gene expression is unrelated to its essentiality") +  
   theme_cowplot()
 ```
@@ -236,12 +226,12 @@ joined %>%
 We predicted a V-shaped curve, with stronger dependencies as gene expression increases. Surprisingly, we saw no relationship between gene expression and gene essentiality, where genes with both low and high expression displayed both gains and losses in fitness. The overall observation from this dataset shows baseline gene expression levels are poor indicators of the essentiality of a gene. This analysis also highlighted that several genes were binned on the x-axis, i.e. could have no measurable expression levels, but have assigned dependency scores. Across `r nrow(achilles)` cell lines in the Achilles project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
   
 #### Noise Reduction
-Given cells do not express all genes, but might receive a dependency sore in this experimental paradigm, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. Of the `r nrow(achilles)` cell lines for which gene essentiality data is collected, `r sum(achilles$X1 %in% expression$X1)` have genome-wide gene expression data. From these cell lines, we removed dependency scores for genes from cell line that have a corresponding gene expression value of zero.  
+Given cells do not express all genes, but might receive a dependency score in this experimental paradigm, we sought to remove dependency scores for gene-cell line pairs that have an expression value of zero under basal conditions. Of the `r nrow(achilles)` cell lines for which gene essentiality data is collected, `r sum(achilles$X1 %in% expression$X1)` have genome-wide gene expression data. From these cell lines, we removed dependency scores for genes from cell line that have a corresponding gene expression value of zero.  
   
 ```{r expression_0, echo=FALSE, message=FALSE, warning=FALSE}
 #how many 0s?
 ggplot() +
-  geom_histogram(data = expression_long, aes(x = gene_expression), color = "gray", binwidth = 0.25) +
+  geom_histogram(data = expression_long, aes(x = gene_expression), color = "gray", fill = "#02224C", binwidth = 0.25) +
   labs(title = paste("Binned gene expression values in ", sum(achilles$X1 %in% expression$X1), " Achilles cell lines", sep = ""), 
        subtitle = paste0(
     round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1), "% of all values are zero"), 
@@ -252,15 +242,16 @@ ggplot() +
   NULL
 ```
   
-For some genes expressed in highly specific and restricted cell types, this operation removed many dependency values. After removing these values, we found that highly specialized genes in discrete cell types have too few cells with both gene expression values and gene essentiality values to assign a meaningful correlation value. Thus, if a gene was absent from too many cell lines, we omitted it to prevent assigned values from relying on too few data points.  
+For some genes expressed in highly specific and restricted cell types, this operation removed many dependency values. After removing these values, we found that highly specialized genes in discrete cell types have too few cells with both gene expression values and gene essentiality values to assign a meaningful correlation value. Thus, if a gene was absent from too many cell lines, we omitted it to prevent assigned values from relying on too few data points.   
   
-```{r dep_cleaning, echo=FALSE, message=FALSE, warning=FALSE}
+```{r dep_0s, echo=FALSE, message=FALSE, warning=FALSE}
+#gets rid of zeros by replacing with NAs
 no_expression <- expression_long %>% 
   filter(gene_expression == 0) %>% 
   unite(X1, gene, col = "match", sep = "-", remove = TRUE) %>% 
   pull(match)
 
-achilles_no0 <- achilles_long %>% 
+achilles_no0 <- achilles_raw_long %>% 
   unite(X1, gene, col = "match", sep = "-", remove = FALSE) %>% 
   filter(match %in% no_expression == FALSE) %>% 
   select(-match) %>%
@@ -281,8 +272,8 @@ arrows <- tibble(
   y2 = c(2500, 5000)
 )
 
-no0_plot <- ggplot(achilles_no0_plot) +
-  geom_histogram(aes(x = pos), color = "gray") +
+threshold <- ggplot(achilles_no0_plot) +
+  geom_histogram(aes(x = pos), color = "gray", fill = "#02224C") +
   labs(x = "# of cell lines expressing target gene", y = "# of genes in bin", title = "The number of cell lines each gene was present within") +
   geom_curve(data = arrows, aes(x = x1, y = y1, xend = x2, yend = y2),
              arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
@@ -296,6 +287,7 @@ no0_plot <- ggplot(achilles_no0_plot) +
   geom_vline(aes(xintercept = sum(achilles$X1 %in% expression$X1)-na_cutoff), color = "red") +
   theme_cowplot()
 
+#code below sets threshold to remove too many NAs from raw data without zeros
 toomanyNAs <- achilles_no0 %>% 
   summarise_all(list(~sum(is.na(.)))) %>% 
   gather(gene, NAs) %>% 
@@ -303,8 +295,8 @@ toomanyNAs <- achilles_no0 %>%
   filter(NAs > na_cutoff) %>% 
   pull(gene)
 
-achilles_clean <- achilles_no0 %>% 
-  select(-one_of(toomanyNAs)) #would be nice to list these, but lose the kable in Rmd->md->html conversion
+achilles_clean <- achilles_no0 %>% select(-one_of(toomanyNAs)) #this is now the same object as achilles, but different than achilles_raw; referenced below
+#would be nice to list these omitted genes, but lose the kable in Rmd->md->html conversion
 
 ##relationship between number of cell lines that drive gene correlation and number of genes in list
 count_v_max_no0 <- achilles_no0 %>% 
@@ -318,55 +310,81 @@ count_v_max_no0 <- achilles_no0 %>%
   left_join(achilles_no0_plot, by = c("rowname" = "gene")) %>% 
   arrange(pos)
 
-na_cutoff_tmp <- count_v_max %>% 
-  top_frac(-.05, pos) %>% 
-  arrange(pos) %>% 
-  pull(NAs) %>% 
-  min(.)
-
-threshold_plot <- count_v_max_no0 %>% 
+sampling <- count_v_max_no0 %>% 
   ggplot() +
-  geom_point(aes(x = pos, y = count), alpha = 0.2) +
+  geom_point(aes(x = pos, y = count), alpha = 0.2, color = "#02224C") +
   geom_vline(xintercept = nrow(achilles_clean) - na_cutoff, color = "red") +
-  geom_vline(xintercept = nrow(achilles_clean) - na_cutoff_tmp, color = "red", linetype="dashed") +
+  #geom_vline(xintercept = nrow(achilles_clean) - na_cutoff_tmp, color = "red", linetype="dashed") +
   labs(y = "# of genes correlated w/ target", x = "# of cell lines expressing target gene", title = "Sampling too few cells weakens predictions") +
   annotate("text", x = sum(achilles$X1 %in% expression$X1)-na_cutoff + 10, y = 10, size = 3, color = "red", hjust = 0, fontface = "bold",
            label = glue::glue("Threshold")) +
   theme_cowplot()
 
-#patchwork
-no0_plot + threshold_plot
+sampling
 ```
   
+  
 We set a threshold of no more than `r na_cutoff` zeros, meaning that if a gene had fewer than `r nrow(achilles)-na_cutoff` cell lines with dependency values, the correlation pattern of a gene would be meaningless, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data.  
+  
+```{r raw, echo=FALSE, message=FALSE, warning=FALSE}
+threshold
+```
   
 To quantify the effect of these cleaning step on the data, we compared the correlation matrix generated from the raw data to the correlation matrix from the cleaned data. Plotting these ~200M gene-gene pairs revealed that more positive genes became more positive compared positive genes that became negative; conversely, more gene pairs with negative correlations became more negative rather than less negative. Simply stated, these cleaning steps had a greater effect on strengthening the data in either direction rather than weakening it, supporting these steps as important for this resource. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix.  
   
 ```{r special_sauce, echo=FALSE, message=FALSE, warning=FALSE}
-#generate cor matrix from raw data
-#did this in the previous chunk
+#generate cor matrix from raw data to compare raw correlation to final correlation
+achilles_cor_raw <- achilles_raw %>% 
+  select(-X1) %>% 
+  correlate() 
 
-#different approach
-achilles_cor <- shave(achilles_cor)
-achilles_cor_raw <- shave(achilles_cor_raw)
+#shave to reduce redundancies
+achilles_cor_shave <- shave(achilles_cor)
+achilles_cor_raw_shave <- shave(achilles_cor_raw)
 
-#make long; did above
+#pivot both longer, but use shaved dataset to plot only one gene-gene pair
+achilles_cor_shave_long <- achilles_cor_shave %>% 
+  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
+  filter(!is.na(achilles_correlation))
 
-achilles_joined <- achilles_cor_raw %>% 
-  left_join((achilles_cor), by = c("rowname", "achilles_gene"))
+achilles_cor_raw_shave_long <- achilles_cor_raw_shave %>% 
+  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation_raw") %>% 
+  filter(!is.na(achilles_correlation_raw))
 
-achilles_joined %>% 
-  sample_n(1000000) %>% 
+achilles_joined <- achilles_cor_raw_shave_long %>% 
+  left_join((achilles_cor_shave_long), by = c("rowname" = "rowname", "achilles_gene" = "achilles_gene"))
+
+log_breaks10M <- c(1, 10, 100, 1000, 10000, 100000, 1000000, 10000000)
+log_labels10M <-c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000", "10,000,000")
+
+effect_of_cleaning <- achilles_joined %>% 
+  #sample_n(1000000) %>% 
   ggplot() +
   geom_abline(intercept = 0, slope = 1, color = "gray") +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 0) +
-  geom_hex(aes(x = achilles_cor_raw, y = achilles_cor), 
+  geom_hex(aes(x = achilles_correlation_raw, y = achilles_correlation), 
            bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
-  scale_fill_viridis_c(option = "C", name = "Count", trans = "log10", breaks = log_breaks, labels = log_labels) + #breaks and labels defined above
-  labs(x = "Raw Correlation", y = "Corrected Correlation") +  
+  scale_fill_viridis_c(option = "E", name = "Hex Bin \nCount", trans = "log10", breaks = log_breaks10M, labels = log_labels10M, limits = c(1,10000000)) + #breaks and labels defined above
+  labs(x = "Raw Correlation", y = "Corrected Correlation", title = "Effect of cleaning") +  
   coord_fixed(ratio = 1, xlim = c(-1, 1), ylim = c(-1, 1)) +
   theme_minimal()
+
+#achilles_cor read in line 35
+#achilles_cor_long generated line 36
+
+achilles_cor_heatmap <- achilles_cor %>% 
+  #rearrange(absolute = FALSE) %>%    
+  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
+  filter(!is.na(achilles_correlation)) %>% 
+  ggplot(aes(rowname, achilles_gene, fill = achilles_correlation)) +
+  geom_raster() +
+  scale_fill_viridis(option = "D", name="Pearson\nCorrelation", limit = c(-1, 1)) +
+  labs(title = "Gene-gene correlation matrix") +
+  theme_void() +
+  coord_fixed()
+
+effect_of_cleaning + achilles_cor_heatmap
 ```
 
   
@@ -374,17 +392,13 @@ achilles_joined %>%
 To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a Pearson correlation matrix on these prioritized data in order to quantify the similarity in dependency patterns and annotate genes in functional pathways.  
 
 ```{r r2, echo=FALSE}
-achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
-achilles_cor_long <- achilles_cor %>% 
-  stretch()
-
 achilles_cor_long %>% 
-  filter(!is.na(r)) %>% 
+  filter(!is.na(achilles_correlation)) %>% 
   #sample_n(1000) %>% 
   ggplot() +
-  geom_histogram(aes(x = r), color = "gray", binwidth = 0.05) +
+  geom_histogram(aes(x = achilles_correlation), color = "gray", fill = "#02224C", binwidth = 0.05) +
   scale_y_continuous(breaks = c(0, 25000000, 50000000, 75000000), labels = c("0", "25", "50", "75")) +
-  labs(x = "r^2 values", y = "Count (Million)", title = "Distribution of r^2 values across all gene-gene pairs") +
+  labs(x = "r^2 values", y = "Count (Million)", title = "Distribution of correlation values across all gene-gene pairs") +
   theme_cowplot()
 ```
   
@@ -397,7 +411,7 @@ achilles_cor %>%
   gather("gene", "max") %>% 
   arrange(desc(max)) %>% 
   ggplot(aes(max)) +
-  geom_histogram(binwidth = 0.05, color = "gray") + 
+  geom_histogram(binwidth = 0.05, color = "gray", fill = "#02224C") + 
   #geom_vline(aes(xintercept = achilles_upper), color = "red") +
   labs(title = "Distribution of maximum r^2 values for each gene", x = "Maximum r^2 values", y = "Count") +
   theme_cowplot()
@@ -460,7 +474,7 @@ In order to identify the functional annotation of a single gene, begin with a qu
        enrichr_loop(., focused_lib)
 
     #plot setup
-    target_achilles <- achilles_long %>% 
+    target_achilles <- achilles_raw_long %>% 
       filter(gene == fav_gene) %>% 
       left_join(expression_join, by = "X1") %>% 
       select(cell_line, lineage, dep_score)
@@ -688,15 +702,16 @@ The data presented on datadrivenhypothesis.org is an interactive image that can 
 ```{r include=FALSE}
 #add publication data here first
 ```
-Code is available on the Hirschey Lab github account, including links to download the raw data, and run the analyses in R from scratch. Furthermore, the Broad Institute has a lot of information on their [website](http://www.broadinstitute.org) and the website dedicated to the [Dependency Map project](http://www.depmap.org) about how the raw data were generated, and provide a list of references.  
+Code is available on the [Hirschey Lab github account](http://www.github.com/matthewhirschey), including links to download the raw data, and run the analyses in R from scratch. Furthermore, the Broad Institute has a lot of information on their [website](http://www.broadinstitute.org) and the website dedicated to the [Dependency Map project](http://www.depmap.org) about how the raw data were generated, and provide a list of references.  
   
 #### Code Availability  
 ```{r include=FALSE}
-#update these links!
+#how long
+time_end_data <- Sys.time()
 ```
-[Generate Data](https://github.com/hirscheylab/ddh/blob/master/code/generate_depmap_data.R)  
-[Statistical Analyses](https://github.com/hirscheylab/ddh/blob/master/code/generate_depmap_stats.R)  
-[Table Generator](https://github.com/hirscheylab/ddh/blob/master/code/generate_depmap_tables.R)  
-[Pathway Generator](https://github.com/hirscheylab/ddh/blob/master/code/generate_depmap_pathways.R)  
+[Generate Data](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_data.R)  
+[Statistical Analyses](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_stats.R)  
+[Table Generator](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_tables.R)  
+[Pathway Generator](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_pathways.R)  
   
 `r lubridate::stamp("Methods updated December 31, 1979")(now()) `
