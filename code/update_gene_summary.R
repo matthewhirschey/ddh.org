@@ -9,12 +9,15 @@ library(janitor)
 
 time_begin_gene_summary<- Sys.time()
 
+#read current release information to set parameters for download
+source(here::here("code", "current_release.R"))
+
 #import gene_summary, and select original columns
 gene_summary <- readRDS(here::here("data", "gene_summary_raw.Rds")) %>% 
   select ("approved_symbol", "approved_name", "aka", "ncbi_gene_id", "hgnc_id", "chromosome", "ref_seq_i_ds", "locus_type", "omim_id_supplied_by_omim", "uni_prot_id_supplied_by_uni_prot", "entrez_summary")
 
-gene2pubmedurl <- "ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2pubmed.gz"
-gene2pubmed_raw <- read_tsv(gene2pubmedurl, col_names = TRUE) %>% 
+#gene2pubmedurl defined in current_release.R
+gene2pubmed_raw <- read_tsv(gene2pubmed_url, col_names = TRUE) %>% 
   clean_names()
 
 #add pubmed_count to gene_summary
