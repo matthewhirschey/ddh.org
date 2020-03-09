@@ -13,8 +13,10 @@ time_begin_pubmed <- Sys.time()
 #read current release information to set parameters for download
 source(here::here("code", "current_release.R"))
 
-#load data
-gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
+#Load data 
+gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
+achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
+full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 
 #download data
 #pubtator_url defined in current_release.R
@@ -34,6 +36,30 @@ pubmed_concept_pairs <- gene2pubtator %>%
 #nest for faster searching
 pubmed_concept_pairs <- pubmed_concept_pairs %>% 
   nest(nested = c(target_gene_pair, n))
+
+#prevent join errors in generate_depmap_tables.R by adding missing genes from names(achilles_cor) to this dataset
+missing <- full[which(!full %in% pubmed_concept_pairs$target_gene)]
+
+build_missing_df <- function(missing_gene_vec) {
+  missing_dataframe <- tibble(target_gene = character(), 
+                              nested = list())
+  for (i in missing_gene_vec) {
+    mt_df <- tibble(target_gene = as.character(i), 
+                    target_gene_pair = as.character(NA), 
+                    n = as.numeric(NA))
+    
+    mt_nest <- mt_df %>% 
+      nest(nested = c(target_gene_pair, n))
+    
+    missing_dataframe <- missing_dataframe %>% 
+      bind_rows(mt_nest)
+  }
+  return(missing_dataframe)
+}
+missing_df <- build_missing_df(missing)
+
+pubmed_concept_pairs <- pubmed_concept_pairs %>% 
+  bind_rows(missing_df)
 
 #save files
 saveRDS(pubmed_concept_pairs, file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
