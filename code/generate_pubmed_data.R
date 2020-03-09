@@ -1,3 +1,4 @@
+#~45' to run
 #load libraries
 library(tidyverse)
 library(here)
@@ -29,7 +30,10 @@ pubmed_concept_pairs <- gene2pubtator %>%
   left_join(gene_summary, by = c("item1" = "ncbi_gene_id")) %>% 
   left_join(gene_summary, by = c("item2" = "ncbi_gene_id")) %>% 
   transmute(target_gene = approved_symbol.x, target_gene_pair = approved_symbol.y, n)
-  #skip step to pivot_wide + fill empties then pivot_longer to make complete df 2x bigger
+
+#nest for faster searching
+pubmed_concept_pairs <- pubmed_concept_pairs %>% 
+  nest(nested = c(target_gene_pair, n))
 
 #save files
 saveRDS(pubmed_concept_pairs, file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
