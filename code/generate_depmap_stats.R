@@ -13,9 +13,6 @@ source(here::here("code", "current_release.R"))
 #LOAD data 
 achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 
-#convert cor
-class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
-
 #make some long files
 achilles_cor_long <- achilles_cor %>% 
   stretch()
