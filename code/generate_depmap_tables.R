@@ -16,9 +16,7 @@ gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
 achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
 achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
-
-#convert cor
-class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame")
+pubmed_concept_pairs <- readRDS(file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
 
 #setup containers
 master_top_table <- tibble(
@@ -31,11 +29,11 @@ master_bottom_table <- tibble(
 )
 
 #define list
-sample <- sample(names(achilles_cor), size = 10) #comment this out
+sample <- sample(names(achilles_cor), size = 1000) #comment this out
 r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 
-gene_group <- full #(~60' on a laptop); change to sample for testing
+gene_group <- sample #(~60' on a laptop); change to sample for testing
 
 #master_table_top
 for (fav_gene in gene_group) {
@@ -48,6 +46,13 @@ for (fav_gene in gene_group) {
       left_join(gene_summary, by = "approved_symbol") %>% 
       select(approved_symbol, approved_name, fav_gene) %>% 
       rename(gene = approved_symbol, name = approved_name, r2 = fav_gene)
+    
+    dep_top <- pubmed_concept_pairs %>% 
+      filter(target_gene == fav_gene) %>% 
+      right_join(dep_top, by = c("target_gene_pair" = "gene")) %>% 
+      rename(gene = target_gene_pair, concept_count = n) %>% 
+      select(gene, name, r2, concept_count) %>% 
+      mutate(concept_count = replace_na(concept_count, 0))
     
     top_table <- dep_top %>% 
       mutate(fav_gene = fav_gene) %>% 
@@ -70,6 +75,13 @@ for (fav_gene in gene_group) {
     select(approved_symbol, approved_name, fav_gene) %>% 
     rename(gene = approved_symbol, name = approved_name, r2 = fav_gene)
   
+  dep_bottom <- pubmed_concept_pairs %>% 
+    filter(target_gene == fav_gene) %>% 
+    right_join(dep_bottom, by = c("target_gene_pair" = "gene")) %>% 
+    rename(gene = target_gene_pair, concept_count = n) %>% 
+    select(gene, name, r2, concept_count) %>% 
+    mutate(concept_count = replace_na(concept_count, 0))
+  
   bottom_table <- dep_bottom %>% 
     mutate(fav_gene = fav_gene) %>% 
     group_by(fav_gene) %>% 
@@ -80,8 +92,8 @@ for (fav_gene in gene_group) {
 }
 
 #save
-saveRDS(master_top_table, file=here::here("data", "master_top_table.Rds"))
-saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table.Rds"))
+saveRDS(master_top_table, file=here::here("data", "master_top_table1000.Rds"))
+saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table1000.Rds"))
 
 #how long
 time_end_tables <- Sys.time()
