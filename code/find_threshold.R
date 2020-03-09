@@ -67,7 +67,7 @@ sd_threshold <- 3
 achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
 achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
 
-na_cutoff_tmp <- achilles_cor_long %>% 
+na_cutoff <- achilles_cor_long %>% 
   dplyr::filter(r > achilles_upper) %>%  #| achilles_correlation_raw < achilles_lower) %>% 
   dplyr::group_by(x) %>% 
   dplyr::summarize(count = n()) %>% 
@@ -78,4 +78,8 @@ na_cutoff_tmp <- achilles_cor_long %>%
   dplyr::pull(NAs) %>% 
   min(.)
 
-print(na_cutoff_tmp)
+print(na_cutoff)
+
+#save
+saveRDS(na_cutoff, file = here::here("data", paste0(release, "_na_cutoff.Rds")))
+
