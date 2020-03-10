@@ -1,4 +1,5 @@
 ## THIS CODE GENERATES master_top AND master_bottom TABLES
+#~60'
 
 #load libraries
 library(tidyverse)
@@ -31,11 +32,11 @@ master_bottom_table <- tibble(
 )
 
 #define list
-sample <- sample(names(achilles_cor), size = 100) #comment this out
+#sample <- sample(names(achilles_cor), size = 100) #comment this out
 r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 
-gene_group <- sample #(~60' on a laptop); change to sample for testing
+gene_group <- full #(~60' on a laptop); change to sample for testing
 
 #master_tables
 for (fav_gene in gene_group) {
@@ -94,8 +95,8 @@ for (fav_gene in gene_group) {
 }
 
 #save
-saveRDS(master_top_table, file=here::here("data", "master_top_table1000.Rds"))
-saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table1000.Rds"))
+saveRDS(master_top_table, file=here::here("data", "master_top_table.Rds"))
+saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table.Rds"))
 
 #how long
 time_end_tables <- Sys.time()
