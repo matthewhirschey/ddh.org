@@ -95,7 +95,7 @@ make_top_table <- function(gene_symbol) {
     dplyr::select(-fav_gene) %>%
     dplyr::mutate(r2 = round(r2, 3)) %>% 
     dplyr::arrange(desc(r2)) %>%
-    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication" = "concept_count")
 }
 
 make_bottom_table <- function(gene_symbol) {
@@ -105,7 +105,7 @@ make_bottom_table <- function(gene_symbol) {
     dplyr::select(-fav_gene) %>%
     dplyr::mutate(r2 = round(r2, 3)) %>% 
     dplyr::arrange(r2) %>%
-    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication" = "concept_count")
 }
 
 make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
@@ -140,7 +140,7 @@ make_cellbins <- function(gene_symbol) {
     geom_vline(xintercept = 1, color = "lightgray") +
     geom_vline(xintercept = -1, color = "lightgray") +
     geom_vline(xintercept = 0) +
-    geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
+    geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "gray", fill = "#02224C") +
     labs(x = "Dependency Score (binned)") +
     theme_cowplot()
 }
@@ -153,15 +153,17 @@ make_celldeps <- function(gene_symbol) {
     select(cell_line, lineage, dep_score) %>%
     arrange(dep_score) %>%
     ggplot() +
-    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score, text = paste0("Cell Line: ", cell_line)), alpha = 0.2) +
+    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), 
+                   y = dep_score, 
+                   text = paste0("Cell Line: ", cell_line)), 
+               alpha = 0.2, color = "#02224C") +
     labs(x = "Cell Lines", y = "Dependency Score") +
     geom_hline(yintercept = mean_virtual_achilles) +
     geom_hline(yintercept = 1, color = "lightgray") +
     geom_hline(yintercept = -1, color = "lightgray") +
     geom_hline(yintercept = 0) +
+    scale_x_discrete(expand = expansion(mult = c(-.01, .01)), na.translate = FALSE) +
     theme_cowplot() +
-    #geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
-    #geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
     theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
     NULL
 }
