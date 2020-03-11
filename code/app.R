@@ -95,7 +95,7 @@ make_top_table <- function(gene_symbol) {
     dplyr::select(-fav_gene) %>%
     dplyr::mutate(r2 = round(r2, 3)) %>% 
     dplyr::arrange(desc(r2)) %>%
-    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication" = "concept_count")
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
 
 make_bottom_table <- function(gene_symbol) {
@@ -105,7 +105,7 @@ make_bottom_table <- function(gene_symbol) {
     dplyr::select(-fav_gene) %>%
     dplyr::mutate(r2 = round(r2, 3)) %>% 
     dplyr::arrange(r2) %>%
-    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication" = "concept_count")
+    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
 
 make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
@@ -162,7 +162,7 @@ make_celldeps <- function(gene_symbol) {
     geom_hline(yintercept = 1, color = "lightgray") +
     geom_hline(yintercept = -1, color = "lightgray") +
     geom_hline(yintercept = 0) +
-    scale_x_discrete(expand = expansion(mult = c(-.01, .01)), na.translate = FALSE) +
+    scale_x_discrete(expand = expansion(mult = 0.02), na.translate = FALSE) +
     theme_cowplot() +
     theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
     NULL
@@ -431,6 +431,11 @@ ui <- fluidPage(
                                          "Enter a gene symbol to generate a table of similar genes"),
                         conditionalPanel(condition = 'input.go != 0', 
                                          fluidRow(h4(textOutput("text_dep_top"))),
+                                         fluidRow(checkboxGroupInput(inputId = "vars_dep_top", 
+                                                                     "Select columns:",
+                                                                     c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
+                                                                     selected = c("Z Score", "Co-publication Count"), 
+                                                                     inline = TRUE)),
                                          fluidRow(dataTableOutput(outputId = "dep_top")))),
                tabPanel("Pathways",
                         conditionalPanel(condition = 'input.go == 0',
@@ -444,6 +449,11 @@ ui <- fluidPage(
                                          "Enter a gene symbol to generate a table of dissimilar genes"),
                         conditionalPanel(condition = 'input.go != 0', 
                                          fluidRow(h4(textOutput("text_dep_bottom"))),
+                                         fluidRow(checkboxGroupInput(inputId = "vars_dep_bottom", 
+                                                                     "Select columns:",
+                                                                     c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
+                                                                     selected = c("Z Score", "Co-publication Count"), 
+                                                                     inline = TRUE)),
                                          fluidRow(dataTableOutput(outputId = "dep_bottom")))),
                tabPanel("Pathways",
                         conditionalPanel(condition = 'input.go == 0',
@@ -509,14 +519,14 @@ server <- function(input, output, session) {
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_top_table(data()), 
+      make_top_table(data()) %>% dplyr::select("Gene", "Name", input$vars_dep_top), 
       options = list(pageLength = 25))
   })
   output$dep_bottom <- DT::renderDataTable({
     validate(
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_bottom_table(data()),
+      make_bottom_table(data()) %>% dplyr::select("Gene", "Name", input$vars_dep_bottom),
     options = list(pageLength = 25))
   })
   output$cell_deps <- renderPlotly({
