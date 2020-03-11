@@ -373,18 +373,18 @@ effect_of_cleaning <- achilles_joined %>%
 #achilles_cor read in line 35
 #achilles_cor_long generated line 36
 
-achilles_cor_heatmap <- achilles_cor %>% 
-  #rearrange(absolute = FALSE) %>%    
-  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
-  filter(!is.na(achilles_correlation)) %>% 
-  ggplot(aes(rowname, achilles_gene, fill = achilles_correlation)) +
-  geom_raster() +
-  scale_fill_viridis(option = "D", name="Pearson\nCorrelation", limit = c(-1, 1)) +
-  labs(title = "Gene-gene correlation matrix") +
-  theme_void() +
-  coord_fixed()
+#achilles_cor_heatmap <- achilles_cor %>% 
+#  #rearrange(absolute = FALSE) %>%    
+#  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
+#  filter(!is.na(achilles_correlation)) %>% 
+#  ggplot(aes(rowname, achilles_gene, fill = achilles_correlation)) +
+#  geom_raster() +
+#  scale_fill_viridis(option = "D", name="Pearson\nCorrelation", limit = c(-1, 1)) +
+#  labs(title = "Gene-gene correlation matrix") +
+#  theme_void() +
+#  coord_fixed()
 
-effect_of_cleaning + achilles_cor_heatmap
+effect_of_cleaning #+ achilles_cor_heatmap
 ```
 
   
