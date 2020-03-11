@@ -58,8 +58,9 @@ for (fav_gene in gene_group) {
            concept_count = n) %>% 
     mutate(r2 = round(r2, 2), 
            z_score = round((r2 - mean_virtual_achilles)/sd_virtual_achilles, 1), 
-           concept_count = replace_na(concept_count, 0)) %>% 
-    select(gene, name, z_score, r2, concept_count)
+           concept_count = replace_na(concept_count, 0), 
+           concept_index = round((concept_count/max(concept_count))*100), 0) %>% 
+    select(gene, name, z_score, r2, concept_count, concept_index)
               
     top_table <- dep_top %>% 
       mutate(fav_gene = fav_gene) %>% 
@@ -82,8 +83,9 @@ for (fav_gene in gene_group) {
            concept_count = n) %>% 
     mutate(r2 = round(r2, 2), 
            z_score = round((r2 - mean_virtual_achilles)/sd_virtual_achilles, 1), 
-           concept_count = replace_na(concept_count, 0)) %>% 
-    select(gene, name, z_score, r2, concept_count)
+           concept_count = replace_na(concept_count, 0), 
+           concept_index = round((concept_count/max(concept_count))*100), 0) %>% 
+    select(gene, name, z_score, r2, concept_count, concept_index)
   
   bottom_table <- dep_bottom %>% 
     mutate(fav_gene = fav_gene) %>% 
