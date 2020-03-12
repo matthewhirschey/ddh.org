@@ -473,7 +473,7 @@ ui <- fluidPage(
              #uncomment this parenthesis)
     ),
     tabPanel("Methods",
-             includeMarkdown("methods.md")
+             includeHTML("methods.html")
              ),
     tabPanel("Download Report",
              conditionalPanel(condition = 'input.go == 0',
