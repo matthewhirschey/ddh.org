@@ -1,3 +1,9 @@
+library(tidyverse)
+library(tidygraph)
+library(networkD3)
+library(ggraph)
+library(viridis)
+
 make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
   dep_network <- tibble()
   
