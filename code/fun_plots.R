@@ -1,3 +1,8 @@
+library(tidyverse)
+library(cowplot)
+library(viridis)
+
+
 make_cellbins <- function(gene_symbol) {
   achilles %>% #plot setup
     select(X1, gene_symbol) %>%

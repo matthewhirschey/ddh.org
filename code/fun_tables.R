@@ -1,3 +1,5 @@
+library(tidyverse)
+
 make_top_table <- function(gene_symbol) {
   master_top_table %>%
     dplyr::filter(fav_gene == gene_symbol) %>%
