@@ -4,14 +4,14 @@ library(networkD3)
 library(ggraph)
 library(viridis)
 
-make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
+make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg = 2) {
   dep_network <- tibble()
   
   #find top and bottom correlations for fav_gene
-  dep_top <- make_top_table(gene_symbol) %>%
+  dep_top <- make_top_table(top_table, gene_symbol) %>%
     slice(1:threshold)
   
-  dep_bottom <- make_bottom_table(gene_symbol) %>%
+  dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>%
     slice(1:threshold) #limit for visualization?
   
   #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
@@ -22,17 +22,27 @@ make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
     message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- make_top_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
+    dep_top_related <- top_table %>%
+      dplyr::filter(fav_gene == i) %>%
+      tidyr::unnest(data) %>%
+      dplyr::select(-fav_gene) %>%
+      dplyr::mutate(r2 = round(r2, 3)) %>% 
+      dplyr::arrange(desc(r2)) %>%
+      dplyr::slice(1:threshold) %>% 
+      dplyr::mutate(x = i, origin = "pos") %>% 
+      dplyr::rename(y = gene) %>%
+      dplyr::select(x, y, r2, origin)
     
-    dep_bottom_related <- make_bottom_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
+    dep_bottom_related <- bottom_table %>%
+      dplyr::filter(fav_gene == i) %>%
+      tidyr::unnest(data) %>%
+      dplyr::select(-fav_gene) %>%
+      dplyr::mutate(r2 = round(r2, 3)) %>% 
+      dplyr::arrange(r2) %>%
+      dplyr::slice(1:threshold) %>% 
+      dplyr::mutate(x = i, origin = "pos") %>% 
+      dplyr::rename(y = gene) %>%
+      dplyr::select(x, y, r2, origin)
     
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>%
@@ -77,14 +87,14 @@ make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
   forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100, Nodesize = "degree", colourScale = node_color)
 }
 
-make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
+make_graph_report <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg = 2) {
   dep_network <- tibble()
   
   #find top and bottom correlations for fav_gene
-  dep_top <- make_top_table(gene_symbol) %>%
+  dep_top <- make_top_table(top_table, gene_symbol) %>%
     slice(1:threshold)
   
-  dep_bottom <- make_bottom_table(gene_symbol) %>%
+  dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>%
     slice(1:threshold) #limit for visualization?
   
   #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
@@ -95,17 +105,27 @@ make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in related_genes){
     message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- make_top_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
+    dep_top_related <- top_table %>%
+      dplyr::filter(fav_gene == i) %>%
+      tidyr::unnest(data) %>%
+      dplyr::select(-fav_gene) %>%
+      dplyr::mutate(r2 = round(r2, 3)) %>% 
+      dplyr::arrange(desc(r2)) %>%
+      dplyr::slice(1:threshold) %>% 
+      dplyr::mutate(x = i, origin = "pos") %>% 
+      dplyr::rename(y = gene) %>%
+      dplyr::select(x, y, r2, origin)
     
-    dep_bottom_related <- make_bottom_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
+    dep_bottom_related <- bottom_table %>%
+      dplyr::filter(fav_gene == i) %>%
+      tidyr::unnest(data) %>%
+      dplyr::select(-fav_gene) %>%
+      dplyr::mutate(r2 = round(r2, 3)) %>% 
+      dplyr::arrange(r2) %>%
+      dplyr::slice(1:threshold) %>% 
+      dplyr::mutate(x = i, origin = "pos") %>% 
+      dplyr::rename(y = gene) %>%
+      dplyr::select(x, y, r2, origin)
     
     #each temp object is bound together, and then bound to the final df for graphing
     dep_related <- dep_top_related %>%

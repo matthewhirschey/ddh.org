@@ -3,10 +3,10 @@ library(cowplot)
 library(viridis)
 
 
-make_cellbins <- function(gene_symbol) {
-  achilles %>% #plot setup
+make_cellbins <- function(data_table, expression_table, gene_symbol) {
+  data_table %>% #plot setup
     select(X1, gene_symbol) %>%
-    left_join(expression_join, by = "X1") %>%
+    left_join(expression_table, by = "X1") %>%
     rename(dep_score = gene_symbol) %>%
     select(cell_line, lineage, dep_score) %>%
     arrange(dep_score) %>%
@@ -19,10 +19,10 @@ make_cellbins <- function(gene_symbol) {
     theme_cowplot()
 }
 
-make_celldeps <- function(gene_symbol) {
-  achilles %>% #plot setup
+make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
+  data_table %>% #plot setup
     select(X1, gene_symbol) %>%
-    left_join(expression_join, by = "X1") %>%
+    left_join(expression_table, by = "X1") %>%
     rename(dep_score = gene_symbol) %>%
     select(cell_line, lineage, dep_score) %>%
     arrange(dep_score) %>%
@@ -32,7 +32,7 @@ make_celldeps <- function(gene_symbol) {
                    text = paste0("Cell Line: ", cell_line)), 
                alpha = 0.2, color = "#02224C") +
     labs(x = "Cell Lines", y = "Dependency Score") +
-    geom_hline(yintercept = mean_virtual_achilles) +
+    geom_hline(yintercept = mean) +
     geom_hline(yintercept = 1, color = "lightgray") +
     geom_hline(yintercept = -1, color = "lightgray") +
     geom_hline(yintercept = 0) +

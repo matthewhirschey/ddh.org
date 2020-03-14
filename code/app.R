@@ -125,15 +125,15 @@ render_report_to_file <- function(file, gene_symbol) {
 render_complete_report <- function (file, gene_symbol) {
   fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
-  p1 <- make_celldeps(gene_symbol)
-  p2 <- make_cellbins(gene_symbol)
-  target_achilles_bottom <- make_achilles_table(gene_symbol) %>% slice(1:10)
-  target_achilles_top <- make_achilles_table(gene_symbol) %>% dplyr::arrange(desc(`Dependency Score`)) %>%  slice(1:10)
-  dep_top <- make_top_table(gene_symbol)
+  p1 <- make_celldeps(achilles, expression_join, gene_symbol, mean_virtual_achilles)
+  p2 <- make_cellbins(achilles, expression_join, gene_symbol)
+  target_achilles_bottom <- make_achilles_table(achilles, expression_join, gene_symbol) %>% slice(1:10)
+  target_achilles_top <- make_achilles_table(achilles, expression_join, gene_symbol) %>% dplyr::arrange(desc(`Dependency Score`)) %>%  slice(1:10)
+  dep_top <- make_top_table(master_top_table, gene_symbol)
   flat_top_complete <- make_enrichment_table(master_positive, gene_symbol)
-  dep_bottom <- make_bottom_table(gene_symbol)
+  dep_bottom <- make_bottom_table(master_bottom_table, gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
-  graph_report <- make_graph_report(gene_symbol)
+  graph_report <- make_graph_report(master_top_table, master_bottom_table, gene_symbol)
   rmarkdown::render("report_depmap_app.Rmd", output_file = file)
 
 }
@@ -294,27 +294,27 @@ server <- function(input, output, session) {
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_top_table(data()) %>% dplyr::select("Gene", "Name", input$vars_dep_top), 
+      make_top_table(master_top_table, data()) %>% dplyr::select("Gene", "Name", input$vars_dep_top), 
       options = list(pageLength = 25))
   })
   output$dep_bottom <- DT::renderDataTable({
     validate(
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_bottom_table(data()) %>% dplyr::select("Gene", "Name", input$vars_dep_bottom),
+      make_bottom_table(master_bottom_table, data()) %>% dplyr::select("Gene", "Name", input$vars_dep_bottom),
     options = list(pageLength = 25))
   })
   output$cell_deps <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
-      ggplotly(make_celldeps(data()), tooltip = "text")
+      ggplotly(make_celldeps(achilles, expression_join, data(), mean_virtual_achilles), tooltip = "text")
     })
   })
   output$cell_bins <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "")) #""left blank
-    ggplotly(make_cellbins(data()))
+    ggplotly(make_cellbins(achilles, expression_join, data()))
   })
   output$plot_text <- renderUI({
     validate(
@@ -324,7 +324,7 @@ server <- function(input, output, session) {
   output$target_achilles <- DT::renderDataTable({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
-    make_achilles_table(data())
+    make_achilles_table(achilles, expression_join, data())
   })
   output$pos_enrich <- DT::renderDataTable({
     validate(
@@ -344,7 +344,7 @@ server <- function(input, output, session) {
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
-    make_graph(data())
+    make_graph(master_top_table, master_bottom_table, data())
     })
   })
   output$report <- downloadHandler(

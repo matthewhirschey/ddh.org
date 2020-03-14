@@ -471,8 +471,8 @@ fav_gene_summary <- gene_summary %>%
   filter(approved_symbol == fav_gene)
 
 #dep tables
-dep_top <- make_top_table(fav_gene)
-dep_bottom <- make_bottom_table(fav_gene)
+dep_top <- make_top_table(master_top_table, fav_gene)
+dep_bottom <- make_bottom_table(master_bottom_table, fav_gene)
 
 #pathway enrichment analyses
 flat_top_complete <- make_enrichment_table(master_positive, fav_gene)
@@ -496,8 +496,8 @@ The second plot is a histogram of dependency scores, showing the distribution of
   
   
 ```{r dep_plots, echo=FALSE, message=FALSE, warning=FALSE}
-dep_plot1 <- make_celldeps(fav_gene)
-dep_plot2 <- make_cellbins(fav_gene)
+dep_plot1 <- make_celldeps(achilles, expression_join, fav_gene, mean_virtual_achilles)
+dep_plot2 <- make_cellbins(achilles, expression_join, fav_gene)
 dep_plot1 + dep_plot2
 ```
   
@@ -590,10 +590,10 @@ Identifying genes that share similar patterns of dependency to a queried unknown
   
 ```{r static_graph, echo=FALSE, message=FALSE, warning=FALSE}
 # from fun_tables.R and fun_graphs.R
-make_graph(fav_gene)
+make_graph_report(master_top_table, master_bottom_table, fav_gene)
 ```
   
-The data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration.
+The image here is a representative static, albeit busy, network graph; data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration.
 
 ## Broader Implications
 Like the proverbial man [searching for his lost keys under the lamp post](https://www.matthewhirschey.com/articles/exploratory-mind) because the light shines there, searching for biological truths often occurs under 'lamp posts' because that's where scientists can see. But what if your keys are not under the light? Or your gene is totally unknown? What do you do?  
