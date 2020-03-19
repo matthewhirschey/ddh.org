@@ -6,8 +6,7 @@ library(rentrez)
 library(feather)
 
 gene_names_url <- "https://www.genenames.org/cgi-bin/download/custom?col=gd_hgnc_id&col=gd_app_sym&col=gd_app_name&col=gd_prev_sym&col=gd_aliases&col=gd_pub_chrom_map&col=gd_pub_refseq_ids&col=md_eg_id&col=gd_locus_type&col=md_mim_id&col=md_prot_id&status=Approved&hgnc_dbtag=on&order_by=gd_app_sym_sort&format=text&submit=submit"
-pubtator_url <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/gene2pubtatorcentral.gz"
-gene2pubmed_url <- "ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2pubmed.gz"
+source(here::here("code", "current_release.R"))
 gene_summary_output_filename <- "gene_summary.Rds"
 fetch_batch_size <- 100   # batch size of 500 was too high. 200 worked, using 100 as reasonable default
 
