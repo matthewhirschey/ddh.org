@@ -16,6 +16,7 @@ source(here::here("code", "current_release.R"))
 #Load data 
 gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
 achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
+r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
 
 #download data
