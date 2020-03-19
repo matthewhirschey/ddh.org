@@ -73,7 +73,7 @@ na_cutoff <- achilles_cor_long %>%
   dplyr::summarize(count = n()) %>% 
   dplyr::left_join(achilles_no0_plot, by = c("x" = "gene")) %>% 
   dplyr::arrange(pos) %>% 
-  dplyr::top_frac(-.05, pos) %>% 
+  dplyr::top_frac(-fraction_cutoff, pos) %>% 
   dplyr::arrange(pos) %>% 
   dplyr::pull(NAs) %>% 
   min(.)

@@ -1,13 +1,17 @@
 ---
-title: "Methods"
-author: Matthew Hirschey
-output: md_document
+output: html_fragment
 ---
 
 ```{r setup, include=FALSE}
-###knit this document to generate methods.md, which then is served by the Shiny app###
-#upon each release, run generate_depmap_data.R & generate_depmap_stats.R, then knit
+###knit this document to generate methods.html, which then is served by the Shiny app; html fragments only contain <body></body> content, and are designed to be served in other pages###
+##upon each release, run 
+#find_threshold.R, 
+#generate_depmap_data.R 
+#generate_pubmed_data.R
+#generate_depmap_stats.R
+#then knit
 knitr::opts_chunk$set(echo = TRUE)
+library(janitor)
 library(lubridate)
 library(tidyverse)
 library(knitr)
@@ -19,17 +23,26 @@ library(patchwork)
 library(enrichR)
 library(tidygraph)
 library(ggraph)
-library(pander)
 library(patchwork)
+library(ggrepel)
+library(kableExtra)
+library(networkD3)
+```
 
+```{r message=FALSE, warning=FALSE, include=FALSE}
 #clear environment
 #rm(list=ls()) 
 
 time_begin_data <- Sys.time()
 
+#Load functions
+source(here::here("code", "fun_tables.R"))
+source(here::here("code", "fun_plots.R"))
+source(here::here("code", "fun_graphs.R"))
+source(here::here("code", "fix_names.R"))
+
 #read current release information 
 source(here::here("code", "current_release.R"))
-source(here::here("code", "fix_names.R"))
 
 ##LOAD DATA
 fav_gene <- "TP53"
@@ -40,6 +53,13 @@ achilles_cor_long <- achilles_cor %>%
   pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation")
 expression <- readRDS(file = here::here("data", paste0(release, "_expression.Rds")))
 expression_join <- readRDS(file = here::here("data", paste0(release, "_expression_join.Rds")))
+pubmed_concept_pairs <- readRDS(file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
+
+#read data from generate_depmap_pathways.R
+master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
+master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
+master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
+master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
 
 #LOAD STATS
 sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
@@ -53,54 +73,50 @@ achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>%
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 achilles_raw <- clean_colnames(achilles_raw)
-
-#pathway enrichment analysis loop function
-enrichr_loop <- function(gene_list, databases){
-  if(is_empty(gene_list)){
-    flat_complete <- NULL
-    return(flat_complete)
-  } else {
-    flat_complete <- as_tibble()
-    for(lib in databases){
-      enriched <- enrichr(gene_list, lib)
-      
-      flat <- flatten_dfc(enriched) %>% 
-        mutate(enrichr = lib)
-      
-      flat_complete <- flat_complete %>% 
-        bind_rows(flat)
-    }
-    flat_complete <- flat_complete %>% 
-      arrange(Adjusted.P.value) %>% 
-      select(enrichr, Term, Overlap) 
-    
-    flat_complete$enrichr <- str_replace_all(flat_complete$enrichr, "\\_", " ")
-    flat_complete$Term <- str_replace_all(flat_complete$Term, "\\_", " ")
-    return(flat_complete)
-  }
-}
 ```
 
-![searching under the lamppost](`r "https://source.unsplash.com/y41FEMqdJ3A/400x300"`)  
+![](`r "https://source.unsplash.com/y41FEMqdJ3A/800x600"`)  
   
 ## Why this project?
-Like the proverbial man [searching for his lost keys under the lamp post](https://www.matthewhirschey.com/articles/exploratory-mind) because the light shines there, searching for biological truths often occurs under 'lamp posts' because that's where scientists can see. But what if your keys are not under the light? Or your gene is totally unknown? What do you do?  
+Identifying the key functions of human genes is a major biomedical research goal. While some genes are very well-studied, most human genes we know little about. Mapping a broad set of gene functions *en masse* is currently not possible, and therefore most scientific research proceeds with a one-gene-at-a-time approach.  While this reductionist approach has guided the scientific methods for hundreds of years, the volume, complexity, and sophistication of modern science necessitate alternative approaches.  
   
-The scientific method has guided scientific minds for hundreds of years, starting with a question, followed by a hypothesis, and then an experimental path to test the prediction. While hypotheses are the bedrock of science, the volume, complexity, and sophistication of modern science necessitate new methods to generate hypotheses.  
+  
+```{r pubmed, echo=FALSE, message=FALSE, warning=FALSE}
+gene2pubmed <- read_tsv(gene2pubmed_url, col_names = TRUE) %>% #gene2pubmed_url read from current_release.R
+  clean_names() %>%
+  filter(number_tax_id == 9606) %>%  #only the rows corresponding to humans (#tax_id = 9606) 
+  group_by(gene_id) %>% 
+  count(sort = TRUE) %>% 
+  left_join(gene_summary, by = c("gene_id" = "ncbi_gene_id")) %>% 
+  select(gene_id, approved_symbol, n, approved_name) %>% 
+  filter(!is.na(approved_symbol))
+
+ggplot() +
+  geom_point(data = gene2pubmed, mapping = aes(x = fct_reorder(approved_symbol, n), y = n), alpha = 0.2) +
+  geom_text_repel(data = subset(gene2pubmed, n > 3000), mapping = aes(x = fct_reorder(approved_symbol, n), y = n, label = approved_symbol)) +
+  labs(x = "Human Gene", y = "Number of Publications", subtitle = "Number of Publications per human gene") +
+  theme_cowplot() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  coord_cartesian(xlim = c(0, 33000))
+```
+  
   
 New tools in Data Science -- a combination of computer programming, math & statistics, and topical expertise -- combined with the rapid adoption of open science and data sharing allow scientists to access publicly available datasets and interrogate these data *before* performing any experiments.  
   
-Imagine having strong data to support your new hypothesis *before* testing it. Welcome to data-driven hypothesis.
-
-## What is this project?
-The overall goal of the data-driven hypothesis (DDH) project is to use new tools in Data Science to generate hypotheses supported by data that can be tested in the lab.  
+Such tools allow researchers to identify new hypotheses for well-studied genes, or new processes for un-annotated genes. Indeed, most human genes are poorly studied, perhaps because of the intractability to study them with no prior knowledge.  
   
-Several high-quality, functional genomic datasets are published online and made available with Creative Commons Attribution 4.0 International [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses. Functional genomics is a field of molecular biology that aims to understand the function of all genes and proteins in a genome -- a stated goal of much basic science research. In functional genomics, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach. The advent and rapid adoption of data-sharing platforms, such as [figshare.com](https://figshare.com) have provided high-quality data sets for public interrogation. The DDH project aims to integrate functional genomics data and holds tremendous promise to generate hypotheses, data, and knowledge in order to provide a deep understanding of the dynamic properties of an organism.  
-    
+This project aims to address this challenge. Welcome to data-driven hypothesis.  
+   
+## What is this project?
+The overall goal of the data-driven hypothesis (DDH) project is to use new tools in Data Science to generate hypotheses supported by data that can be tested in the lab. Several high-quality, functional genomic datasets are published online and made available with Creative Commons Attribution 4.0 International [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses. Functional genomics is a field of molecular biology that aims to understand the function of all genes and proteins in a genome -- a stated goal of much basic science research. In functional genomics, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach. The advent and rapid adoption of data-sharing platforms, such as [figshare.com](https://figshare.com) have provided high-quality data sets for public interrogation.  
+  
+We present here a comprehensive resource for functionally mapping thousands of genes across the human genome. Importantly, this method integrates gene essentiality, gene expression, and literature mining to identify candidate functions of known or unknown genes.  The DDH project holds tremendous promise to generate hypotheses, data, and knowledge in order to provide a deep understanding of the dynamic properties of an organism.  We provide this resource via an intuitive online interface, which will provide the scientific community a platform to query and prioritize experimental hypotheses to test in the lab.  
+  
 ## How does it work?
 This project began as an extension of a simple and common concept in molecular biology called gene co-expression analysis. When a gene of unknown function is identified, one strategy to learn something about the new gene is to identify shared patterns of expression with other genes. If unknown Gene X is expressed with known genes A, B, and C, then you can infer that Gene X might be part of a functional module with A, B, C. This approach is particularly powerful when genes A, B, and C are part of a known biological pathway, which leads to the hypothesis that Gene X might also be part of that same pathway.  
   
-```{r gene_coexpression, echo=FALSE}
+```{r gene_coexpression, echo=FALSE, message=FALSE, warning=FALSE}
 # Dummy data
 x <- paste0("CTL ", seq(1,3))
 x <- x %>% 
@@ -135,7 +151,7 @@ data$Z <- c(A,B)
 # Heatmap 
 ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
-  labs(x = "", y = "", fill = "Gene \nCorrelation", title = "Gene Coexpression Example*", caption = "*simulated data") +
+  labs(x = "", y = "", fill = "Gene \nCorrelation", subtitle = "Gene Coexpression Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") +
   scale_x_discrete(position = "top")
 ```
@@ -144,7 +160,7 @@ Following on this idea, we set out to map genes to common functional pathways ba
   
 It is well-known that human cancer cell lines rely on different pathways for their viability. Indeed this is the entire rationale for personalized, precision medicine in cancer. The overall goal of the 'DepMap' project is to identify all essential genes in 2000 cell lines over the 5-year project period to identify new therapeutic targets in various cancers. Despite not knowing the mechanistic basis for why some cell lines require specific genes while other cell lines do not, we reasoned that intrinsic reliance of a cell on a pathway might allow unbiased detection of novel genes participating in specific pathways.  
   
-```{r cell_dependency, echo=FALSE}
+```{r cell_dependency, echo=FALSE, message=FALSE, warning=FALSE}
 # Dummy data
 x <- paste0("cell line ", seq(1,6))
 y <- paste0("gene ", LETTERS[24])
@@ -177,7 +193,7 @@ data$Z <- c(B,A)
 # Heatmap 
 ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
-  labs(x = "", y = "", fill = "Dependency \nScore", title = "Dependency Score Example*", caption = "*simulated data") +
+  labs(x = "", y = "", fill = "Dependency \nScore", subtitle = "Dependency Score Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") + 
   scale_fill_viridis() + 
   scale_x_discrete(position = "top")
@@ -186,7 +202,7 @@ ggplot(data, aes(X, fct_rev(Y), fill= Z)) +
 ## What did I do?
 Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r release` release contains gene essentiality scores for `r ncol(achilles)` genes across `r nrow(achilles)` cell lines, and was used for this project. 
   
-```{r dep_scores, echo=FALSE}
+```{r dep_scores, echo=FALSE, message=FALSE, warning=FALSE}
 #insert summary of scores
 achilles_raw_long <- achilles_raw %>% 
   pivot_longer(-X1, names_to = "gene", values_to = "dep_score") %>% 
@@ -194,7 +210,7 @@ achilles_raw_long <- achilles_raw %>%
 
 ggplot() +
   geom_histogram(data = achilles_raw_long, aes(x = dep_score), color = "gray", fill = "#02224C", binwidth = 0.1) +
-  labs(x = "Dependency Score", y = "Count (Million)", title = paste0("Dependency Score Distribution from DepMap release ", release)) +
+  labs(x = "Dependency Score", y = "Count (Million)", subtitle = paste0("Dependency Score Distribution from DepMap release ", release)) +
   scale_y_continuous(breaks = c(0, 500000, 1000000, 1500000, 2000000), labels = c("0", "0.5", "1", "1.5", "2")) +
   scale_x_continuous(breaks = c(-5:7)) +
   theme_cowplot()
@@ -219,7 +235,7 @@ joined %>%
   geom_hex(aes(x = dep_score, y = gene_expression), 
            bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
   scale_fill_viridis_c(option = "E", name = "Hex Bin \nCount", trans = "log10", breaks = log_breaks, labels = log_labels, limits = c(1,1000000)) + #log scale transform legend
-  labs(x = "Dependency Score", y = "Gene Expression", title = "Gene expression is unrelated to its essentiality") +  
+  labs(x = "Dependency Score", y = "Gene Expression", subtitle = "Gene expression is unrelated to its essentiality") +  
   theme_cowplot()
 ```
   
@@ -274,7 +290,7 @@ arrows <- tibble(
 
 threshold <- ggplot(achilles_no0_plot) +
   geom_histogram(aes(x = pos), color = "gray", fill = "#02224C") +
-  labs(x = "# of cell lines expressing target gene", y = "# of genes in bin", title = "The number of cell lines each gene was present within") +
+  labs(x = "# of cell lines expressing target gene", y = "# of genes in bin", subtitle = "The number of cell lines each gene was present within") +
   geom_curve(data = arrows, aes(x = x1, y = y1, xend = x2, yend = y2),
              arrow = arrow(length = unit(0.07, "inch")), size = 0.4,
              color = "gray60", curvature = .20) +
@@ -315,7 +331,7 @@ sampling <- count_v_max_no0 %>%
   geom_point(aes(x = pos, y = count), alpha = 0.2, color = "#02224C") +
   geom_vline(xintercept = nrow(achilles_clean) - na_cutoff, color = "red") +
   #geom_vline(xintercept = nrow(achilles_clean) - na_cutoff_tmp, color = "red", linetype="dashed") +
-  labs(y = "# of genes correlated w/ target", x = "# of cell lines expressing target gene", title = "Sampling too few cells weakens predictions") +
+  labs(y = "# of genes correlated w/ target", x = "# of cell lines expressing target gene", subtitle = "Sampling too few cells weakens predictions") +
   annotate("text", x = sum(achilles$X1 %in% expression$X1)-na_cutoff + 10, y = 10, size = 3, color = "red", hjust = 0, fontface = "bold",
            label = glue::glue("Threshold")) +
   theme_cowplot()
@@ -324,7 +340,7 @@ sampling
 ```
   
   
-We set a threshold of no more than `r na_cutoff` zeros, meaning that if a gene had fewer than `r nrow(achilles)-na_cutoff` cell lines with dependency values, the correlation pattern of a gene would be meaningless, and that gene was therefore removed. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data.  
+We set a threshold of no more than `r na_cutoff` zeros, meaning that if a gene had fewer than `r nrow(achilles)-na_cutoff` cell lines with dependency values, the correlation pattern of a gene would be meaningless, and that gene was therefore removed. This value was based on removing `r paste0(round(fraction_cutoff*100, 0), " %")` of the genes with the fewest number of cells deriving the correlation value and having the highest number of correlated gene patterns. This process removed `r length(toomanyNAs)`  genes that had too few cells with expression and dependency data.  
   
 ```{r raw, echo=FALSE, message=FALSE, warning=FALSE}
 threshold
@@ -366,45 +382,45 @@ effect_of_cleaning <- achilles_joined %>%
   geom_hex(aes(x = achilles_correlation_raw, y = achilles_correlation), 
            bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
   scale_fill_viridis_c(option = "E", name = "Hex Bin \nCount", trans = "log10", breaks = log_breaks10M, labels = log_labels10M, limits = c(1,10000000)) + #breaks and labels defined above
-  labs(x = "Raw Correlation", y = "Corrected Correlation", title = "Effect of cleaning") +  
+  labs(x = "Raw Correlation", y = "Corrected Correlation", subtitle = "Effect of cleaning") +  
   coord_fixed(ratio = 1, xlim = c(-1, 1), ylim = c(-1, 1)) +
   theme_minimal()
 
 #achilles_cor read in line 35
 #achilles_cor_long generated line 36
 
-achilles_cor_heatmap <- achilles_cor %>% 
-  #rearrange(absolute = FALSE) %>%    
-  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
-  filter(!is.na(achilles_correlation)) %>% 
-  ggplot(aes(rowname, achilles_gene, fill = achilles_correlation)) +
-  geom_raster() +
-  scale_fill_viridis(option = "D", name="Pearson\nCorrelation", limit = c(-1, 1)) +
-  labs(title = "Gene-gene correlation matrix") +
-  theme_void() +
-  coord_fixed()
+#achilles_cor_heatmap <- achilles_cor %>% 
+#  #rearrange(absolute = FALSE) %>%    
+#  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
+#  filter(!is.na(achilles_correlation)) %>% 
+#  ggplot(aes(rowname, achilles_gene, fill = achilles_correlation)) +
+#  geom_raster() +
+#  scale_fill_viridis(option = "D", name="Pearson\nCorrelation", limit = c(-1, 1)) +
+#  labs(title = "Gene-gene correlation matrix") +
+#  theme_void() +
+#  coord_fixed()
 
-effect_of_cleaning + achilles_cor_heatmap
+effect_of_cleaning #+ achilles_cor_heatmap
 ```
 
   
 ## How does it work?
-To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a Pearson correlation matrix on these prioritized data in order to quantify the similarity in dependency patterns and annotate genes in functional pathways.  
+To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a gene-by-gene Pearson correlation matrix on these prioritized data to quantify the similarity in dependency patterns and annotate genes in functional pathways.  
 
-```{r r2, echo=FALSE}
+```{r r2, echo=FALSE, message=FALSE, warning=FALSE}
 achilles_cor_long %>% 
   filter(!is.na(achilles_correlation)) %>% 
   #sample_n(1000) %>% 
   ggplot() +
   geom_histogram(aes(x = achilles_correlation), color = "gray", fill = "#02224C", binwidth = 0.05) +
   scale_y_continuous(breaks = c(0, 25000000, 50000000, 75000000), labels = c("0", "25", "50", "75")) +
-  labs(x = "r^2 values", y = "Count (Million)", title = "Distribution of correlation values across all gene-gene pairs") +
+  labs(x = "r^2 values", y = "Count (Million)", subtitle = "Distribution of correlation values across all gene-gene pairs") +
   theme_cowplot()
 ```
   
 This process generated approximately `r round(nrow(achilles_cor_long)/1000000, 0)` million correlation values, with a distribution centered around zero. This output produced a range of maximum correlation values for each gene.  
   
-```{r achilles_max, echo=FALSE}
+```{r achilles_max, echo=FALSE, message=FALSE, warning=FALSE}
 achilles_cor %>% 
   select(-rowname) %>% 
   summarize_all(list(~max(., na.rm = TRUE))) %>% 
@@ -413,98 +429,54 @@ achilles_cor %>%
   ggplot(aes(max)) +
   geom_histogram(binwidth = 0.05, color = "gray", fill = "#02224C") + 
   #geom_vline(aes(xintercept = achilles_upper), color = "red") +
-  labs(title = "Distribution of maximum r^2 values for each gene", x = "Maximum r^2 values", y = "Count") +
+  labs(subtitle = "Distribution of maximum r^2 values for each gene", x = "Maximum r^2 values", y = "Count") +
   theme_cowplot()
 
 ```
   
 #### Statistics
-Rather than setting an arbitrary threshold for the r^2 value that would be considered a low, medium, or high correlation between two genes, we performed a permutation test on the correlated data. A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we broke the relationship between gene-gene pairs and the correlation values. We can then compare the true statistic (mean correlation) to the generated distribution of null statistics (fake means), along with standard deviations of these sampled data. This strategy will give a better idea of where to draw a threshold of a "significant correlation" for these analyses. We sampled 20,000 r^2 values from all gene-gene pairs without replacement simulating a virtual Achilles dataset for a single cell. We then repeated this process 1000 times mimicking 1000 discrete cell lines.  
+Rather than setting an arbitrary threshold for the r^2 value that would be considered a low, medium, or high correlation between two genes, we performed a permutation test on the correlated data. A permutation test involves permuting one or more variables in a data set before performing the test, in order to break any existing relationships and simulate the null hypothesis. In this case, we broke the relationship between gene-gene pairs and the correlation values. We then generated a distribution of null statistics (fake means), along with standard deviations of these sampled data. This strategy identified at which correlation value to draw a threshold of a "significant correlation" for these analyses. We sampled 20,000 r^2 values from all gene-gene pairs without replacement simulating a virtual Achilles correlation dataset for a single cell. We then repeated this process 1000 times mimicking 1000 discrete cell lines.  
   
 This statistical analysis produced the following data:  
 **Mean:** `r mean_virtual_achilles`  
 **Standard Deviation:** `r sd_virtual_achilles`  
   
-Using a standard deviation threshold of `r sd_threshold`, we calculated the boundaries of r^2 values to be greater than `r round(achilles_upper, 2)` or lower than `r round(achilles_lower, 2)` for negative correlations.  
+Using a standard deviation threshold of `r sd_threshold`, we calculated the boundaries of r^2 values to be greater than `r round(achilles_upper, 2)` or lower than `r round(achilles_lower, 2)` for negative correlations. Simply stated, gene-gene correlations above or below, respectively, these values were considered strong and used for subsequent analyses. The r^2 values and corresponding z-score transformations of these values are shown on the tables.  
+  
+#### Comparing to Known Literature    
+The process of generating a prioritized gene list based on similar patterns to a query gene is an unbiased approach to map genes into functional pathways. To find novel genes in established pathways, this approach requires identifying "novel" or "unexpected" genes in the gene list. However, what may seem unexpected to one researcher might be obvious or intuitive to another. To remove bias in prioritizing candidate genes for further study and to programatically identify novelty, we generated a **co-publication index**, where every human gene was compared to publication co-incidence with every other human gene in the [PubMed](https://pubmed.ncbi.nlm.nih.gov) database.  
+  
+PubMed contains 30 million publication records containing article metadata and abstracts. We began by first parsing each of the 30 million abstracts for all gene names and gene aliases in an abstract. Next we were able to generate article level summaries for each gene in each article, and then counted gene-gene co-occurrence in an abstract. Measuring all human gene-gene co-occurrences across all PubMed records allowed us to identify the frequency with which a gene was published with another gene. Unfortunately, gene nomenclature is a mess, with official gene names changing over time, and several genes sharing common aliases. As a keystone example, the protein p38 has been used as a name to describe the genes MAPK14 (NCBI gene id 1432), AHSA1 (NCBI gene id 10598), and AIMP2 (NCBI gene id 7965). The protein p38 associated with MAPK14 is among the most studied and published on genes in the human genome, whereas AHSA1 and AIMP2 are among the least studied. This discrepancy and ambiguity in identifying genes in abstracts necessitated an alternative approach.  
+  
+Next, we leveraged a PubMed resource from the National Library of Medicine (NLM) called gene2pubmed that links unique NCBI gene ids to a PubMed id. This resource is part of the NLM's Indexing Initiative (IND) is working to automate indexing methods partially or completely manual indexing practices. Using gene2pubmed, we again measured all human gene-gene co-occurrences across all PubMed records. While this method overcomes the challenges associated with gene nomenclature by providing gene ids, it is still limited in its ability to curate genes associated with scientific papers by the same challenges in gene nomenclature.  
+  
+A new machine learning (ML)-based resource developed by the Computational Biology Branch at the NLM/NCBI called [Pubtator](https://www.ncbi.nlm.nih.gov/research/pubtator/) aims to overcome these challenges by providing automatic annotations of biomedical concepts such as genes and mutations in PubMed abstracts and PMC full-text articles. Using advanced text-mining techniques, Pubtator goes beyond assigning genes to paper by developing a ML model that generates automated annotations for genes/proteins, genetic variants, diseases, chemicals, species and cell lines in a single paper, across all PubMed (30 million) abstracts and the PMC Text Mining subset of (3 million full text) articles.Improved concept identification systems and a new disambiguation module based on deep learning provides best-in-class annotation accuracy. Using these data, we filtered "concept ids" that matched official NCBI gene IDs, and then took the same approach described above to determine the number of times a gene was annotated with scientific paper, and the pairwise count of each gene with each other gene in a single paper, across all papers. Because of the wide range of annotated gene co-occurrences (`r paste0("0 to ", pubmed_concept_pairs %>% filter(target_gene == "INS") %>% unnest() %>% summarize(max(n)) %>% pull())`), we also generated a relative index [(co-occurrence count/max co-occurrence)*100] normalized to 100. The co-occurrence count and co-occurrence index provides useful, and unbiased information about the level of prior knowledge for gene-gene relationship identified by the analytic approach detailed above.  
   
 #### Pathway Analyses
-```{r focused_lib, echo=FALSE}
+```{r focused_lib, echo=FALSE, message=FALSE, warning=FALSE}
 focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
 #find a way to out put this in a simple/clean format?
 ```
 To identify clusters of genes with shared relationships, we performed gene set enrichment analysis. Enrichment analysis is a computational method for inferring knowledge about a target gene set by comparing it to annotated gene sets representing prior biological knowledge. Enrichment analysis determines whether an input set of genes significantly overlaps with annotated gene sets. For each gene in our matrix, we determined the number of genes that were greater than or less than `r sd_threshold` standard deviations away from the permuted mean. This target gene list was then queried against `r length(focused_lib)` gene sets across a [broad range of curated data](https://amp.pharm.mssm.edu/Enrichr/#stats). By leveraging the [Enrichr](https://amp.pharm.mssm.edu/Enrichr/) resource from the [Ma'ayan Laboratory](http://labs.icahn.mssm.edu/maayanlab/), we determined the top ranked pathways, processes, drugs, cell lines, tissues, or diseases, and ranked by p-value. In this setting, the p-value is computed using a standard statistical method used by most enrichment analysis tools: Fisher's exact test or the hypergeometric test. This is a binomial proportion test that assumes a binomial distribution and independence for probability of any gene belonging to any set. [See here for more information about how Enrichr computes its associations](https://amp.pharm.mssm.edu/Enrichr/help#background).  
+    
+#### Network Analyses
+As an alternative approach to prioritize further study of novel functional mappings, an interactive network graph of gene-gene relationships can be built. A single gene query results in a list of top and bottom associated genes based on patterns of gene dependency scores. The top 10 and bottom 10 genes are then queried for each of their top and bottom correlated genes. These resulting 400 gene pairs (20 genes * 20 genes) are then used to build a network graph, which can reveal if a top associated gene with the query gene, also has the query gene in its top (or bottom) 10. In this way, strong functional networks can be identified and prioritized for further study.  
   
 ## How do I use this?
-In order to identify the functional annotation of a single gene, begin with a query. Entering a single gene in the search box produces a series of tables and plots that identifies a functional map of the processes that gene *might* be involved in. In some cases, a querying gene with known functions will identify gene with well-established connections to the query gene; in other cases, new genes and new biological process might be identified, suggesting there is more to discover for well-known pathways. Querying unknown genes is especially powerful, as the associated genes and pathways provide a starting point for an otherwise difficult problem to prioritize experimentally.  
+In order to identify the functional annotation of a single gene, begin with a query. Entering a single gene in the search box produces a series of tables and plots that identifies a functional map of the processes that gene *might* be involved in. In some cases, querying a gene with known functions will identify genes with well-established connections to the query gene; in other cases, new genes and new biological process might be identified, suggesting there is more to discover for well-known pathways. Querying unknown genes is especially powerful, as the associated genes and pathways provide a starting point for an otherwise difficult problem to prioritize experimentally.  
   
 ```{r p53_code, message=FALSE, warning=FALSE, include=FALSE}
 #summary
-    fav_gene_summary <- gene_summary %>% 
-      filter(approved_symbol == fav_gene)
-    
-    #dep tables
-    dep_top <- achilles_cor %>% 
-      focus(fav_gene) %>% 
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(approved_symbol = rowname) %>% 
-      left_join(gene_summary, by = "approved_symbol") %>% 
-      select(approved_symbol, approved_name, fav_gene) %>% 
-      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene)
-    
-    dep_bottom <- achilles_cor %>% 
-      focus(fav_gene) %>% 
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(approved_symbol = rowname) %>% 
-      left_join(gene_summary, by = "approved_symbol") %>% 
-      select(approved_symbol, approved_name, fav_gene) %>% 
-      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene)
-    #this is to get neg correlators
-      
-    #pathway enrichment analyses
-    flat_top_complete <- dep_top %>%
-       pull("gene") %>% 
-       c(fav_gene, .) %>% 
-       enrichr_loop(., focused_lib)
-     
-     #bottom 
-     flat_bottom_complete <- dep_bottom %>%
-       pull("gene") %>% 
-       enrichr_loop(., focused_lib)
+fav_gene_summary <- gene_summary %>% 
+  filter(approved_symbol == fav_gene)
 
-    #plot setup
-    target_achilles <- achilles_raw_long %>% 
-      filter(gene == fav_gene) %>% 
-      left_join(expression_join, by = "X1") %>% 
-      select(cell_line, lineage, dep_score)
-    
-    target_achilles_top <- target_achilles %>% 
-      top_frac(dep_score, n = 0.01)
-    
-    target_achilles_bottom <- target_achilles %>% 
-      top_frac(dep_score, n = -0.01) %>% 
-      arrange(dep_score)
-    
-    #plot1
-    dep_plot1 <- ggplot(target_achilles) +
-      geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
-      labs(x = "Dependency Score (binned)") + 
-      theme_light()
-    
-    #plot2
-    dep_plot2 <- ggplot(target_achilles) +
-      geom_point(aes(x = fct_rev(fct_reorder(target_achilles$cell_line, target_achilles$dep_score, .desc = TRUE)), y = dep_score)) +
-      labs(x = "Cell Lines", y = "Dependency Score") +
-      geom_hline(yintercept = mean_virtual_achilles) +
-      geom_hline(yintercept = 1, linetype="dashed") +
-      geom_hline(yintercept = -1, linetype="dashed") +
-      geom_hline(yintercept = 0) +
-      geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
-      geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
-      theme_light() +
-      theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
-      NULL
+#dep tables
+dep_top <- make_top_table(master_top_table, fav_gene)
+dep_bottom <- make_bottom_table(master_bottom_table, fav_gene)
+
+#pathway enrichment analyses
+flat_top_complete <- make_enrichment_table(master_positive, fav_gene)
+flat_bottom_complete <- make_enrichment_table(master_negative, fav_gene)
 ```
 #### 1. Query YFG (your favorite gene)
 As an example, we will query the protein P53. Typing in the given protein name "P53" produces an error, because the official gene symbol needs to be entered. Querying TP53 (official gene symbol) generates a short summary of the gene, its name and list of aliases, and an Entrez gene summary paragraph when available.  
@@ -523,8 +495,10 @@ The first plot shows the distribution of dependency scores across `r length(achi
 The second plot is a histogram of dependency scores, showing the distribution of scores for `r fav_gene`. While the majority of cells have little change in cellular growth when `r fav_gene` is absent (the histogram is centered around zero), some cells require `r fav_gene` for growth (cells scoring below -1), whereas in other cells `r fav_gene` functions as a tumor suppressor (cells with a score above 1).  
   
   
-```{r dep_plots, echo=FALSE}
-dep_plot2 + dep_plot1
+```{r dep_plots, echo=FALSE, message=FALSE, warning=FALSE}
+dep_plot1 <- make_celldeps(achilles, expression_join, fav_gene, mean_virtual_achilles)
+dep_plot2 <- make_cellbins(achilles, expression_join, fav_gene)
+dep_plot1 + dep_plot2
 ```
   
   
@@ -532,21 +506,30 @@ To identify the cells at the tails of the plots, a dependency table will show th
   
   
 #### Cells with strong `r fav_gene` genetic dependencies:
-```{r target_achilles_top, echo=FALSE}
-target_achilles_top %>% 
+```{r target_achilles_top, echo=FALSE, message=FALSE, warning=FALSE}
+achilles_raw_long %>%  
+  filter(gene == fav_gene) %>% 
+  left_join(expression_join, by = "X1") %>% 
+  select(cell_line, lineage, dep_score) %>% 
+  top_n(dep_score, n = 10) %>% 
   mutate(dep_score = round(dep_score, 2)) %>% 
-  rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score") %>%
-  pander::pander(justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
+  knitr::kable(col.names = c("Cell Line", "Lineage", "Dependency Score")) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
   
   
   
 #### Cells with low or inverse `r fav_gene` genetic dependencies
-```{r target_achilles_bottom, echo=FALSE}
-target_achilles_bottom %>% 
+```{r target_achilles_bottom, echo=FALSE, message=FALSE, warning=FALSE}
+achilles_raw_long %>%  
+  filter(gene == fav_gene) %>% 
+  left_join(expression_join, by = "X1") %>% 
+  select(cell_line, lineage, dep_score) %>% 
+  top_n(dep_score, n = -10) %>% 
+  arrange(dep_score) %>% 
   mutate(dep_score = round(dep_score, 2)) %>% 
-  rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score") %>%
-  pander::pander(justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
+  knitr::kable(col.names = c("Cell Line", "Lineage", "Dependency Score")) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
   
   
@@ -555,154 +538,77 @@ Understanding the shape of the curve and distribution of the raw data underlying
   
   
 #### 3. Similar Patterns
-Positive correlations of dependency scores are ranked for each gene. Recall that these genes show similar patterns of dependencies in the same cell lines. More simply, the cells that care about `r fav_gene` deletion also care about deletion of these genes, implying a functional relationship. In the Dependency Score Example heatmap schematic above, `r fav_gene` is gene X, and genes with similar patterns would be genes A, B, and C. The `r paste0(length(dep_top$gene))` genes that show a  similar genetic dependencies as `r fav_gene` and are above `r sd_threshold` standard deviations away from the resampled mean are displayed.  
+Positive correlations of dependency scores are ranked for each gene. Recall that these genes show similar patterns of dependencies in the same cell lines. More simply, the cells that care about `r fav_gene` deletion also care about deletion of these genes, implying a functional relationship. In the Dependency Score Example heatmap schematic above, `r fav_gene` is gene X, and genes with similar patterns would be genes A, B, and C. The `r paste0(length(dep_top$Gene))` genes that show a  similar genetic dependencies as `r fav_gene` and are above `r sd_threshold` standard deviations away from the resampled mean are displayed.  
   
+One data source that can help prioritize genes for study is to compare gene-gene associations to known gene-gene relationships based on previous literature. By counting the number of times a p53 was published with each of these top ranked genes, the Relaxin family peptide receptor 2 (RXFP2) emerges as an unexpected connection, based on current literature.  
   
-```{r dep_top, echo=FALSE}
-head(dep_top, 6) %>% 
-  mutate(r2 = round(r2, 2)) %>% 
-  rename("Gene" = "gene", "Gene Name" = "name", "R^2" = "r2")  %>%
-  pander::pander(justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
+```{r dep_top, echo=FALSE, message=FALSE, warning=FALSE}
+head(dep_top, 10) %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = FALSE)
 ```
   
   
+These `r paste0(length(dep_top$Gene))` genes were queried for gene set enrichment, and the gene sets and pathways with the strongest statistical significance are shown. Simply stated, these are the pathways that best represent the list of genes that share similar genetic dependencies, and suggest that the query gene is part of these pathways.  
   
-These `r paste0(length(dep_top$gene))` genes were queried for gene set enrichment, and the gene sets and pathways with the strongest statistical significance are shown. Simply stated, these are the pathways that best represent the list of genes that share similar genetic dependencies, and suggest that the query gene is part of these pathways.  
   
-  
-```{r flat_top_complete, echo=FALSE}
+```{r flat_top_complete, echo=FALSE, message=FALSE, warning=FALSE}
 flat_top_complete %>% 
-  select(enrichr, Term, Overlap) %>% 
   slice(1:10) %>% 
-  rename("Gene Set" = "enrichr", "Gene List" = "Term")  %>%
-  pander::pander(justify = c("left", "left", "right"), split.cells = c("20%", "70%", "10%"))
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = FALSE)
 ```
   
   
 #### 4. Dissimilar
-Like the analysis for genes that share similar patterns, this analysis can be used to find genes that share distinctly dissimilar patterns; that is, genes that have an inverse correlation of dependences. Simply stated, the cells that care about `r fav_gene` deletion *do not* care about deletion of these genes, implying an inverse or opposing relationship. In the Dependency Score Example heatmap schematic above, `r fav_gene` is gene X, and genes with dissimilar patterns would be genes D, E, and F. The `r paste0(length(dep_bottom$gene))` genes that show inverse genetic dependencies to `r fav_gene` and are below `r sd_threshold` standard deviations away from the resampled mean are:   
+Like the analysis for genes that share similar patterns, this analysis can be used to find genes that share distinctly dissimilar patterns; that is, genes that have an inverse correlation of dependences. Simply stated, the cells that care about `r fav_gene` deletion *do not* care about deletion of these genes, implying an inverse or opposing relationship. In the Dependency Score Example heatmap schematic above, `r fav_gene` is gene X, and genes with dissimilar patterns would be genes D, E, and F. The `r paste0(length(dep_bottom$Gene))` genes that show inverse genetic dependencies to `r fav_gene` and are below `r sd_threshold` standard deviations away from the resampled mean are:   
   
   
-```{r dep_bottom, echo=FALSE}
-head(dep_bottom, 6) %>% 
-  mutate(r2 = round(r2, 2)) %>% 
-  rename("Gene" = "gene", "Gene Name" = "name", "R^2" = "r2") %>%
-  pander::pander(justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
+```{r dep_bottom, echo=FALSE, message=FALSE, warning=FALSE}
+head(dep_bottom, 10) %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
 ```
   
   
+These `r paste0(length(dep_bottom$Gene))` genes were also queried for gene set enrichment, and the gene sets and pathways with the strongest statistical significance are shown. Simply stated, these are the pathways that best represent the list of genes that have inverse genetic dependencies. 
   
-These `r paste0(length(dep_bottom$gene))` genes were also queried for gene set enrichment, and the gene sets and pathways with the strongest statistical significance are shown. Simply stated, these are the pathways that best represent the list of genes that have inverse genetic dependencies. 
   
-  
-```{r flat_bottom_complete, echo=FALSE}
+```{r flat_bottom_complete, echo=FALSE, message=FALSE, warning=FALSE}
 flat_bottom_complete %>% 
-  select(enrichr, Term, Overlap) %>% 
-  slice(1:15) %>% 
-  rename("Gene Set" = "enrichr", "Gene List" = "Term")  %>%
-  pander::pander(justify = c("left", "left", "right"), split.cells = c("20%", "70%", "10%"))
+  slice(1:10) %>% 
+  knitr::kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = FALSE)
 ```
   
   
-  
-How to interpret these genes and pathways is more variable than the positively correlated genes and pathways. In some cases, a negative regulator of a gene has a negative correlation with that gene, such as in this example with `r fav_gene` and its negative regulator `r dep_bottom$gene[1]`. In other cases, opposing *pathways* are shown, contrasting the `r fav_gene` enriched pathway term "`r flat_top_complete$Term[8]`" with the dissimilar enriched pathway term "`r flat_bottom_complete$Term[12]`", revealing two opposing biological pathways.    
+How to interpret these genes and pathways is more variable than the positively correlated genes and pathways. In some cases, a negative regulator of a gene has a negative correlation with that gene, such as in this example with `r fav_gene` and its negative regulator `r dep_bottom$Gene[1]`. In other cases, opposing *pathways* are shown, contrasting the `r fav_gene` enriched pathway term "`r flat_top_complete[11,2]`" with the dissimilar enriched pathway term "`r flat_bottom_complete[11,2]`", revealing two opposing biological pathways.    
   
   
 #### 5. Graph
 Identifying genes that share similar patterns of dependency to a queried unknown gene generates strong hypotheses about new functional annotations and maps to new pathways. However, the strength of the hypothesis cannot be fully inferred from single gene list. If a new gene is associated with the queried gene, then you might infer a functional relationship. However, if you inspect the top 10 genes with the queried gene, then inspect the top 10 genes of each of those, building a functional network graph of the top related genes might reveal a stronger association of the new gene with your queried gene *and* its top ranked genes.  
   
 ```{r static_graph, echo=FALSE, message=FALSE, warning=FALSE}
-#enter static viz of gene networks
-
-#setup graph 
-threshold <- 10
-deg <- 10
-dep_network <- tibble()
-  
- #find top and bottom correlations for fav_gene
-  dep_top_slice <- dep_top %>% 
-    slice(1:threshold)
-  
-  dep_bottom_slice <- dep_bottom %>% 
-    slice(1:threshold) #limit for visualization?
-  
-  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_top_slice %>% 
-    bind_rows(dep_bottom_slice) %>% 
-    dplyr::pull("gene")
-  
-  #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
-  for (i in related_genes){
-    message("Getting correlations related to ", fav_gene, ", including ", i)
-    dep_top_related <- achilles_cor %>% 
-      focus(i) %>% 
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i) %>% 
-      rename(y = rowname, r2 = i) %>% 
-      select(x, y, r2) %>% 
-      slice(1:threshold) #limit for visualization?
-    
-    dep_bottom_related <- achilles_cor %>% 
-      focus(i) %>% 
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      mutate(x = i) %>% 
-      rename(y = rowname, r2 = i) %>% 
-      select(x, y, r2) %>% 
-      slice(1:threshold) #limit for visualization?
-    
-    #each temp object is bound together, and then bound to the final df for graphing
-    dep_related <- dep_top_related %>% 
-      bind_rows(dep_bottom_related)
-    
-    dep_network <- dep_network %>% 
-      bind_rows(dep_related)
-  }
-  
-    #make_graph_report
-  graph_network <- tidygraph::as_tbl_graph(dep_network)
-  nodes <-  as_tibble(graph_network) %>% 
-    rowid_to_column("id") %>% 
-    mutate(degree = igraph::degree(graph_network), 
-           group = 1) %>% 
-    arrange(desc(degree))
-  
-  links <- graph_network %>% 
-    activate(edges) %>% # %E>%
-    as_tibble()
-  
-  # determine the nodes that have at least the minimum degree
-  nodes_filtered <- nodes %>%
-    filter(degree >= deg) %>%  #input$degree
-    as.data.frame
-  
-  # filter the edge list to contain only links to or from the nodes that have the minimum or more degree
-  links_filtered <- links %>% 
-    filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>% 
-    as.data.frame
-  
-  links_filtered$from <- match(links_filtered$from, nodes_filtered$id)
-  links_filtered$to <- match(links_filtered$to, nodes_filtered$id)
-  
-  graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
-  
-  graph_network_ggraph %>%       
-    ggraph(layout = "nicely") +      
-    geom_edge_fan(aes(color = r2)) + #, color = 'steelblue'
-    geom_node_point(aes(size = degree), color = 'black', alpha = 0.8) +   
-    geom_node_label(aes(label = name), repel = TRUE) +
-    scale_edge_color_viridis(option = "inferno") +
-    theme_graph()
+# from fun_tables.R and fun_graphs.R
+make_graph_report(master_top_table, master_bottom_table, fav_gene)
 ```
   
-The data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration; the static image above is a representative snapshot.  
+The image here is a representative static, albeit busy, network graph; data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration.
+
+## Broader Implications
+Like the proverbial man [searching for his lost keys under the lamp post](https://www.matthewhirschey.com/articles/exploratory-mind) because the light shines there, searching for biological truths often occurs under 'lamp posts' because that's where scientists can see. But what if your keys are not under the light? Or your gene is totally unknown? What do you do?  
+  
+The scientific method has guided scientific minds for hundreds of years, starting with a question, followed by a hypothesis, and then an experimental path to test the prediction. While hypotheses are the bedrock of science, the volume, complexity, and sophistication of modern science necessitate new methods to generate hypotheses.  
+  
+New tools in Data Science -- a combination of computer programming, math & statistics, and topical expertise -- combined with the rapid adoption of open science and data sharing allow scientists to access publicly available datasets and interrogate these data *before* performing any experiments.  
+  
+Imagine having strong data to support your new hypothesis *before* testing it. This is data-driven hypothesis.
   
 ## Where do I get more information? 
 ```{r include=FALSE}
 #add publication data here first
 ```
-Code is available on the [Hirschey Lab github account](http://www.github.com/matthewhirschey), including links to download the raw data, and run the analyses in R from scratch. Furthermore, the Broad Institute has a lot of information on their [website](http://www.broadinstitute.org) and the website dedicated to the [Dependency Map project](http://www.depmap.org) about how the raw data were generated, and provide a list of references.  
+Code is available on the [Hirschey Lab github account](https://github.com/matthewhirschey/ddh), including links to download the raw data, and run the analyses in R from scratch. Furthermore, the Broad Institute has a lot of information on their [website](http://www.broadinstitute.org) and the website dedicated to the [Dependency Map project](http://www.depmap.org) about how the raw data were generated, and provide a list of references.  
   
 #### Code Availability  
 ```{r include=FALSE}
