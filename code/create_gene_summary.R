@@ -1,4 +1,3 @@
-library(optparse)
 library(tidyverse)
 library(vroom)
 library(janitor)
@@ -105,23 +104,10 @@ update_gene_summary <- function(gene_summary_input, gene2pubmed_url, pubtator_ur
 }
 
 create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_path) {
+  # Specify an entrez key to speed up fetching data. To create an entrez key see "Using API Keys" at https://cran.r-project.org/web/packages/rentrez/vignettes/rentrez_tutorial.html
   gene_summary <- build_gene_summary(gene_names_url, entrez_key) 
   gene_summary <- update_gene_summary(gene_summary, gene2pubmed_url, pubtator_url)
   saveRDS(gene_summary, file = gene_summary_output_path)
 }
 
-# Command line argument parser that will let a user optionally specify:
-# - entrez key to speed up fetching data. To create an entrez key see "Using API Keys" at https://cran.r-project.org/web/packages/rentrez/vignettes/rentrez_tutorial.html
-# - alternate destination directory
-option_list = list(
-  make_option(c("--entrezkey"), type="character", default=NULL,
-              help="NCBI entrez key [default= %default]", metavar="character"),
-  make_option(c("--destdir"), type="character", default="data",
-              help="Destination directory [default= %default]", metavar="character")
-)
-opt_parser = OptionParser(option_list=option_list)
-opt = parse_args(opt_parser)
 
-# fetch data and write gene summary feather file
-create_gene_summary(gene_names_url, opt$entrezkey,
-                    here::here(opt$destdir, gene_summary_output_filename))
