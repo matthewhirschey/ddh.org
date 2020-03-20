@@ -1,0 +1,175 @@
+---
+title: "Pubtator Notebook"
+output: html_notebook
+---
+
+```{r setup}
+library(tidyverse)
+library(tidytext)
+library(here)
+library(tictoc)
+library(widyr)
+#rm(list = ls())
+```
+
+#import
+```{r}
+#read data from create_gene_summary.R
+load(here::here("data", "gene_summary.RData"))
+
+#raw <- read_tsv(here::here("data", "pubtator", "gene2pubtatorcentral"), col_names = c("pmid", "type", "concept_id", "mentions", "resource")) %>% 
+#  select(pmid, concept_id, mentions) %>% 
+#  mutate(match = concept_id %in% gene_summary$ncbi_gene_id) %>% 
+#  filter(match == TRUE) %>% 
+#  select(-match)
+
+#saveRDS(raw, file = here::here("data", "pubtator", "raw.Rds"))
+raw <- readRDS(here::here("data", "pubtator", "raw.Rds"))
+
+#clean
+#raw <- raw %>% separate(concept_id, into = c("concept_id"), sep = "[^[:digit:]]") #drop garbage
+raw$concept_id <- as.numeric(raw$concept_id)
+```
+
+#import from url
+This is code that went into update_gene_summary to add concept_id counts to the gene list
+This will help provide context for gene-gene (concept-concept counts)
+```{r}
+pubtatorurl <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/gene2pubtatorcentral.gz"
+gene2pubtator <- read_tsv(pubtatorurl, col_names = c("pmid", "type", "concept_id", "mentions", "resource")) %>% 
+  select(pmid, concept_id, mentions) %>% 
+  filter(concept_id %in% gene_summary$ncbi_gene_id == TRUE)
+
+gene2pubtator$concept_id <- as.numeric(gene2pubtator$concept_id)
+
+gene2pubtator_count <- gene2pubtator %>% 
+  group_by(concept_id) %>% 
+  count(sort = TRUE) %>% 
+  right_join(gene_summary_raw, by = c("concept_id" = "ncbi_gene_id"))  %>% 
+  rename("ncbi_gene_id" = "concept_id", 
+         "concept_count" = "n") %>% 
+  mutate(concept_count = replace_na(concept_count, 0))
+
+gene2pubtator_count %>% 
+  arrange(desc(concept_count))
+
+gene_summary %>% 
+  mutate(pubmed_count_rank = dplyr::percent_rank(pubmed_count)
+```
+
+
+#co-occurance of concepts
+Count words co-occuring within sections
+```{r}
+#ie what two gene co-occur in a paper, across all papers
+gene_pairs <- raw %>%
+  #filter(!is.na(concept_id)) %>% 
+  #sample_frac(0.1) %>% 
+  pairwise_count(concept_id, pmid, sort = TRUE)
+
+#fix names before making wider
+gene_summary_match <- gene_summary %>% 
+  select(approved_symbol, ncbi_gene_id)
+
+gene_pairs <- gene_pairs %>% 
+  #slice(1:10) %>% 
+  left_join(gene_summary_match, by = c("item1" = "ncbi_gene_id")) %>% 
+  left_join(gene_summary_match, by = c("item2" = "ncbi_gene_id")) %>% 
+  transmute(gene_id = approved_symbol.x, y = approved_symbol.y, n)
+
+#make wider, and (importantly) fill missing values with "0"
+gene_pair_matrix <- gene_pairs %>% 
+  pivot_wider(names_from = y, values_from = n, values_fill = list(n = 0))
+
+saveRDS(gene_pair_matrix, file = here::here("data", "gene_pair_matrix.Rds"))
+#readRDS(file = here::here("data", "gene_pair_matrix.Rds"))
+```
+
+#test matrix
+```{r}
+head(gene_pair_matrix)
+
+gene_pair_matrix %>% 
+  select(gene_id, SIRT4) %>% 
+  arrange(desc(SIRT4))
+
+gene_pair_matrix %>% 
+  select(gene_id, C6orf136) %>% 
+  arrange(desc(C6orf136))
+
+gene_pair_matrix %>% 
+  select(gene_id, SDHB) %>% 
+  arrange(desc(SDHB))
+```
+
+#test gene pairs
+```{r}
+gene_pairs %>% 
+  filter(target_gene == "TNF") %>% 
+  arrange(desc(n))
+```
+
+
+#viz
+```{r}
+ggplot(gene_pairs) +
+  geom_histogram(aes(x = log10(n)))
+```
+
+# rank
+```{r}
+#ntile() was too rough (too many low ranks in high bins); used percent_rank(): a number between 0 and 1 computed by rescaling min_rank to [0, 1]; importantly, this gives the same percent to identical n's, so all the 0's are the same, all the 1's are the same, etc.
+
+gene_pairs <- gene_pairs %>% 
+  #sample_n(1000) %>% 
+  mutate(log2 = log2(n)) %>% 
+  arrange(desc(log2))
+
+
+gene_pairs <- gene_pairs %>% 
+  #sample_n(1000) %>% 
+  mutate(rank = percent_rank(log2)) %>% 
+  arrange(desc(rank))
+
+head(gene_pairs, n = 100)
+
+gene_pairs %>% 
+  filter(gene_id == "SIRT4") %>% 
+  arrange(desc(n))
+
+gene_pairs %>% 
+  filter(gene_id == "C6orf136") %>% 
+  arrange(desc(n))
+
+gene_pairs %>% 
+  filter(gene_id == "SDHB") %>% 
+  arrange(desc(n))
+```
+I don't really like any of these; might just leave the raw numbers.
+
+#count
+Count number of times a concept_id (i.e. gene id) was associated with a paper; when other concepts are in the same paper, it is the basis for the gene co-occurance
+```{r}
+count <- raw %>% 
+  #sample_n(1000) %>% 
+  group_by(concept_id) %>% 
+  summarize(count = n()) %>% 
+  mutate(rank = signif(percent_rank(count), 2)) %>% 
+  arrange(desc(count)) %>% 
+  left_join(gene_summary_match, by = c("concept_id" = "ncbi_gene_id"))
+  
+head(count, n = 50)
+tail(count, n = 50)
+
+count %>% filter(approved_symbol == "C6orf136")
+```
+
+#bootstrap!!!
+sample null hypothesis of data for mean, sd, 
+then calculate for dataset
+then z-transform
+then list z-scores for pub concept co-occurance
+```{r}
+
+```
+

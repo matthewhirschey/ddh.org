@@ -49,6 +49,12 @@ master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
 master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
 
 #FUNCTIONS-----
+#common functions
+source(here::here("code", "fun_tables.R"))
+source(here::here("code", "fun_plots.R"))
+source(here::here("code", "fun_graphs.R"))
+
+#shiny functions
 gene_summary_details <- function(gene_summary) {
   title <- paste0(gene_summary$approved_symbol, ": ", gene_summary$approved_name)
   tagList(
@@ -101,234 +107,6 @@ gene_summary_ui <- function(gene_symbol) {
   result
 }
 
-make_top_table <- function(gene_symbol) {
-  master_top_table %>%
-    dplyr::filter(fav_gene == gene_symbol) %>%
-    tidyr::unnest(data) %>%
-    dplyr::select(-fav_gene) %>%
-    dplyr::mutate(r2 = round(r2, 3)) %>% 
-    dplyr::arrange(desc(r2)) %>%
-    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
-}
-
-make_bottom_table <- function(gene_symbol) {
-  master_bottom_table %>%
-    dplyr::filter(fav_gene == gene_symbol) %>%
-    tidyr::unnest(data) %>%
-    dplyr::select(-fav_gene) %>%
-    dplyr::mutate(r2 = round(r2, 3)) %>% 
-    dplyr::arrange(r2) %>%
-    dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2")
-}
-
-make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
-  table %>%
-    dplyr::filter(fav_gene == gene_symbol) %>%
-    tidyr::unnest(data) %>%
-    dplyr::select(enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
-    dplyr::arrange(Adjusted.P.value) %>%
-    dplyr::rename("Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
-}
-
-make_achilles_table <- function(gene_symbol) {
-  target_achilles <- achilles %>%
-    dplyr::select(X1, gene_symbol) %>%
-    dplyr::left_join(expression_join, by = "X1") %>%
-    dplyr::rename(dep_score = gene_symbol) %>%
-    dplyr::select(cell_line, lineage, dep_score) %>%
-    dplyr::mutate(dep_score = round(dep_score, 3)) %>% 
-    dplyr::arrange(dep_score) %>%
-    dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
-  return(target_achilles)
-}
-
-make_cellbins <- function(gene_symbol) {
-  achilles %>% #plot setup
-    select(X1, gene_symbol) %>%
-    left_join(expression_join, by = "X1") %>%
-    rename(dep_score = gene_symbol) %>%
-    select(cell_line, lineage, dep_score) %>%
-    arrange(dep_score) %>%
-    ggplot() +
-    geom_vline(xintercept = 1, color = "lightgray") +
-    geom_vline(xintercept = -1, color = "lightgray") +
-    geom_vline(xintercept = 0) +
-    geom_histogram(aes(x = dep_score), binwidth = 0.25, color = "lightgray") +
-    labs(x = "Dependency Score (binned)") +
-    theme_cowplot()
-}
-
-make_celldeps <- function(gene_symbol) {
-  achilles %>% #plot setup
-    select(X1, gene_symbol) %>%
-    left_join(expression_join, by = "X1") %>%
-    rename(dep_score = gene_symbol) %>%
-    select(cell_line, lineage, dep_score) %>%
-    arrange(dep_score) %>%
-    ggplot() +
-    geom_point(aes(x = fct_reorder(cell_line, dep_score, .desc = FALSE), y = dep_score, text = paste0("Cell Line: ", cell_line)), alpha = 0.2) +
-    labs(x = "Cell Lines", y = "Dependency Score") +
-    geom_hline(yintercept = mean_virtual_achilles) +
-    geom_hline(yintercept = 1, color = "lightgray") +
-    geom_hline(yintercept = -1, color = "lightgray") +
-    geom_hline(yintercept = 0) +
-    theme_cowplot() +
-    #geom_point(data = target_achilles_top, aes(x = cell_line, y = dep_score), color = "red") +
-    #geom_point(data = target_achilles_bottom, aes(x = cell_line, y = dep_score), color = "red") +
-    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + # axis.title.x=element_blank()
-    NULL
-}
-
-make_graph <- function(gene_symbol, threshold = 10, deg = 2) {
-  dep_network <- tibble()
-
- #find top and bottom correlations for fav_gene
-  dep_top <- make_top_table(gene_symbol) %>%
-    slice(1:threshold)
-
-  dep_bottom <- make_bottom_table(gene_symbol) %>%
-    slice(1:threshold) #limit for visualization?
-
-  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_top %>%
-    bind_rows(dep_bottom) %>%
-    dplyr::pull("Gene")
-
-  #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
-  for (i in related_genes){
-    message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- make_top_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
-    
-    dep_bottom_related <- make_bottom_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
-
-    #each temp object is bound together, and then bound to the final df for graphing
-    dep_related <- dep_top_related %>%
-      bind_rows(dep_bottom_related)
-
-    dep_network <- dep_network %>%
-      bind_rows(dep_related)
-  }
-  
-  #make graph
-  graph_network <- tidygraph::as_tbl_graph(dep_network)
-  nodes <-  as_tibble(graph_network) %>%
-    rowid_to_column("id") %>%
-    mutate(degree = igraph::degree(graph_network),
-           group = case_when(name %in% gene_symbol == TRUE ~ "query",
-                             name %in% dep_top$Gene ~ "pos",
-                             name %in% dep_bottom$Gene ~ "neg",
-                             TRUE ~ "connected")) %>%
-    arrange(desc(degree))
-
-  links <- graph_network %>%
-    activate(edges) %>% # %E>%
-    as_tibble()
-
-  # determine the nodes that have at least the minimum degree
-  nodes_filtered <- nodes %>%
-    filter(degree >= deg) %>%  #input$degree
-    as.data.frame
-
-  # filter the edge list to contain only links to or from the nodes that have the minimum or more degree
-  links_filtered <- links %>%
-    filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>%
-    as.data.frame
-
-  # re-adjust the from and to values to reflect the new positions of nodes in the filtered nodes list
-  links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
-  links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
-
-  #Pos #74D055, Neg #3A568C, Q #FDE825, C #450D53
-  node_color <- 'd3.scaleOrdinal(["#74D055", "#3A568C", "#FDE825", "#450D53"])'
-
-  forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100, Nodesize = "degree", colourScale = node_color)
-  }
-
-make_graph_report <- function(gene_symbol, threshold = 10, deg = 2) {
-  dep_network <- tibble()
-  
-  #find top and bottom correlations for fav_gene
-  dep_top <- make_top_table(gene_symbol) %>%
-    slice(1:threshold)
-  
-  dep_bottom <- make_bottom_table(gene_symbol) %>%
-    slice(1:threshold) #limit for visualization?
-  
-  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_top %>%
-    bind_rows(dep_bottom) %>%
-    dplyr::pull("Gene")
-  
-  #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
-  for (i in related_genes){
-    message("Getting correlations from ", i, " related to ", gene_symbol)
-    dep_top_related <- make_top_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
-    
-    dep_bottom_related <- make_bottom_table(i) %>% 
-      slice(1:threshold) %>% 
-      mutate(x = i, origin = "pos") %>% 
-      rename(y = Gene, r2 = `R^2`) %>%
-      select(x, y, r2, origin)
-    
-    #each temp object is bound together, and then bound to the final df for graphing
-    dep_related <- dep_top_related %>%
-      bind_rows(dep_bottom_related)
-    
-    dep_network <- dep_network %>%
-      bind_rows(dep_related)
-  }
-  
-  #make graph
-  graph_network <- tidygraph::as_tbl_graph(dep_network)
-  nodes <-  as_tibble(graph_network) %>%
-    rowid_to_column("id") %>%
-    mutate(degree = igraph::degree(graph_network),
-           group = case_when(name %in% gene_symbol == TRUE ~ "query",
-                             name %in% dep_top$Gene ~ "pos",
-                             name %in% dep_bottom$Gene ~ "neg",
-                             TRUE ~ "connected")) %>%
-    arrange(desc(degree))
-
-  links <- graph_network %>%
-    activate(edges) %>% # %E>%
-    as_tibble()
-
-  # determine the nodes that have at least the minimum degree
-  nodes_filtered <- nodes %>%
-    filter(degree >= deg) %>%  #input$degree
-    as.data.frame
-
-  # filter the edge list to contain only links to or from the nodes that have the minimum or more degree
-  links_filtered <- links %>%
-    filter(to %in% nodes_filtered$id & from %in% nodes_filtered$id) %>%
-    as.data.frame
-
-  links_filtered$from <- match(links_filtered$from, nodes_filtered$id)
-  links_filtered$to <- match(links_filtered$to, nodes_filtered$id)
-
-  graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
-
-  graph_network_ggraph %>%
-    ggraph::ggraph(layout = "auto") +
-    geom_edge_fan(aes(edge_width = abs(r2)), alpha = 0.3) +
-    geom_node_point(aes(size = degree, color = group), alpha = 0.7) +
-    geom_node_label(aes(label = name), repel = TRUE) +
-    scale_colour_viridis(discrete = TRUE, name = "Group", labels = c("Query", "Positive", "Negative", "Connected")) +
-    theme_graph(base_family = 'Helvetica')
-}
-
 render_report_to_file <- function(file, gene_symbol) {
   if (gene_symbol %in% colnames(achilles)) {
     src <- normalizePath('report_depmap_app.Rmd')
@@ -360,15 +138,15 @@ render_report_to_file <- function(file, gene_symbol) {
 render_complete_report <- function (file, gene_symbol) {
   fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
-  p1 <- make_celldeps(gene_symbol)
-  p2 <- make_cellbins(gene_symbol)
-  target_achilles_bottom <- make_achilles_table(gene_symbol) %>% slice(1:10)
-  target_achilles_top <- make_achilles_table(gene_symbol) %>% dplyr::arrange(desc(`Dependency Score`)) %>%  slice(1:10)
-  dep_top <- make_top_table(gene_symbol)
+  p1 <- make_celldeps(achilles, expression_join, gene_symbol, mean_virtual_achilles)
+  p2 <- make_cellbins(achilles, expression_join, gene_symbol)
+  target_achilles_bottom <- make_achilles_table(achilles, expression_join, gene_symbol) %>% slice(1:10)
+  target_achilles_top <- make_achilles_table(achilles, expression_join, gene_symbol) %>% dplyr::arrange(desc(`Dependency Score`)) %>%  slice(1:10)
+  dep_top <- make_top_table(master_top_table, gene_symbol)
   flat_top_complete <- make_enrichment_table(master_positive, gene_symbol)
-  dep_bottom <- make_bottom_table(gene_symbol)
+  dep_bottom <- make_bottom_table(master_bottom_table, gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
-  graph_report <- make_graph_report(gene_symbol)
+  graph_report <- make_graph_report(master_top_table, master_bottom_table, gene_symbol)
   rmarkdown::render("report_depmap_app.Rmd", output_file = file)
 
 }
@@ -462,15 +240,41 @@ gene_page <- fluidPage(
     ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
+<<<<<<< HEAD
                         fluidRow(h4(textOutput("text_dep_top"))),
                         fluidRow(dataTableOutput(outputId = "dep_top"))),
+=======
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of similar genes"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_dep_top"))),
+                                         fluidRow(checkboxGroupInput(inputId = "vars_dep_top", 
+                                                                     "Select columns:",
+                                                                     c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
+                                                                     selected = c("Z Score", "Co-publication Count"), 
+                                                                     inline = TRUE)),
+                                         fluidRow(dataTableOutput(outputId = "dep_top")))),
+>>>>>>> master
                tabPanel("Pathways",
                         fluidRow(h4(textOutput("text_pos_enrich"))),
                         fluidRow(dataTableOutput(outputId = "pos_enrich")))),
     navbarMenu(title = "Dissimilar",
                tabPanel("Genes",
+<<<<<<< HEAD
                         fluidRow(h4(textOutput("text_dep_bottom"))),
                         fluidRow(dataTableOutput(outputId = "dep_bottom"))),
+=======
+                        conditionalPanel(condition = 'input.go == 0',
+                                         "Enter a gene symbol to generate a table of dissimilar genes"),
+                        conditionalPanel(condition = 'input.go != 0', 
+                                         fluidRow(h4(textOutput("text_dep_bottom"))),
+                                         fluidRow(checkboxGroupInput(inputId = "vars_dep_bottom", 
+                                                                     "Select columns:",
+                                                                     c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
+                                                                     selected = c("Z Score", "Co-publication Count"), 
+                                                                     inline = TRUE)),
+                                         fluidRow(dataTableOutput(outputId = "dep_bottom")))),
+>>>>>>> master
                tabPanel("Pathways",
                         fluidRow(h4(textOutput("text_neg_enrich"))),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
@@ -483,8 +287,7 @@ gene_page <- fluidPage(
              #uncomment this parenthesis)
     ),
     tabPanel("Methods",
-             includeMarkdown("methods.md")
-             ),
+             includeHTML(here::here("code","methods.html"))),
     tabPanel("Download Report",
               h2("Report Generator"),
               conditionalPanel(condition = 'input.submit == 0',
@@ -529,27 +332,27 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_top_table(data()), 
+      make_top_table(master_top_table, data()) %>% dplyr::select("Gene", "Name", input$vars_dep_top), 
       options = list(pageLength = 25))
   })
   output$dep_bottom <- DT::renderDataTable({
     validate(
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_bottom_table(data()),
+      make_bottom_table(master_bottom_table, data()) %>% dplyr::select("Gene", "Name", input$vars_dep_bottom),
     options = list(pageLength = 25))
   })
   output$cell_deps <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
-      ggplotly(make_celldeps(data()), tooltip = "text")
+      ggplotly(make_celldeps(achilles, expression_join, data(), mean_virtual_achilles), tooltip = "text")
     })
   })
   output$cell_bins <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "")) #""left blank
-    ggplotly(make_cellbins(data()))
+    ggplotly(make_cellbins(achilles, expression_join, data()))
   })
   output$plot_text <- renderUI({
     validate(
@@ -559,7 +362,7 @@ gene_callback <- function(input, output, session) {
   output$target_achilles <- DT::renderDataTable({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
-    make_achilles_table(data())
+    make_achilles_table(achilles, expression_join, data())
   })
   output$pos_enrich <- DT::renderDataTable({
     validate(
@@ -579,7 +382,7 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
-    make_graph(data())
+    make_graph(master_top_table, master_bottom_table, data())
     })
   })
   output$report <- downloadHandler(
