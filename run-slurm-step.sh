@@ -12,7 +12,7 @@ export SINGULARITY_IMAGEDIR="${SINGULARITY_BASE}/images"
 mkdir -p $SINGULARITY_TMPDIR $SINGULARITY_CACHEDIR $SINGULARITY_IMAGEDIR
 
 # pull singularity image if it doesn't exist
-if [! -f "$SINGULARITY_IMAGEDIR/ddh.sif" ]
+if [ ! -f "$SINGULARITY_IMAGEDIR/ddh.sif" ]
 then
   singularity pull $SINGULARITY_IMAGEDIR/ddh.sif $DOCKER_IMG
 fi
