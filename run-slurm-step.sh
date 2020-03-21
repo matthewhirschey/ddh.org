@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-DOCKER_IMG="docker://dukegcb/ddh:latest"
+DOCKER_IMG="docker://jbradley/depmap:latest"
 
 # numeric step to run
 export DDH_STEP=$1
+
+# make sure we have a data directory created
+mkdir data
 
 # setup singularity environment variables 
 SINGULARITY_BASE="singularity"

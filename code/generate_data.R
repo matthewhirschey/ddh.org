@@ -42,11 +42,21 @@ if ("4" %in% steps_to_run) {
   dpu_pathways_positive_type <- "positive"
   dpu_pathways_negative_type <- "negative"
 
-  foreach(i=1:num_subset_files) %dopar% create_pathway_subset_file(dpu_pathways_positive_type, i, num_subset_files)
-  save_master_positive(subset_filepaths)
+  message("DDH: Creating pathway postive subset files.")
+  foreach(i=1:num_subset_files) %dopar% {
+      source(here::here("code", "generate_depmap_pathways.R"))
+      create_pathway_subset_file(dpu_pathways_positive_type, i, num_subset_files)
+  }
+  message("DDH: Save master postive file.")
+  save_master_positive(dpu_get_all_pathways_subset_filepaths(dpu_pathways_positive_type, num_subset_files))
 
-  foreach(i=1:num_subset_files) %dopar% create_pathway_subset_file(dpu_pathways_negative_type, 2, num_subset_files)
-  save_master_negative(subset_filepaths)
+  message("DDH: Creating pathway negative subset files.")
+  foreach(i=1:num_subset_files) %dopar% {
+      source(here::here("code", "generate_depmap_pathways.R"))
+      create_pathway_subset_file(dpu_pathways_negative_type, i, num_subset_files)
+  }
+  message("DDH: Save master negative file.")
+  save_master_negative(dpu_get_all_pathways_subset_filepaths(dpu_pathways_negative_type, num_subset_files))
 
   stopCluster(cl)
   message("DDH: Finished step 4.")

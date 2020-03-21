@@ -14,6 +14,17 @@ source(here::here("code", "current_release.R"))
 dpu_pathways_positive_type <- "positive"
 dpu_pathways_negative_type <- "negative"
 
+dpu_get_subset_filepath <- function(pathways_type, file_idx, num_subset_files) {
+  # create filename like 'positive_subset_1_of_10' or 'negative_subset_1_of_10'
+  subset_filename <- paste0(pathways_type, "_subset", "_", file_idx, "_of_", num_subset_files, ".Rds")
+  here::here("data", subset_filename)
+}
+
+# Get a path all subset files within the data directory for either positive or negative pathway data
+dpu_get_all_pathways_subset_filepaths <- function(pathways_type, num_subset_files) {
+  dpu_get_subset_filepath(pathways_type, seq(num_subset_files), num_subset_files)
+}
+
 master_positive_filename <- "master_positive.Rds"
 master_negative_filename <- "master_negative.Rds"
 
