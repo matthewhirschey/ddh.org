@@ -110,4 +110,4 @@ create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_
   saveRDS(gene_summary, file = gene_summary_output_path)
 }
 
-
+create_gene_summary(gene_names_url, entrez_key, here::here("data", gene_summary_output_filename))
