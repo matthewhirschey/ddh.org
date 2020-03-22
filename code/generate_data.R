@@ -52,6 +52,7 @@ if ("path" %in% steps_to_run) {
 
   message("DDH: Creating pathway postive subset files.")
   foreach(i=1:num_subset_files) %dopar% {
+      # This code block runs in a background process. We re-source generate_depmap_pathways.R because of this.
       source(here::here("code", "generate_depmap_pathways.R"))
       create_pathway_subset_file(dpu_pathways_positive_type, i, num_subset_files)
   }
@@ -60,6 +61,7 @@ if ("path" %in% steps_to_run) {
 
   message("DDH: Creating pathway negative subset files.")
   foreach(i=1:num_subset_files) %dopar% {
+      # This code block runs in a background process. We re-source generate_depmap_pathways.R because of this.
       source(here::here("code", "generate_depmap_pathways.R"))
       create_pathway_subset_file(dpu_pathways_negative_type, i, num_subset_files)
   }
