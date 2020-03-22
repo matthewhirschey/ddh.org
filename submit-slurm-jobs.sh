@@ -7,7 +7,7 @@ STEP2_FLAGS="--mem=212G"
 STEP3_FLAGS="--mem=32G"
 STEP4_FLAGS="--mem=32G --cpus-per-task=10"
 STD_FLAGS="--parsable"
-if [ -v "$DDH_EMAIL" ]
+if [ ! -z "$DDH_EMAIL" ]
 then
   STD_FLAGS="$STD_FLAGS --mail-type=DONE --mail-user=$DDH_EMAIL"
 fi
@@ -18,7 +18,7 @@ STEP2_JOB_ID=$(sbatch $STD_FLAGS --job-name="ddh-pubm2" --dependency=afterok:$ST
 STEP3_JOB_ID=$(sbatch $STD_FLAGS --job-name="ddh-tbls3" --dependency=afterok:$STEP2_JOB_ID $STEP3_FLAGS run-slurm-step.sh "tbls")
 STEP4_JOB_ID=$(sbatch $STD_FLAGS --job-name="ddh-path4" --dependency=afterok:$STEP3_JOB_ID $STEP4_FLAGS run-slurm-step.sh "path")
 
-if [ -v "$DDH_UPLOAD_RESULTS" ]
+if [ ! -z "$DDH_UPLOAD_RESULTS" ]
 then
    # upload results when last data generation step finishes
    sbatch $STD_FLAGS --job-name="ddh-upload" --dependency=afterok:$STEP4_JOB_ID upload-slurm.sh
