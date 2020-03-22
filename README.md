@@ -13,18 +13,32 @@ Visit [www.datadrivenhypothesis.org](http://www.datadrivenhypothesis.org) to vie
 ## Generating/Recreating Data
 
 The .R scripts in the `/code` directory are used to generate files in the `/data` directory.
-If you have [R](https://www.r-project.org), the required libraries installed, and an NCBI API key, you can generate the data by running:
+If you have [R](https://www.r-project.org), the required libraries installed you can generate the data by running:
 ```
 mkdir data
-export ENTREZ_KEY="your-key-here"
 Rscript code/generate_data.R
 ```
 
-#### Singularity
+If you have an NCBI API key this can speed up portions of the data generation process. Before running `Rscript code/generate_data.R` export your NCBI API key to an environment variable named `ENTREZ_KEY` like so:
+```
+export ENTREZ_KEY="your-key-here"
+```
+
+#### Singularity and Slurm
 
 On systems that support the [singularity](https://sylabs.io/singularity/) container runtime, we recommend using our container image to run the data-generating R scripts with the required dependencies.
 
-Generating data under singularity is also demonstrated in the [submit-slurm-jobs.sh](submit-slurm-jobs.sh). It requires a `config.sh` script to set the `ENTREZ_KEY` environment variable. This script can be run like so from a slurm cluster:
+Generating data under singularity is also demonstrated in the [submit-slurm-jobs.sh](submit-slurm-jobs.sh). It requires a `config.sh` script. This config script has three optional environment variables: `ENTREZ_KEY`, `DDH_EMAIL`, `DDH_UPLOAD_RESULTS`.
+An example config.sh script that will email you about job progress and upload the results looks like so:
+```
+export ENTREZ_KEY="your-key-here"
+export DDH_EMAIL="your-email@email.com"
+export DDH_UPLOAD_RESULTS="TRUE"
+```
+This `DDH_UPLOAD_RESULTS` requires you to create a `.ddsclient` configuration file in your home directory on the cluster. See [instructions to setup a DukeDS config file](https://github.com/Duke-GCB/DukeDSClient/wiki/Agent-User-Keys-(setup)).
+to set the `ENTREZ_KEY` environment variable. You can also speicfy a `DDH_EMAIL` email address to be emailed with job progress. 
+
+This script can be run like so from a slurm cluster:
 ```
 ./submit-slurm-jobs.sh
 ```
