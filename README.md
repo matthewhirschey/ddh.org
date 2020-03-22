@@ -13,39 +13,22 @@ Visit [www.datadrivenhypothesis.org](http://www.datadrivenhypothesis.org) to vie
 ## Generating/Recreating Data
 
 The .R scripts in the `/code` directory are used to generate files in the `/data` directory.
-
-### Using Make
-
-This project includes a GNU [Makefile](https://www.gnu.org/software/make/manual/html_node/Introduction.html) that can execute the `.R` scripts and generate data files as needed. If you have [R](https://www.r-project.org) and the required libraries installed, you can generate the data by running `make` on the command-line. Note that the gene\_summary expects your NCBI API key to be set in the environment variable `ENTREZ_KEY`:
-
+If you have [R](https://www.r-project.org), the required libraries installed, and an NCBI API key, you can generate the data by running:
 ```
-ENTREZ_KEY="your-key-here" make
+mkdir data
+export ENTREZ_KEY="your-key-here"
+Rscript code/generate_data.R
 ```
-
-By default, this will make the `all` target in the [Makefile](Makefile), which produces all of the data files. To generate an individual data file or set of them (e.g. `depmap_tables`), you can simply `make` that target:
-
-```
-make depmap_data
-make data/sd_threshold.rds
-```
-
-To remove all data files, use `make clean`
 
 #### Singularity
 
 On systems that support the [singularity](https://sylabs.io/singularity/) container runtime, we recommend using our container image to run the data-generating R scripts with the required dependencies.
 
-The [Makefile](Makefile) includes a `container_image` target that will download the docker image and convert it into singularity format. See the [build-slurm.sh](build-slurm.sh) script for examples.
+Generating data under singularity is also demonstrated in the [submit-slurm-jobs.sh](submit-slurm-jobs.sh). It requires a `config.sh` script to set the `ENTREZ_KEY` environment variable. This script can be run like so from a slurm cluster:
+```
+./submit-slurm-jobs.sh
+```
+This script will submit multiple jobs that will run one after another with differing requirements.
+When this script finishes it will upload the results to DukeDS service.
 
-Generating data under singularity is also demonstrated in the [build-slurm.sh](build-slurm.sh). It sets the `RSCRIPT_CMD` environment variable so that `make` will run `singularity ... Rscript` instead of simply `Rscript`. `build-slurm.sh` is designed to be submitted as an `sbatch` job. It sources site-specific variables and secrets (such as `ENTREZ_KEY`) from a `config.sh` file, which you may need to create.
 
-### Manual Data Generation
-
-Alternatively, you can run the scripts manually:
-
-To generate the data files, run:
-1. code/create_gene_summary.R
-2. code/generate_depmap_data.R
-3. code/generate_depmap_stats.R
-4. code/generate_depmap_tables.R
-5. code/generate_pathways.sh
