@@ -9,7 +9,7 @@ STEP4_FLAGS="--mem=32G --cpus-per-task=10"
 STD_FLAGS="--parsable"
 if [ ! -z "$DDH_EMAIL" ]
 then
-  STD_FLAGS="$STD_FLAGS --mail-type=DONE --mail-user=$DDH_EMAIL"
+  STD_FLAGS="$STD_FLAGS --mail-type=END --mail-user=$DDH_EMAIL"
 fi
 
 # run data generation steps with each waiting for the previous to finish
