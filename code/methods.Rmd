@@ -149,11 +149,14 @@ while (j < 3) {
 data$Z <- c(A,B)
 
 # Heatmap 
-ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
+heatmap_gene <- ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
   labs(x = "", y = "", fill = "Gene \nCorrelation", subtitle = "Gene Coexpression Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") +
   scale_x_discrete(position = "top")
+
+heatmap_gene
+ggsave(here::here("results", "fig1a_heatmap_gene.png"), plot = heatmap_gene, dpi = 300)
 ```
   
 Following on this idea, we set out to map genes to common functional pathways based on dependence of a pathway for cell viability. Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) as part of a larger ['DepMap' project](http://www.depmap.org) aimed at identifying and cataloging gene essentiality across hundreds of well-characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Using computational modeling, a normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be essential in a given cell line. A score of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness and often identifies tumor suppressor genes.  
@@ -191,12 +194,15 @@ while (j < 4) {
 data$Z <- c(B,A)
 
 # Heatmap 
-ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
+heatmap_dep <- ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
   labs(x = "", y = "", fill = "Dependency \nScore", subtitle = "Dependency Score Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") + 
   scale_fill_viridis() + 
   scale_x_discrete(position = "top")
+
+heatmap_dep
+ggsave(here::here("results", "fig1b_heatmap_dep.png"), plot = heatmap_dep, dpi = 300)
 ```
   
 ## What did I do?
@@ -208,12 +214,15 @@ achilles_raw_long <- achilles_raw %>%
   pivot_longer(-X1, names_to = "gene", values_to = "dep_score") %>% 
   filter(!is.na(dep_score))
 
-ggplot() +
+depmap_raw <- ggplot() +
   geom_histogram(data = achilles_raw_long, aes(x = dep_score), color = "gray", fill = "#02224C", binwidth = 0.1) +
   labs(x = "Dependency Score", y = "Count (Million)", subtitle = paste0("Dependency Score Distribution from DepMap release ", release)) +
   scale_y_continuous(breaks = c(0, 500000, 1000000, 1500000, 2000000), labels = c("0", "0.5", "1", "1.5", "2")) +
   scale_x_continuous(breaks = c(-5:7)) +
   theme_cowplot()
+
+depmap_raw
+ggsave(here::here("results", "fig2e_depmap_raw.png"), plot = depmap_raw, dpi = 300)
 ```
   
 #### Predictive analytics by pattern recognition
@@ -230,13 +239,16 @@ joined <- expression_long %>%
 
 log_breaks <- c(1, 10, 100, 1000, 10000, 100000, 1000000)
 log_labels <-c("1", "10", "100", "1,000", "10,000", "100,000", "1,000,000")
-joined %>% 
+depVexp <- joined %>% 
   ggplot() +
   geom_hex(aes(x = dep_score, y = gene_expression), 
            bins = 90, na.rm = TRUE, size = 0.2, color = "black") +
   scale_fill_viridis_c(option = "E", name = "Hex Bin \nCount", trans = "log10", breaks = log_breaks, labels = log_labels, limits = c(1,1000000)) + #log scale transform legend
   labs(x = "Dependency Score", y = "Gene Expression", subtitle = "Gene expression is unrelated to its essentiality") +  
   theme_cowplot()
+
+depVexp
+ggsave(here::here("results", "fig2b_depVexp.png"), plot = depVexp, dpi = 300)
 ```
   
 We predicted a V-shaped curve, with stronger dependencies as gene expression increases. Surprisingly, we saw no relationship between gene expression and gene essentiality, where genes with both low and high expression displayed both gains and losses in fitness. The overall observation from this dataset shows baseline gene expression levels are poor indicators of the essentiality of a gene. This analysis also highlighted that several genes were binned on the x-axis, i.e. could have no measurable expression levels, but have assigned dependency scores. Across `r nrow(achilles)` cell lines in the Achilles project, `r round(((expression_long %>% filter(gene_expression == 0) %>% count())/(length(expression_long$gene_expression))*100), digits = 1)`% of all gene expression values are zero, confirming this notion. 
@@ -246,7 +258,7 @@ Given cells do not express all genes, but might receive a dependency score in th
   
 ```{r expression_0, echo=FALSE, message=FALSE, warning=FALSE}
 #how many 0s?
-ggplot() +
+expression_0 <- ggplot() +
   geom_histogram(data = expression_long, aes(x = gene_expression), color = "gray", fill = "#02224C", binwidth = 0.25) +
   labs(title = paste("Binned gene expression values in ", sum(achilles$X1 %in% expression$X1), " Achilles cell lines", sep = ""), 
        subtitle = paste0(
@@ -256,6 +268,9 @@ ggplot() +
   scale_y_continuous(breaks = seq(0, 3000000, by = 1000000), labels = c("0", "1", "2", "3")) +
   theme_cowplot() +
   NULL
+
+expression_0
+ggsave(here::here("results", "fig2c_expression_0.png"), plot = expression_0, dpi = 300)
 ```
   
 For some genes expressed in highly specific and restricted cell types, this operation removed many dependency values. After removing these values, we found that highly specialized genes in discrete cell types have too few cells with both gene expression values and gene essentiality values to assign a meaningful correlation value. Thus, if a gene was absent from too many cell lines, we omitted it to prevent assigned values from relying on too few data points.   
@@ -337,6 +352,7 @@ sampling <- count_v_max_no0 %>%
   theme_cowplot()
 
 sampling
+ggsave(here::here("results", "fig2e_sampling.png"), plot = sampling, dpi = 300)
 ```
   
   
@@ -344,6 +360,8 @@ We set a threshold of no more than `r na_cutoff` zeros, meaning that if a gene h
   
 ```{r raw, echo=FALSE, message=FALSE, warning=FALSE}
 threshold
+ggsave(here::here("results", "fig2e_threshold.png"), plot = threshold, dpi = 300)
+
 ```
   
 To quantify the effect of these cleaning step on the data, we compared the correlation matrix generated from the raw data to the correlation matrix from the cleaned data. Plotting these ~200M gene-gene pairs revealed that more positive genes became more positive compared positive genes that became negative; conversely, more gene pairs with negative correlations became more negative rather than less negative. Simply stated, these cleaning steps had a greater effect on strengthening the data in either direction rather than weakening it, supporting these steps as important for this resource. These 'cleaned' dependency data had `r length(achilles_clean)` remaining gene-dependency pairs, which were then used to generate correlation matrix.  
@@ -401,6 +419,8 @@ effect_of_cleaning <- achilles_joined %>%
 #  coord_fixed()
 
 effect_of_cleaning #+ achilles_cor_heatmap
+ggsave(here::here("results", "fig2f_effect_of_cleaning.png"), plot = effect_of_cleaning, dpi = 300)
+
 ```
 
   
@@ -408,7 +428,7 @@ effect_of_cleaning #+ achilles_cor_heatmap
 To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a gene-by-gene Pearson correlation matrix on these prioritized data to quantify the similarity in dependency patterns and annotate genes in functional pathways.  
 
 ```{r r2, echo=FALSE, message=FALSE, warning=FALSE}
-achilles_cor_long %>% 
+r2 <- achilles_cor_long %>% 
   filter(!is.na(achilles_correlation)) %>% 
   #sample_n(1000) %>% 
   ggplot() +
@@ -416,12 +436,15 @@ achilles_cor_long %>%
   scale_y_continuous(breaks = c(0, 25000000, 50000000, 75000000), labels = c("0", "25", "50", "75")) +
   labs(x = "r^2 values", y = "Count (Million)", subtitle = "Distribution of correlation values across all gene-gene pairs") +
   theme_cowplot()
+
+r2
+ggsave(here::here("results", "fig3a_r2.png"), plot = r2, dpi = 300)
 ```
   
 This process generated approximately `r round(nrow(achilles_cor_long)/1000000, 0)` million correlation values, with a distribution centered around zero. This output produced a range of maximum correlation values for each gene.  
   
 ```{r achilles_max, echo=FALSE, message=FALSE, warning=FALSE}
-achilles_cor %>% 
+achilles_max <- achilles_cor %>% 
   select(-rowname) %>% 
   summarize_all(list(~max(., na.rm = TRUE))) %>% 
   gather("gene", "max") %>% 
@@ -432,6 +455,8 @@ achilles_cor %>%
   labs(subtitle = "Distribution of maximum r^2 values for each gene", x = "Maximum r^2 values", y = "Count") +
   theme_cowplot()
 
+achilles_max
+ggsave(here::here("results", "fig3b_achilles_max.png"), plot = achilles_max, dpi = 300)
 ```
   
 #### Statistics
@@ -498,7 +523,9 @@ The second plot is a histogram of dependency scores, showing the distribution of
 ```{r dep_plots, echo=FALSE, message=FALSE, warning=FALSE}
 dep_plot1 <- make_celldeps(achilles, expression_join, fav_gene, mean_virtual_achilles)
 dep_plot2 <- make_cellbins(achilles, expression_join, fav_gene)
-dep_plot1 + dep_plot2
+dep_plot2 + dep_plot1
+ggsave(here::here("results", "fig4a_dep_plot1.png"), plot = dep_plot1, dpi = 300)
+ggsave(here::here("results", "fig4b_dep_plot2.png"), plot = dep_plot2, dpi = 300)
 ```
   
   
@@ -590,7 +617,10 @@ Identifying genes that share similar patterns of dependency to a queried unknown
   
 ```{r static_graph, echo=FALSE, message=FALSE, warning=FALSE}
 # from fun_tables.R and fun_graphs.R
-make_graph_report(master_top_table, master_bottom_table, fav_gene)
+p53graph <- make_graph_report(master_top_table, master_bottom_table, fav_gene)
+
+p53graph
+ggsave(here::here("results", "fig4c_p53graph.png"), plot = p53graph, dpi = 300)
 ```
   
 The image here is a representative static, albeit busy, network graph; data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration.
