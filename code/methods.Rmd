@@ -151,7 +151,7 @@ data$Z <- c(A,B)
 # Heatmap 
 heatmap_gene <- ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
-  labs(x = "", y = "", fill = "Gene \nCorrelation", subtitle = "Gene Coexpression Example*", caption = "*simulated data") +
+  labs(x = "", y = "", fill = "Expression \nCorrelation", subtitle = "Gene Coexpression Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") +
   scale_x_discrete(position = "top")
 
@@ -196,7 +196,7 @@ data$Z <- c(B,A)
 # Heatmap 
 heatmap_dep <- ggplot(data, aes(X, fct_rev(Y), fill= Z)) + 
   geom_tile() +
-  labs(x = "", y = "", fill = "Dependency \nScore", subtitle = "Dependency Score Example*", caption = "*simulated data") +
+  labs(x = "", y = "", fill = "Dependency \nCorrelation", subtitle = "Dependency Score Example*", caption = "*simulated data") +
   theme_minimal_grid(color = "white") + 
   scale_fill_viridis() + 
   scale_x_discrete(position = "top")
@@ -222,7 +222,7 @@ depmap_raw <- ggplot() +
   theme_cowplot()
 
 depmap_raw
-ggsave(here::here("results", "fig2e_depmap_raw.png"), plot = depmap_raw, dpi = 300)
+ggsave(here::here("results", "fig2a_depmap_raw.png"), plot = depmap_raw, dpi = 300)
 ```
   
 #### Predictive analytics by pattern recognition

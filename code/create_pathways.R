@@ -29,3 +29,7 @@ go_bp <- go_bp %>%
   left_join(go_bp_count, by = "pathway")
 
 rm(go_bp_count)
+
+#think about filtering (what is max number of genes you want to query?)
+#%>% 
+#  filter(count > 50)
