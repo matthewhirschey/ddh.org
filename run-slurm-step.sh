@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-DOCKER_IMG="docker://jbradley/depmap:latest"
+DOCKER_IMG="docker://matthewhirschey/ddh:latest"
 
 # numeric step to run
 export DDH_STEP=$1
