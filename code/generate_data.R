@@ -39,13 +39,14 @@ if ("tbls" %in% steps_to_run) {
 }
 
 if ("path" %in% steps_to_run) {
-  # Requires 32G of memory and 10 CPUs
+  # Requires 32G of memory and 5 CPUs
   message("DDH: Running step 4 - pathway data generation.")
   source(here::here("code", "generate_depmap_pathways.R"))
   num_subset_files <- 10
+  num_workers <- 5
 
   library(doParallel)
-  cl <- makeCluster(num_subset_files)
+  cl <- makeCluster(num_workers)
   registerDoParallel(cl)
   dpu_pathways_positive_type <- "positive"
   dpu_pathways_negative_type <- "negative"

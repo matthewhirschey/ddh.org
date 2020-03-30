@@ -5,7 +5,7 @@ export ENTREZ_KEY
 STEP1_FLAGS="--mem=64G"
 STEP2_FLAGS="--mem=212G"
 STEP3_FLAGS="--mem=32G"
-STEP4_FLAGS="--mem=32G --cpus-per-task=10"
+STEP4_FLAGS="--mem=32G --cpus-per-task=5"
 
 # create flags that will send an email when a job fails or when a job ends(fail or succeed)
 FAIL_EMAIL_FLAGS=""
