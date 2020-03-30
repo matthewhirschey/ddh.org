@@ -39,19 +39,21 @@ p1 + p2
   
 ### Cells that lose fitness when `r gene_symbol` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-pander(target_achilles_bottom)
+pander(target_achilles_bottom, split.table = Inf)
 ```
     
 ### Cells that don't rely on `r gene_symbol` or if greater than 1 gain fitness when `r gene_symbol` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-pander(target_achilles_top)
+pander(target_achilles_top, split.table = Inf)
 ```
   
 ## Positive Ranked Dependency from DepMap  
 `r if(length(dep_top$Gene) > 0) {pander(paste("The", length(dep_top$Gene), "genes that show the highest postive correlation for similar genetic dependencies are listed here."))} else {}`  
 ```{r template_dep_top, echo=FALSE}
 if(length(dep_top$Gene) > 0) {
-  pander(dep_top, justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
+  dep_top %>% 
+    select(`Gene`, `Name`, `Z Score`, `Co-publication Count`) %>% 
+    pander(justify = c("left", "left", "right", "right"), split.table = Inf)
 } else {
   pander("Zero genes reached threshold")
 }
@@ -76,7 +78,9 @@ if(length(dep_top$Gene) > 0) {
 `r if(length(dep_bottom$Gene) > 0) {pander(paste0("The ", length(dep_bottom$Gene), " ranked genes that show the most negative correlation for similar genetic dependencies are listed here."))} else {}`  
 ```{r template_dep_bottom, echo=FALSE}
 if(length(dep_bottom$Gene) > 0) {
-  pander(dep_bottom, justify = c("left", "left", "right"), split.cells = c("25%", "65%", "10%"))
+  dep_top %>% 
+    select(`Gene`, `Name`, `Z Score`, `Co-publication Count`) %>% 
+    pander(justify = c("left", "left", "right", "right"), split.table = Inf)
 } else {
   pander("Zero genes reached threshold")
 }
