@@ -56,6 +56,27 @@ source(here::here("code", "fun_plots.R"))
 source(here::here("code", "fun_graphs.R"))
 
 #shiny functions
+search_panel <- function() {
+  searchInput(
+    inputId = "gene_or_pathway",
+    placeholder = "search",
+    btnSearch = icon("search")
+  )
+}
+
+gene_search_results <- function(gene_summary_row) {
+  title <- paste0(gene_summary_row["approved_symbol"], ": ", gene_summary_row["approved_name"])
+  list(
+    div(
+      tags$a(title, href=paste0("?show=gene&symbol=", gene_summary_row["approved_symbol"]))
+    ),
+    div(tags$strong("Aka:"), gene_summary_row["aka"]),
+    div(tags$strong("Entrez ID:"), gene_summary_row["ncbi_gene_id"]),
+    hr()
+  )
+}
+
+
 gene_summary_details <- function(gene_summary) {
   title <- paste0(gene_summary$approved_symbol, ": ", gene_summary$approved_name)
   tagList(
@@ -71,26 +92,29 @@ gene_summary_details <- function(gene_summary) {
   )
 }
 
-gene_search_results <- function(gene_summary_row) {
-  title <- paste0(gene_summary_row["approved_symbol"], ": ", gene_summary_row["approved_name"])
-  list(
-    div(
-      tags$a(title, href=paste0("?show=gene&symbol=", gene_summary_row["approved_symbol"]))
-      ),
-    div(tags$strong("Aka:"), gene_summary_row["aka"]),
-    div(tags$strong("Entrez ID:"), gene_summary_row["ncbi_gene_id"]),
-    hr()
-  )
-}
+#pathway_summary_details <- function(gene_summary) {
+#  title <- paste0(pathways$pathway, ": ", gene_summary$approved_name)
+#  tagList(
+#    h3(title),
+#    h4("Summary"),
+#    tags$dl(
+#      tags$dt("Gene"), tags$dd(gene_summary$approved_symbol),
+#      tags$dt("Name"), tags$dd(gene_summary$approved_name),
+#      tags$dt("aka"), tags$dd(gene_summary$aka),
+#      tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id),
+#      tags$dt("Gene Summary"), tags$dd(gene_summary$entrez_summary)
+#    )
+#  )
+#}
 
-gene_summary_not_found <- function(gene_symbol) {
-  if(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0) {
-    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Make sure to use the 'Official' gene symbol. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "?")))
-  } else {
-    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias.")))
-  }  
-  return(result)
-}
+#gene_summary_not_found <- function(gene_symbol) {
+#  if(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0) {
+#    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Make sure to use the 'Official' gene symbol. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "?")))
+#  } else {
+#    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias.")))
+#  }  
+#  return(result)
+#}
 
 # renders 'not found' or details about gene
 gene_summary_ui <- function(gene_symbol) {
@@ -98,12 +122,12 @@ gene_summary_ui <- function(gene_symbol) {
   if (gene_symbol != '') {
     gene_summary_row <- gene_summary %>%
       filter(approved_symbol == gene_symbol)
-    if (dim(gene_summary_row)[1] == 0) {
-      result <- gene_summary_not_found(gene_symbol)
-    } else {
-      title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
+#    if (dim(gene_summary_row)[1] == 0) {
+#      result <- gene_summary_not_found(gene_symbol)
+#    } else {
+#      title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
       result <- gene_summary_details(gene_summary_row)
-    }
+#    }
   }
   result
 }
@@ -182,29 +206,32 @@ save_data <- function(input) {
   write_csv(data, path=file.path(directory_path, file_name), col_names=FALSE)
 }
 
-search_panel <- function() {
-  searchInput(
-    inputId = "gene_or_pathway",
-    placeholder = "TP53",
-    btnSearch = icon("search")
-  )
-}
-
+#UI------
+### HEAD
 head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
 
+### universal elements
 main_title <- "Data-Driven Hypothesis"
 
 search_tab_panel <- div(
   search_panel()
 )
 
+### HOME (landing) PAGE
 home_page <- tagList(
   head_tags,
   navbarPage(title = main_title),
-  h4("Enter gene symbol"),
+  tags$img(src = "https://source.unsplash.com/y41FEMqdJ3A/800x600"),
+  tags$div(
+    tags$br(),
+    "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "for predicting pathways and functions for thousands of genes across the human genomes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.", 
+    tags$br(),
+    tags$br()),
+   h4("Enter gene symbol or pathway name"),
   search_panel(),
 )
 
+### SEARCH PAGE
 search_page <- tagList(
   head_tags,
   navbarPage(title = main_title),
@@ -216,17 +243,13 @@ search_page <- tagList(
   )
 )
 
-
-#UI------
+### SEARCH RESULT
 gene_page <- fluidPage(
   head_tags,
-  navbarPage(
-    title = main_title,
+  navbarPage(title = main_title,
     tabPanel("Home",
-             "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "to functionally map human genes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.",
-             hr(),
-             uiOutput("gene_summary"),
-             div(search_panel(), style="float: right")
+             div(search_panel(), style="float: right"),
+             uiOutput("gene_summary")
     ),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
@@ -392,7 +415,7 @@ gene_callback <- function(input, output, session) {
   )
 }
 
-# Creat output for our router in main UI of Shiny app.
+# Create output for our router in main UI of Shiny app.
 ui <- shinyUI(
   fluidPage(
     uiOutput("pageContent")
