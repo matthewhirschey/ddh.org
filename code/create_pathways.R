@@ -24,12 +24,15 @@ go_bp_count <- go_bp %>%
   summarize(count = n()) %>% 
   ungroup()
 
-go_bp <- go_bp %>% 
+pathways <- go_bp %>% 
   nest() %>% 
-  left_join(go_bp_count, by = "pathway")
+  left_join(go_bp_count, by = "pathway") %>% 
+  filter(count < 50) %>%  #removes 839 (what is max number of genes you want to query?)
+  separate(col = "pathway", into = c("pathway", "go"), sep = "\\(GO\\:") %>% 
+  separate(col = "go", into = "go", sep = "\\)", extra = "drop")
 
 rm(go_bp_count)
+saveRDS(pathways, file = here::here("data", "pathways.Rds"))
 
-#think about filtering (what is max number of genes you want to query?)
-#%>% 
-#  filter(count > 50)
+
+###get something back out

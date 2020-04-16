@@ -30,6 +30,7 @@ source(here::here("code", "current_release.R"))
 
 #read data from create_gene_summary.R
 gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
+pathways <- readRDS(here::here("data", "pathways.Rds"))
      
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))

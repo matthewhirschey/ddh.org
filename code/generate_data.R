@@ -18,6 +18,7 @@ if ("gens" %in% steps_to_run) {
   # Requires around 64G of memory
   message("DDH: Running step 1 - Gene summary and other files.")
   source(here::here("code", "create_gene_summary.R"))
+  source(here::here("code", "create_pathways.R"))
   source(here::here("code", "find_threshold.R")) #run this first to generate the na_cutoff
   source(here::here("code", "generate_depmap_data.R")) #script to generate ddh correlation matrix
   source(here::here("code", "generate_depmap_stats.R")) #script to generate ddh stats
