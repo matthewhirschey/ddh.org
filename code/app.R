@@ -456,7 +456,6 @@ server <- shinyServer(function(input, output, session) {
     updateQueryString(paste0("?show=search&query=", input$gene_or_pathway), mode="push")
   })
   
-  # the below item is problematic for the back button
   search_callback(input, output, session)
   gene_callback(input, output, session)
 })
