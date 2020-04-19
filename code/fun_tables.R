@@ -40,3 +40,40 @@ make_achilles_table <- function(data_table, expression_table, gene_symbol) {
     dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Dependency Score" = "dep_score")
   return(target_achilles)
 }
+
+make_query_results_table <- function(gene_summary, pathways, query_str, limit_pathways=10, limit_genes=10) {
+  # Searches for query_str in gene_summary and pathways and limits the number of rows returned from each.
+  # Returns df with columns:
+  # - key - pathways$pathway or gene_summary$approved_name
+  # - title - pathways$go or gene_summary$approved_symbol
+  # - contents - 'pathway' or 'gene'
+  # - data - variables from a single row of pathways or gene_summary
+
+  # create regex that finds query at the start of the string(^) or after a space(\\s) and ignores case
+  find_word_start_regex <- regex(paste0('(^', query_str, ')|(\\s', query_str, ')'), ignore_case=TRUE)
+
+  # find pathway data and nest it underneath generic key, title, and contents columns
+  pathways_data <- pathways %>%
+    filter(str_detect(pathway, find_word_start_regex)) %>%
+    head(limit_pathways) %>%
+    mutate(key = go) %>%
+    mutate(title = pathway) %>%
+    add_column(contents='pathway') %>%
+    group_by(key, title, contents) %>%
+    nest()
+
+  # find gene data and nest it underneath generic key, title, and contents columns
+  genes_data <- gene_summary %>%
+    filter(
+      str_detect(approved_symbol, find_word_start_regex) |
+        str_detect(approved_name, find_word_start_regex) |
+        str_detect(aka, find_word_start_regex)) %>%
+    head(limit_genes) %>%
+    mutate(key = approved_symbol) %>%
+    mutate(title = approved_name) %>%
+    add_column(contents='gene') %>%
+    group_by(key, title, contents) %>%
+    nest()
+
+  return (bind_rows(genes_data, pathways_data))
+}
