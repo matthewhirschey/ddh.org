@@ -75,5 +75,6 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
     group_by(key, title, contents) %>%
     nest()
 
-  return (bind_rows(genes_data, pathways_data))
+  bind_rows(genes_data, pathways_data) %>%
+    arrange(title)
 }
