@@ -120,11 +120,10 @@ gene_summary_details <- function(gene_summary) {
 
 pathway_summary_details <- function(pathways_row) {
   gene_symbols <- lapply(pathways_row$data, function(x) { paste(x$gene, collapse=', ') })
-  title <- paste0(pathways_row$pathway, "(", pathways_row$go, ")")
+  title <- paste0("Pathway:", pathways_row$pathway, "(", pathways_row$go, ")")
   list(
     h4(
-      tags$strong("Pathway:"),
-      tags$a(title, href=paste0("?show=detail&content=pathway&go=", pathways_row$go))
+      tags$strong(title),
     ),
     tags$dl(
       tags$dt("Genes"),
