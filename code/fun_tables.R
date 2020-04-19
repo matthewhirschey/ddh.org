@@ -44,8 +44,8 @@ make_achilles_table <- function(data_table, expression_table, gene_symbol) {
 make_query_results_table <- function(gene_summary, pathways, query_str, limit_pathways=10, limit_genes=10) {
   # Searches for query_str in gene_summary and pathways and limits the number of rows returned from each.
   # Returns df with columns:
-  # - key - pathways$pathway or gene_summary$approved_name
-  # - title - pathways$go or gene_summary$approved_symbol
+  # - key - pathways$go or gene_summary$approved_symbol
+  # - title - pathways$pathway or gene_summary$approved_name
   # - contents - 'pathway' or 'gene'
   # - data - variables from a single row of pathways or gene_summary
 
