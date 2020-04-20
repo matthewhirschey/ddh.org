@@ -64,18 +64,44 @@ search_panel <- function() {
   )
 }
 
-gene_search_results <- function(gene_summary_row) {
+query_result_row <- function(row) {
+  if (row$contents == 'gene') {
+    gene_query_result_row(row)
+  } else {
+    pathway_query_result_row(row)
+  }
+}
+
+gene_query_result_row <- function(row) {
+  gene_summary_row <- row$data
   title <- paste0(gene_summary_row["approved_symbol"], ": ", gene_summary_row["approved_name"])
   list(
-    div(
-      tags$a(title, href=paste0("?show=gene&symbol=", gene_summary_row["approved_symbol"]))
-    ),
-    div(tags$strong("Aka:"), gene_summary_row["aka"]),
-    div(tags$strong("Entrez ID:"), gene_summary_row["ncbi_gene_id"]),
-    hr()
+   h4(
+     tags$strong("Gene:"),
+     tags$a(title, href=paste0("?show=detail&content=gene&symbol=", gene_summary_row["approved_symbol"]))
+   ),
+   div(tags$strong("Aka:"), gene_summary_row["aka"]),
+   div(tags$strong("Entrez ID:"), gene_summary_row["ncbi_gene_id"]),
+   hr()
   )
 }
 
+pathway_query_result_row <- function(row) {
+  pathways_row <- row$data
+  gene_symbols <- lapply(pathways_row$data, function(x) { paste(x$gene, collapse=', ') })
+  title <- paste0(pathways_row$pathway, "(", pathways_row$go, ")")
+  list(
+    h4(
+      tags$strong("Pathway:"),
+      tags$a(title, href=paste0("?show=detail&content=pathway&go=", pathways_row$go))
+    ),
+    tags$dl(
+      tags$dt("Genes"),
+      tags$dd(gene_symbols),
+    ),
+    hr()
+  )
+}
 
 gene_summary_details <- function(gene_summary) {
   title <- paste0(gene_summary$approved_symbol, ": ", gene_summary$approved_name)
@@ -92,20 +118,20 @@ gene_summary_details <- function(gene_summary) {
   )
 }
 
-#pathway_summary_details <- function(gene_summary) {
-#  title <- paste0(pathways$pathway, ": ", gene_summary$approved_name)
-#  tagList(
-#    h3(title),
-#    h4("Summary"),
-#    tags$dl(
-#      tags$dt("Gene"), tags$dd(gene_summary$approved_symbol),
-#      tags$dt("Name"), tags$dd(gene_summary$approved_name),
-#      tags$dt("aka"), tags$dd(gene_summary$aka),
-#      tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id),
-#      tags$dt("Gene Summary"), tags$dd(gene_summary$entrez_summary)
-#    )
-#  )
-#}
+pathway_summary_details <- function(pathways_row) {
+  gene_symbols <- lapply(pathways_row$data, function(x) { paste(x$gene, collapse=', ') })
+  title <- paste0("Pathway:", pathways_row$pathway, "(", pathways_row$go, ")")
+  list(
+    h4(
+      tags$strong(title),
+    ),
+    tags$dl(
+      tags$dt("Genes"),
+      tags$dd(gene_symbols),
+    ),
+    hr()
+  )
+}
 
 #gene_summary_not_found <- function(gene_symbol) {
 #  if(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0) {
@@ -130,6 +156,12 @@ gene_summary_ui <- function(gene_symbol) {
 #    }
   }
   result
+}
+
+pathway_summary_ui <- function(pathway_go) {
+  pathway_row <- pathways %>%
+    filter(go == pathway_go)
+  pathway_summary_details(pathway_row)
 }
 
 render_report_to_file <- function(file, gene_symbol) {
@@ -237,19 +269,19 @@ search_page <- tagList(
   navbarPage(title = main_title),
   div(search_panel(), style="float: right"),
   h3(textOutput("search_title")),
-  div(div(h3("Gene", class="panel-title"), class="panel-heading"),
+  div(div(h3("Results", class="panel-title"), class="panel-heading"),
       div(uiOutput("genes_search_result"), class="panel-body"),
       class="bg-info panel panel-default"
   )
 )
 
-### SEARCH RESULT
-gene_page <- fluidPage(
+### DETAILS PAGE: shows either gene or pathway data
+detail_page <- fluidPage(
   head_tags,
   navbarPage(title = main_title,
     tabPanel("Home",
              div(search_panel(), style="float: right"),
-             uiOutput("gene_summary")
+             uiOutput("detail_summary")
     ),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
@@ -316,8 +348,17 @@ gene_page <- fluidPage(
 
 gene_callback <- function(input, output, session) {
   data <- reactive({
-    gene_symbol <- getQueryString()$symbol
-    if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
+    content <- getQueryString()$content
+    if (content == 'gene') {
+      gene_symbol <- getQueryString()$symbol
+      if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
+    } else {
+      pathway_go <- getQueryString()$go
+      pathway_row <- pathways %>%
+        filter(go == pathway_go)
+      # pathway_row$data[[1]]$gene
+      pathway_row$data[[1]]$gene[[1]]  # TODO remove this line and uncomment the above line
+    }
   })
 
   # When the Submit button is clicked, save the form data
@@ -332,9 +373,14 @@ gene_callback <- function(input, output, session) {
   output$text_dep_bottom <- renderText({paste0("Genes with inverse dependencies as ", data())})
   output$text_neg_enrich <- renderText({paste0("Pathways of genes with inverse dependencies as ", data())})
 
-  output$gene_summary <- renderUI({
-    # render details about the gene symbol user entered
-    gene_summary_ui(data())
+  output$detail_summary <- renderUI({
+    content <- getQueryString()$content
+    if (content == 'gene') {
+      gene_summary_ui(data())
+    } else {
+      pathway_summary_ui(getQueryString()$go) 
+    }
+    # render details about the gene symbol or pathway user chose
   })
   output$dep_top <- DT::renderDataTable({
     validate(
@@ -425,7 +471,7 @@ ui <- shinyUI(
 pages_ui <- list(
   home=home_page,
   search=search_page,
-  gene=gene_page
+  detail=detail_page
 )
 
 search_callback <- function(input, output, session) {
@@ -435,10 +481,13 @@ search_callback <- function(input, output, session) {
   })
   output$genes_search_result <- renderUI({
     query <- getQueryString()
-    selected_genes <- gene_summary %>%
-      filter(str_detect(approved_symbol, paste0("^", query$query))) %>%
-      head(10)
-    apply(selected_genes, 1, gene_search_results)
+    query_results_table <- make_query_results_table(gene_summary, pathways, query$query)
+    if (nrow(query_results_table) > 0) {
+      apply(query_results_table, 1, query_result_row)
+    }
+    else {
+      "No results found."
+    }
   })
 }
 
@@ -456,7 +505,6 @@ server <- shinyServer(function(input, output, session) {
     updateQueryString(paste0("?show=search&query=", input$gene_or_pathway), mode="push")
   })
   
-  # the below item is problematic for the back button
   search_callback(input, output, session)
   gene_callback(input, output, session)
 })
