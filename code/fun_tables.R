@@ -5,7 +5,6 @@ make_top_table <- function(table, gene_symbol) {
     dplyr::filter(fav_gene == gene_symbol) %>%
     tidyr::unnest(data) %>%
     dplyr::select(-fav_gene) %>%
-    dplyr::mutate(r2 = round(r2, 3)) %>% 
     dplyr::arrange(desc(r2)) %>%
     dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
@@ -15,7 +14,6 @@ make_bottom_table <- function(table, gene_symbol) {
     dplyr::filter(fav_gene == gene_symbol) %>%
     tidyr::unnest(data) %>%
     dplyr::select(-fav_gene) %>%
-    dplyr::mutate(r2 = round(r2, 3)) %>% 
     dplyr::arrange(r2) %>%
     dplyr::rename("Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }

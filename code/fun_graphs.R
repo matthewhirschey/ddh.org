@@ -4,29 +4,39 @@ library(networkD3)
 library(ggraph)
 library(viridis)
 
+make_graph(master_top_table, master_bottom_table, gene_symbol)
+#gene_symbol <- "SDHA"
+#gene_symbol <- c("SDHA", "SDHB", "SDHC", "SDHD")
+#top_table <- master_top_table
+#bottom_table <- master_bottom_table
+deg <- 2
+source(here::here("code", "fun_tables.R")) #for 
+
 make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg = 2) {
   dep_network <- tibble()
-  
-  #find top and bottom correlations for fav_gene
-  dep_top <- make_top_table(top_table, gene_symbol) %>%
-    slice(1:threshold)
-  
-  dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>%
-    slice(1:threshold) #limit for visualization?
-  
-  #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_top %>%
-    bind_rows(dep_bottom) %>%
-    dplyr::pull("Gene")
-  
+  if(length(gene_symbol == 1)){
+    #find top and bottom correlations for fav_gene
+    dep_top <- make_top_table(top_table, gene_symbol) %>%
+      slice(1:threshold)
+    
+    dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>%
+      slice(1:threshold) #limit for visualization?
+    
+    #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
+    gene_list <- dep_top %>%
+      bind_rows(dep_bottom) %>%
+      dplyr::pull("Gene")
+  } else {
+    gene_list <- gene_symbol
+  }
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
-  for (i in related_genes){
-    message("Getting correlations from ", i, " related to ", gene_symbol)
+  for (i in gene_list){
+    message("Getting correlations from ", i)
     dep_top_related <- top_table %>%
       dplyr::filter(fav_gene == i) %>%
       tidyr::unnest(data) %>%
       dplyr::select(-fav_gene) %>%
-      dplyr::mutate(r2 = round(r2, 3)) %>% 
+      #dplyr::mutate(r2 = round(r2, 3)) %>% 
       dplyr::arrange(desc(r2)) %>%
       dplyr::slice(1:threshold) %>% 
       dplyr::mutate(x = i, origin = "pos") %>% 
@@ -37,7 +47,7 @@ make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg
       dplyr::filter(fav_gene == i) %>%
       tidyr::unnest(data) %>%
       dplyr::select(-fav_gene) %>%
-      dplyr::mutate(r2 = round(r2, 3)) %>% 
+      #dplyr::mutate(r2 = round(r2, 3)) %>% 
       dplyr::arrange(r2) %>%
       dplyr::slice(1:threshold) %>% 
       dplyr::mutate(x = i, origin = "pos") %>% 
@@ -51,7 +61,6 @@ make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg
     dep_network <- dep_network %>%
       bind_rows(dep_related)
   }
-  
   #make graph
   graph_network <- tidygraph::as_tbl_graph(dep_network)
   nodes <-  as_tibble(graph_network) %>%
@@ -81,8 +90,8 @@ make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg
   links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
   links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
   
-  #Pos #74D055, Neg #3A568C, Q #FDE825, C #450D53
-  node_color <- 'd3.scaleOrdinal(["#74D055", "#3A568C", "#FDE825", "#450D53"])'
+  #use color meter to get hexdec color values
+  node_color <- 'd3.scaleOrdinal(["#0C2332", "#544097", "#AD677D", "#EDA555"])'
   
   forceNetwork(Links = links_filtered, Nodes = nodes_filtered, Source = "from", Target ="to", NodeID = "name", Group = "group", zoom = TRUE, bounded = TRUE, opacityNoHover = 100, Nodesize = "degree", colourScale = node_color)
 }
@@ -98,12 +107,12 @@ make_graph_report <- function(top_table, bottom_table, gene_symbol, threshold = 
     slice(1:threshold) #limit for visualization?
   
   #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
-  related_genes <- dep_top %>%
+  gene_list <- dep_top %>%
     bind_rows(dep_bottom) %>%
     dplyr::pull("Gene")
   
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
-  for (i in related_genes){
+  for (i in gene_list){
     message("Getting correlations from ", i, " related to ", gene_symbol)
     dep_top_related <- top_table %>%
       dplyr::filter(fav_gene == i) %>%
