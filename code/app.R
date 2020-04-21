@@ -6,7 +6,6 @@ library(networkD3)
 library(corrr)
 library(here)
 library(lubridate)
-library(feather)
 library(rmarkdown)
 library(markdown)
 library(tidygraph)
@@ -194,11 +193,11 @@ render_report_to_file <- function(file, gene_symbol) {
 
 render_complete_report <- function (file, gene_symbol) {
   fav_gene_summary <- gene_summary %>%
-    filter(approved_symbol == gene_symbol)
+    filter(approved_symbol %in% gene_symbol)
   p1 <- make_celldeps(achilles, expression_join, gene_symbol, mean_virtual_achilles)
   p2 <- make_cellbins(achilles, expression_join, gene_symbol)
-  target_achilles_bottom <- make_achilles_table(achilles, expression_join, gene_symbol) %>% slice(1:10)
-  target_achilles_top <- make_achilles_table(achilles, expression_join, gene_symbol) %>% dplyr::arrange(desc(`Dependency Score`)) %>%  slice(1:10)
+  target_achilles_bottom <- make_achilles_table(achilles, expression_join, gene_symbol) %>% head(10)
+  target_achilles_top <- make_achilles_table(achilles, expression_join, gene_symbol) %>% tail(10)
   dep_top <- make_top_table(master_top_table, gene_symbol)
   flat_top_complete <- make_enrichment_table(master_positive, gene_symbol)
   dep_bottom <- make_bottom_table(master_bottom_table, gene_symbol)
@@ -386,14 +385,14 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_top_table(master_top_table, data()) %>% dplyr::select("Gene", "Name", input$vars_dep_top), 
+      make_top_table(master_top_table, data()) %>% dplyr::select("Query", "Gene", "Name", input$vars_dep_top), 
       options = list(pageLength = 25))
   })
   output$dep_bottom <- DT::renderDataTable({
     validate(
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_bottom_table(master_bottom_table, data()) %>% dplyr::select("Gene", "Name", input$vars_dep_bottom),
+      make_bottom_table(master_bottom_table, data()) %>% dplyr::select("Query", "Gene", "Name", input$vars_dep_bottom),
     options = list(pageLength = 25))
   })
   output$cell_deps <- renderPlotly({

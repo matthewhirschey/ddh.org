@@ -39,7 +39,6 @@ library(cowplot)
 ##import
 Import Broad Insititute and Sanger Depedencay data; added Broad cell line expression data (Aug 21, 2019).
 ```{r import}
-
 #LOAD DATA-----
 #read current release information
 source(here::here("code", "current_release.R"))
