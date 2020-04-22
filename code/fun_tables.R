@@ -78,7 +78,7 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
     head(limit_genes)
 
   # nest gene data underneath generic key, title, and contents columns
-  genes_data <- bind_rows(genes_data_symbol, genes_data_aka, genes_data_name) %>%
+  genes_data <- unique(bind_rows(genes_data_symbol, genes_data_aka, genes_data_name)) %>%
     head(limit_genes) %>%
     mutate(key = approved_symbol) %>%
     mutate(title = approved_name) %>%
