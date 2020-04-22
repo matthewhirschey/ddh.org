@@ -2,11 +2,6 @@ library(tidyverse)
 library(cowplot)
 library(viridis)
 
-gene_symbol <- "SDHA"
-gene_symbol <- c("SDHA", "SDHB", "SDHC", "SDHD")
-make_cellbins(achilles, expression_join, gene_symbol)
-make_celldeps(achilles, expression_join, gene_symbol, mean_virtual_achilles)
-
 make_cellbins <- function(table, expression_table, gene_symbol) {
   p <- table %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
@@ -62,10 +57,3 @@ make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
   }
   return(p)
 }
-
-#data_table <- achilles
-#expression_table <- expression_join
-#gene_symbol <- "SDHA"
-#gene_symbol <- c("SDHA", "SDHB", "SDHC", "SDHD")
-#mean <- mean_virtual_achilles
-

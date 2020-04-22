@@ -56,7 +56,10 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
   # find pathway data and nest it underneath generic key, title, and contents columns
   pathways_data <- pathways %>%
     filter(str_detect(pathway, find_word_start_regex)) %>%
+    mutate(length = str_count(.[[1]])) %>% 
+    arrange(length) %>% 
     head(limit_pathways) %>%
+    select(-length) %>% 
     mutate(key = go) %>%
     mutate(title = pathway) %>%
     add_column(contents='pathway') %>%
@@ -66,23 +69,32 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
   # find genes most specific
   genes_data_symbol <- gene_summary %>%
     filter(str_detect(approved_symbol, find_word_start_regex)) %>%
-    head(limit_genes)
+    mutate(length = str_count(.[[1]])) %>% 
+    arrange(length) %>% 
+    head(limit_genes) %>% 
+    select(-length)
 
   # find genes most likely alternative
   genes_data_aka <- gene_summary %>%
     filter(str_detect(aka, find_word_start_regex)) %>%
-    head(limit_genes)
+    mutate(length = str_count(.[[1]])) %>% 
+    arrange(length) %>% 
+    head(limit_genes) %>% 
+    select(-length)
 
   # find genes most generic
   genes_data_name <- gene_summary %>%
     filter(str_detect(approved_name, find_word_start_regex)) %>%
-    head(limit_genes)
+    mutate(length = str_count(.[[1]])) %>% 
+    arrange(length) %>% 
+    head(limit_genes) %>% 
+    select(-length)
 
   # nest gene data underneath generic key, title, and contents columns
   genes_data <- bind_rows(genes_data_symbol, genes_data_aka, genes_data_name) %>%
     head(limit_genes) %>%
-    mutate(key = approved_symbol) %>%
-    mutate(title = approved_name) %>%
+    mutate(key = approved_symbol,
+           title = approved_name) %>%
     add_column(contents='gene') %>%
     group_by(key, title, contents) %>%
     nest()
