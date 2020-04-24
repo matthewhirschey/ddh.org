@@ -258,8 +258,8 @@ home_page <- tagList(
     "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "for predicting pathways and functions for thousands of genes across the human genomes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.", 
     tags$br(),
     tags$br()),
-   h4("Enter gene symbol or pathway name"),
-  search_panel(),
+  h4("Enter gene symbol or pathway name"),
+  search_panel()
 )
 
 ### SEARCH PAGE
@@ -284,11 +284,12 @@ detail_page <- fluidPage(
     ),
     navbarMenu(title = "Cell Dependencies",
                tabPanel("Plots",
-                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
-                         fluidRow(splitLayout(cellWidths = c("50%", "50%"),
-                                              plotlyOutput(outputId = "cell_deps"),
-                                              plotlyOutput(outputId = "cell_bins"))),
-                         fluidRow(htmlOutput(outputId = "plot_text"))),
+                        fluidRow(h4(textOutput("text_cell_dep_plot"))),
+                        fluidRow(plotlyOutput(outputId = "cell_deps")),
+                        fluidRow(htmlOutput(outputId = "plot_celldeps_text")),
+                        tags$hr(),
+                        fluidRow(plotlyOutput(outputId = "cell_bins")),
+                        fluidRow(htmlOutput(outputId = "plot_cellbins_text"))),
                tabPanel("Table",
                         fluidRow(h4(textOutput("text_cell_dep_table"))),
                         fluidRow(dataTableOutput(outputId = "target_achilles")))
@@ -355,8 +356,8 @@ gene_callback <- function(input, output, session) {
       pathway_go <- getQueryString()$go
       pathway_row <- pathways %>%
         filter(go == pathway_go)
-      # pathway_row$data[[1]]$gene
-      pathway_row$data[[1]]$gene[[1]]  # TODO remove this line and uncomment the above line
+       pathway_row$data[[1]]$gene
+      #pathway_row$data[[1]]$gene[[1]]  # TODO remove this line and uncomment the above line
     }
   })
 
@@ -365,12 +366,22 @@ gene_callback <- function(input, output, session) {
     save_data(input)
   })
 
-  output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", data())})
-  output$text_cell_dep_table <- renderText({paste0("Dependency table generated for ", data())})
-  output$text_dep_top <- renderText({paste0("Genes with similar dependencies as ", data())})
-  output$text_pos_enrich <- renderText({paste0("Pathways of genes with similar dependencies as ", data())})
-  output$text_dep_bottom <- renderText({paste0("Genes with inverse dependencies as ", data())})
-  output$text_neg_enrich <- renderText({paste0("Pathways of genes with inverse dependencies as ", data())})
+  #pathways
+ # observeEvent(input$pathway_click, {
+#    print("clicked")
+#  })
+  
+ # output$pathway_table <- DT::renderDataTable({
+#      DT::datatable(pathways, 
+#      options = list(pageLength = 10))
+#  })
+  
+  output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", str_c(data(), collapse = ", "))})
+  output$text_cell_dep_table <- renderText({paste0("Dependency table generated for ", str_c(data(), collapse = ", "))})
+  output$text_dep_top <- renderText({paste0("Genes with similar dependencies as ", str_c(data(), collapse = ", "))})
+  output$text_pos_enrich <- renderText({paste0("Pathways of genes with similar dependencies as ", str_c(data(), collapse = ", "))})
+  output$text_dep_bottom <- renderText({paste0("Genes with inverse dependencies as ", str_c(data(), collapse = ", "))})
+  output$text_neg_enrich <- renderText({paste0("Pathways of genes with inverse dependencies as ", str_c(data(), collapse = ", "))})
 
   output$detail_summary <- renderUI({
     content <- getQueryString()$content
@@ -407,11 +418,16 @@ gene_callback <- function(input, output, session) {
       need(data() %in% colnames(achilles), "")) #""left blank
     ggplotly(make_cellbins(achilles, expression_join, data()))
   })
-  output$plot_text <- renderUI({
+  output$plot_celldeps_text <- renderUI({
     validate(
       need(data() %in% colnames(achilles), "")) #""left blank
-    HTML("<p></p><p><b>Left:</b> Cell Line Dependency Curve. Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essentail within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out. <b>Right:</b> Histogram of Binned Dependency Scores. Dependency scores across all cell lines for queried gene partitioned into 0.25 unit bins. Shape of the histogram curve reveals overall influence of queried gene on cellular fitness</p>")
+    HTML("<p></p><p><b>Cell Line Dependency Curve.</b> Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essential within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out.</p>")
     })
+  output$plot_cellbins_text <- renderUI({
+    validate(
+      need(data() %in% colnames(achilles), "")) #""left blank
+    HTML("<p></p><p><b>Kernel density estimate.</b> A smoothed version of the histogram of Dependency Scores. Dependency scores across all cell lines for queried genes, revealing overall influence of a gene on cellular fitness</p>")
+  })
   output$target_achilles <- DT::renderDataTable({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
