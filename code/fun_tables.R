@@ -25,7 +25,7 @@ make_enrichment_table <- function(table, gene_symbol) { #master_positive, master
     dplyr::rename("Query" = "fav_gene", "Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
 }
 
-make_achilles_table <- function(table, expression_table, gene_symbol) {
+make_achilles_table <- function(table, expression_table, gene_symbol) { #achilles, expression_join, gene_symbol
   target_achilles <- table %>%
     dplyr::select(X1, any_of(gene_symbol)) %>%
     dplyr::left_join(expression_table, by = "X1") %>%
@@ -42,6 +42,16 @@ make_achilles_table <- function(table, expression_table, gene_symbol) {
   return(target_achilles)
 }
 
+make_pathway_table <- function(table = pathways) { #this makes a summary table of pathways for browsing
+  pathway_table <- table %>% 
+    mutate(genes = map_chr(pathways$data, function(.x) {
+      y <- unlist(.x, use.names = FALSE)
+      str_c(y, collapse = ', ')
+    })) %>% 
+    select(pathway, go, genes)
+  return(pathway_table)
+}
+
 make_query_results_table <- function(gene_summary, pathways, query_str, limit_pathways=10, limit_genes=10) {
   # Searches for query_str in gene_summary and pathways and limits the number of rows returned from each.
   # Returns df with columns:
@@ -53,15 +63,24 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
   # create regex that finds query at the start of the string(^) or after a space(\\s) and ignores case
   find_word_start_regex <- regex(paste0('(^', query_str, ')|(\\s', query_str, ')'), ignore_case=TRUE)
 
-  # find pathway data and nest it underneath generic key, title, and contents columns
-  pathways_data <- pathways %>%
+  # find pathway data
+  pathways_data_title <- pathways %>%
     filter(str_detect(pathway, find_word_start_regex)) %>%
     mutate(length = str_count(.[[1]])) %>% 
     arrange(length) %>% 
     head(limit_pathways) %>%
-    select(-length) %>% 
-    mutate(key = go) %>%
-    mutate(title = pathway) %>%
+    select(-length)
+  
+  # find go data
+  pathways_data_go <- pathways %>%
+    filter(str_detect(go, find_word_start_regex)) %>%
+    head(limit_pathways)
+  
+  # nest pathways data underneath generic key, title, and contents columns
+  pathways_data <- unique(bind_rows(pathways_data_title, pathways_data_go)) %>%
+    head(limit_pathways) %>%
+    mutate(key = go,
+           title = pathway) %>%
     add_column(contents='pathway') %>%
     group_by(key, title, contents) %>%
     nest()

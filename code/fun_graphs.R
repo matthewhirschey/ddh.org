@@ -4,7 +4,7 @@ library(networkD3)
 library(ggraph)
 library(viridis)
 
-source(here::here("code", "fun_tables.R")) #for 
+source(here::here("code", "fun_tables.R")) #for make_table funs
 
 setup_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10) {
   #make empty tibble
@@ -23,7 +23,9 @@ setup_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10) {
       bind_rows(dep_bottom) %>%
       dplyr::pull("Gene")
   } else {
-    gene_list <- gene_symbol
+    gene_list <- top_table %>% #this code ensures that the list of genes from a pathway are in the data
+      dplyr::filter(fav_gene %in% gene_symbol) %>%
+      dplyr::pull(fav_gene)
   }
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in gene_list){
@@ -191,3 +193,4 @@ make_graph_report <- function(top_table, bottom_table, gene_symbol, threshold = 
     theme_graph(base_family = 'Helvetica') +
     guides(size = "none")
 }
+
