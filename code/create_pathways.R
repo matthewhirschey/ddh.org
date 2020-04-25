@@ -30,7 +30,8 @@ pathways <- go_bp %>%
   filter(count < 41) %>%  #5103 total; <50 removes 839; <30 removes 1462; <20 removes 2118
   separate(col = "pathway", into = c("pathway", "go"), sep = "\\(GO\\:") %>% 
   separate(col = "go", into = "go", sep = "\\)", extra = "drop") %>% 
-  mutate(pathway = str_trim(pathway, side = "right"))
+  mutate(pathway = str_trim(pathway, side = "right"), 
+         pathway = str_to_title(pathway))
 
 rm(go_bp_count)
 saveRDS(pathways, file = here::here("data", "pathways.Rds"))

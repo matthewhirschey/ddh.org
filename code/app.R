@@ -88,7 +88,7 @@ gene_query_result_row <- function(row) {
 pathway_query_result_row <- function(row) {
   pathways_row <- row$data
   gene_symbols <- lapply(pathways_row$data, function(x) { paste(x$gene, collapse=', ') })
-  title <- paste0(pathways_row$pathway, "(", pathways_row$go, ")")
+  title <- paste0(pathways_row$pathway, " (GO:", pathways_row$go, ")")
   list(
     h4(
       tags$strong("Pathway:"),
@@ -119,7 +119,7 @@ gene_summary_details <- function(gene_summary) {
 
 pathway_summary_details <- function(pathways_row) {
   gene_symbols <- lapply(pathways_row$data, function(x) { paste(x$gene, collapse=', ') })
-  title <- paste0("Pathway:", pathways_row$pathway, "(", pathways_row$go, ")")
+  title <- paste0("Pathway:", pathways_row$pathway, " (GO:", pathways_row$go, ")")
   list(
     h4(
       tags$strong(title),
@@ -258,8 +258,15 @@ home_page <- tagList(
     "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "for predicting pathways and functions for thousands of genes across the human genomes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.", 
     tags$br(),
     tags$br()),
-  h4("Enter gene symbol or pathway name"),
-  search_panel()
+  h4("Enter gene symbol, pathway name, or GO number"),
+  search_panel(), 
+  actionLink(inputId = "pathway_click", "Or browse the pathways"), 
+  conditionalPanel(condition = 'input.pathway_click == 0',
+                   ""),
+  conditionalPanel(condition = 'input.pathway_click != 0', 
+                   tags$br(),
+                   h4("GO Biological Processes"),
+                   dataTableOutput(outputId = "pathway_table"))
 )
 
 ### SEARCH PAGE
@@ -367,14 +374,13 @@ gene_callback <- function(input, output, session) {
   })
 
   #pathways
- # observeEvent(input$pathway_click, {
-#    print("clicked")
-#  })
+  observeEvent(input$pathway_click, { #event to store the 'click'
+  })
   
- # output$pathway_table <- DT::renderDataTable({
-#      DT::datatable(pathways, 
-#      options = list(pageLength = 10))
-#  })
+  output$pathway_table <- DT::renderDataTable({
+    DT::datatable(make_pathway_table(pathways) %>% dplyr::rename(Pathway = pathway, GO = go, Genes = genes), 
+                  options = list(pageLength = 10))
+  })
   
   output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", str_c(data(), collapse = ", "))})
   output$text_cell_dep_table <- renderText({paste0("Dependency table generated for ", str_c(data(), collapse = ", "))})
@@ -492,7 +498,7 @@ pages_ui <- list(
 search_callback <- function(input, output, session) {
   output$search_title <- renderText({
     query <- getQueryString()
-    paste("Search results for", query$query)
+    paste0("Search results for '", query$query, "'")
   })
   output$genes_search_result <- renderUI({
     query <- getQueryString()

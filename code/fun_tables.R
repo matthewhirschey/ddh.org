@@ -42,9 +42,9 @@ make_achilles_table <- function(table, expression_table, gene_symbol) { #achille
   return(target_achilles)
 }
 
-make_pathway_table <- function(table = pathways) { #this makes a summary table of pathways for browsing
-  pathway_table <- table %>% 
-    mutate(genes = map_chr(pathways$data, function(.x) {
+make_pathway_table <- function(table_name = pathways) { #this makes a summary table of pathways for browsing
+  pathway_table <- table_name %>% 
+    mutate(genes = map_chr(table_name$data, function(.x) {
       y <- unlist(.x, use.names = FALSE)
       str_c(y, collapse = ', ')
     })) %>% 
