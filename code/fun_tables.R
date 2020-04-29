@@ -120,3 +120,12 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
 
   bind_rows(genes_data, pathways_data)
 }
+
+make_cellanatogram_table <- function(dataset, gene_symbol) {
+  dataset %>% 
+    filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
+    filter(!is.na(type)) %>%
+    add_count(main_location) %>% 
+    transmute(Gene = gene_name, Reliability = reliability, Location = main_location, Count = as_factor(n)) %>% 
+    arrange(desc(Count))
+}

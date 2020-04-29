@@ -2,7 +2,7 @@
 ## Environment variable DDH_STEP can be used to control which steps are run.
 ## The step names are "gens", "pubm", "tbls", "path". They need to be run in this order.
 ## By default all steps are run in the correct order. These steps are broken up based on 
-## Their different resource requirments.
+## Their different resource requirements.
 
 library(here)
 source(here::here("code", "current_release.R"))

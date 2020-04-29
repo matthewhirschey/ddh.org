@@ -2,6 +2,7 @@ library(tidyverse)
 library(cowplot)
 library(viridis)
 library(plotly)
+library(gganatogram)
 
 make_cellbins <- function(table, expression_table, gene_symbol) {
   p <- table %>% #plot setup
@@ -56,6 +57,29 @@ make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
   if(length(gene_symbol) == 1){
     p  <- p +
       guides(color = "none")
+  } else {
+    p
+  }
+  return(p)
+}
+
+# make cell anatogram
+make_cellanatogram <- function(dataset, gene_symbol) {
+  p <- dataset %>% 
+    filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
+    filter(!is.na(type)) %>% 
+    select(-value) %>% 
+    add_count(main_location) %>% 
+    mutate(value = as_factor(n)) %>% 
+    gganatogram(outline = T, fillOutline='grey95', organism="cell", fill = "value") +
+    theme_void() +  
+    coord_fixed() +
+    scale_fill_viridis(discrete = TRUE) +
+    labs(fill = "Count") #, title = paste0("Plot for: ", str_c(str_sort(gene_symbol), collapse = ", ")))
+  
+  if(length(gene_symbol) == 1){
+    p  <- p +
+      guides(fill = "none")
   } else {
     p
   }

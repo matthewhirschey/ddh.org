@@ -6,8 +6,8 @@ library(vroom)
 
 #rm(list = ls())
 
-go_bp_url <- "https://amp.pharm.mssm.edu/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2018"
-#consider updating from here: http://amigo.geneontology.org/amigo/software_list
+#read current release information to set url for download
+source(here::here("code", "current_release.R"))
 
 go_bp <- vroom(go_bp_url, col_names = FALSE, delim = "\t") %>%  #, col_names = FALSE, .name_repair = "universal") %>% 
   clean_names() %>% 
@@ -31,7 +31,9 @@ pathways <- go_bp %>%
   separate(col = "pathway", into = c("pathway", "go"), sep = "\\(GO\\:") %>% 
   separate(col = "go", into = "go", sep = "\\)", extra = "drop") %>% 
   mutate(pathway = str_trim(pathway, side = "right"), 
-         pathway = str_to_title(pathway))
+         pathway = str_to_title(pathway), 
+         pathway = str_replace_all(pathway, "Ii", "II"),
+         pathway = str_replace_all(pathway, "ii", "II"))
 
 rm(go_bp_count)
 saveRDS(pathways, file = here::here("data", "pathways.Rds"))

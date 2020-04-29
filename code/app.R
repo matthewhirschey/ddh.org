@@ -16,6 +16,7 @@ library(plotly)
 library(DT)
 library(future)
 library(promises)
+library(gganatogram)
 
 render_report_in_background <- FALSE
 if (supportsMulticore()) {
@@ -27,10 +28,10 @@ if (supportsMulticore()) {
 #read current release information
 source(here::here("code", "current_release.R"))
 
-#read data from create_gene_summary.R
+#read data from create_*.R
 gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
 pathways <- readRDS(here::here("data", "pathways.Rds"))
-     
+
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
 expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
@@ -47,6 +48,9 @@ master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"
 master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
 master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
 master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
+
+#read data from generate_subcell_data.R
+subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))
 
 #FUNCTIONS-----
 #common functions
@@ -113,13 +117,17 @@ gene_summary_details <- function(gene_summary) {
       tags$dt("aka"), tags$dd(gene_summary$aka),
       tags$dt("Entrez ID"), tags$dd(gene_summary$ncbi_gene_id),
       tags$dt("Gene Summary"), tags$dd(gene_summary$entrez_summary)
-    )
+    ), 
+    hr(),
+    plotOutput(outputId = "cellanatogram"), 
+    hr(), 
+    dataTableOutput(outputId = "cellanatogram_table")
   )
 }
 
 pathway_summary_details <- function(pathways_row) {
   gene_symbols <- lapply(pathways_row$data, function(x) { paste(x$gene, collapse=', ') })
-  title <- paste0("Pathway:", pathways_row$pathway, " (GO:", pathways_row$go, ")")
+  title <- paste0("Pathway: ", pathways_row$pathway, " (GO:", pathways_row$go, ")")
   list(
     h4(
       tags$strong(title),
@@ -128,31 +136,20 @@ pathway_summary_details <- function(pathways_row) {
       tags$dt("Genes"),
       tags$dd(gene_symbols),
     ),
-    hr()
+    hr(),
+    plotOutput(outputId = "cellanatogram"), 
+    hr(), 
+    dataTableOutput(outputId = "cellanatogram_table")
   )
 }
 
-#gene_summary_not_found <- function(gene_symbol) {
-#  if(sum(str_detect(gene_summary$aka, paste0("(?<![:alnum:])", gene_symbol, "(?![:alnum:]|\\-)"))) > 0) {
-#    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Make sure to use the 'Official' gene symbol. Did you mean any of these: ", str_c(pull(gene_summary[str_which(gene_summary$aka, gene_symbol), 2]), collapse = ", "), "?")))
-#  } else {
-#    result <- tagList(h4(paste0("Gene symbol ", gene_symbol, " not found. Please make sure this is the 'Official' gene symbol and not an alias.")))
-#  }  
-#  return(result)
-#}
-
-# renders 'not found' or details about gene
+# renders details about gene
 gene_summary_ui <- function(gene_symbol) {
   result <- tagList()
   if (gene_symbol != '') {
     gene_summary_row <- gene_summary %>%
       filter(approved_symbol == gene_symbol)
-#    if (dim(gene_summary_row)[1] == 0) {
-#      result <- gene_summary_not_found(gene_symbol)
-#    } else {
-#      title <- paste0(gene_summary_row$approved_symbol, ": ", gene_summary_row$approved_name)
       result <- gene_summary_details(gene_summary_row)
-#    }
   }
   result
 }
@@ -382,6 +379,15 @@ gene_callback <- function(input, output, session) {
                   options = list(pageLength = 10))
   })
   
+  output$cellanatogram <- renderPlot({
+    make_cellanatogram(subcell, data())
+  })
+  
+  output$cellanatogram_table <- DT::renderDataTable({
+    DT::datatable(make_cellanatogram_table(subcell, data()), 
+                  options = list(pageLength = 10))
+  })
+    
   output$text_cell_dep_plot <- renderText({paste0("Dependency plots generated for ", str_c(data(), collapse = ", "))})
   output$text_cell_dep_table <- renderText({paste0("Dependency table generated for ", str_c(data(), collapse = ", "))})
   output$text_dep_top <- renderText({paste0("Genes with similar dependencies as ", str_c(data(), collapse = ", "))})
