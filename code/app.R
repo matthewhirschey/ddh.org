@@ -70,8 +70,10 @@ search_panel <- function() {
 query_result_row <- function(row) {
   if (row$contents == 'gene') {
     gene_query_result_row(row)
+  } else if (row$contents == 'pathway') {
+      pathway_query_result_row(row)
   } else {
-    pathway_query_result_row(row)
+    gene_list_query_result_row(row)
   }
 }
 
@@ -104,6 +106,53 @@ pathway_query_result_row <- function(row) {
     ),
     hr()
   )
+}
+
+gene_list_query_result_row <- function(row) {
+  gene_summary_rows <- row$data
+  title <- row$key
+  
+  known_gene_symbols <- gene_summary_rows %>% 
+    filter(known == TRUE) %>%
+    pull(approved_symbol)
+  has_known_gene_symbols <- !is_empty(known_gene_symbols)
+  
+  unknown_gene_symbols <- gene_summary_rows %>% 
+    filter(known == FALSE) %>%
+    pull(approved_symbol)
+  has_unknown_gene_symbols <- !is_empty(unknown_gene_symbols)
+  
+  known_gene_symbols_tags <- NULL
+  if (has_known_gene_symbols) {
+    gene_query_param <- paste0("gene_list=", paste(known_gene_symbols, collapse=","))
+    href <- paste0("?show=detail&content=pathway&", gene_query_param)
+    known_gene_symbols_tags <- list(
+      tags$h6("Known Gene Symbols"),
+      tags$a(paste(known_gene_symbols, collapse=", "), href=href)
+    )
+  }
+
+  unknown_gene_symbols_tags <- NULL
+  if (has_unknown_gene_symbols) {
+    unknown_gene_symbols_tags <- list(
+      tags$h6("Unknown Gene Symbols"),
+      tags$div(paste(unknown_gene_symbols, collapse=", "))
+    )
+  }
+  
+  #gene_symbols <- lapply(row$data, function(gene_summary) { paste(gene_summary$approved_symbol, collapse=', ') })
+  #a <- paste(b$data$approved_symbol, collapse=", ")
+  
+
+  list(
+    h4(
+      tags$strong("Custom Gene List"),
+      tags$span(title)
+    ),
+    known_gene_symbols_tags,
+    unknown_gene_symbols_tags,
+    hr()
+  )  
 }
 
 gene_summary_details <- function(gene_summary) {
@@ -158,6 +207,14 @@ pathway_summary_ui <- function(pathway_go) {
   pathway_row <- pathways %>%
     filter(go == pathway_go)
   pathway_summary_details(pathway_row)
+}
+
+gene_list_summary_ui <- function(gene_list) {
+  list(
+    h4(
+      "GENE LIST DETAILS!!!"
+    )
+  )
 }
 
 render_report_to_file <- function(file, gene_symbol) {
@@ -357,11 +414,15 @@ gene_callback <- function(input, output, session) {
       gene_symbol <- getQueryString()$symbol
       if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
     } else {
-      pathway_go <- getQueryString()$go
-      pathway_row <- pathways %>%
-        filter(go == pathway_go)
-       pathway_row$data[[1]]$gene
-      #pathway_row$data[[1]]$gene[[1]]  # TODO remove this line and uncomment the above line
+      pathway_gene_list <- getQueryString()$gene_list
+      if (!is.null(pathway_gene_list)) {
+        c(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+      } else {
+        pathway_go <- getQueryString()$go
+        pathway_row <- pathways %>%
+          filter(go == pathway_go)
+        pathway_row$data[[1]]$gene        
+      }
     }
   })
 
@@ -400,7 +461,12 @@ gene_callback <- function(input, output, session) {
     if (content == 'gene') {
       gene_summary_ui(data())
     } else {
-      pathway_summary_ui(getQueryString()$go) 
+      pathway_gene_list <- getQueryString()$gene_list
+      if (!is.null(pathway_gene_list)) {
+        gene_list_summary_ui(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+      } else {
+        pathway_summary_ui(getQueryString()$go)   
+      }
     }
     # render details about the gene symbol or pathway user chose
   })
@@ -508,7 +574,11 @@ search_callback <- function(input, output, session) {
   })
   output$genes_search_result <- renderUI({
     query <- getQueryString()
-    query_results_table <- make_query_results_table(gene_summary, pathways, query$query)
+    if (grepl(',', query$query)) {
+      query_results_table <- gene_list_query_results_table(gene_summary, query$query)
+    } else {
+      query_results_table <- gene_or_pathway_query_results_table(gene_summary, pathways, query$query)
+    }
     if (nrow(query_results_table) > 0) {
       apply(query_results_table, 1, query_result_row)
     }
