@@ -124,7 +124,7 @@ gene_list_query_result_row <- function(row) {
   
   known_gene_symbols_tags <- NULL
   if (has_known_gene_symbols) {
-    gene_query_param <- paste0("gene_list=", paste(known_gene_symbols, collapse=","))
+    gene_query_param <- paste0("custom_gene_list=", paste(known_gene_symbols, collapse=","))
     href <- paste0("?show=detail&content=pathway&", gene_query_param)
     known_gene_symbols_tags <- list(
       tags$h6("Known Gene Symbols"),
@@ -139,10 +139,6 @@ gene_list_query_result_row <- function(row) {
       tags$div(paste(unknown_gene_symbols, collapse=", "))
     )
   }
-  
-  #gene_symbols <- lapply(row$data, function(gene_summary) { paste(gene_summary$approved_symbol, collapse=', ') })
-  #a <- paste(b$data$approved_symbol, collapse=", ")
-  
 
   list(
     h4(
@@ -152,7 +148,7 @@ gene_list_query_result_row <- function(row) {
     known_gene_symbols_tags,
     unknown_gene_symbols_tags,
     hr()
-  )  
+  )
 }
 
 gene_summary_details <- function(gene_summary) {
@@ -192,6 +188,24 @@ pathway_summary_details <- function(pathways_row) {
   )
 }
 
+gene_list_summary_details <- function(custom_gene_list) {
+  gene_symbols <- paste(custom_gene_list, collapse=', ')
+  title <- paste0("Custom Gene List: ", gene_symbols)
+  list(
+    h4(
+      tags$strong(title),
+    ),
+    tags$dl(
+      tags$dt("Genes"),
+      tags$dd(gene_symbols),
+    ),
+    hr(),
+    plotOutput(outputId = "cellanatogram"),
+    hr(),
+    dataTableOutput(outputId = "cellanatogram_table")
+  )
+}
+
 # renders details about gene
 gene_summary_ui <- function(gene_symbol) {
   result <- tagList()
@@ -209,12 +223,12 @@ pathway_summary_ui <- function(pathway_go) {
   pathway_summary_details(pathway_row)
 }
 
-gene_list_summary_ui <- function(gene_list) {
-  list(
-    h4(
-      "GENE LIST DETAILS!!!"
-    )
-  )
+gene_list_summary_ui <- function(custom_gene_list) {
+  # Filter out invalid symbols for when a user edits "custom_gene_list" query parameter
+  valid_gene_symbols <- gene_summary %>%
+    filter(approved_symbol %in% custom_gene_list) %>%
+    pull(approved_symbol)
+  gene_list_summary_details(valid_gene_symbols)
 }
 
 render_report_to_file <- function(file, gene_symbol) {
@@ -419,9 +433,9 @@ gene_callback <- function(input, output, session) {
         gene_symbol <- getQueryString()$symbol
         if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
       } else {
-        pathway_gene_list <- getQueryString()$gene_list
-        if (!is.null(pathway_gene_list)) {
-          c(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+        custom_gene_list <- getQueryString()$custom_gene_list
+        if (!is.null(custom_gene_list)) {
+          c(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
         } else {
           pathway_go <- getQueryString()$go
           pathway_row <- pathways %>%
@@ -468,9 +482,9 @@ gene_callback <- function(input, output, session) {
       if (content == 'gene') {
         gene_summary_ui(data())
       } else {
-        pathway_gene_list <- getQueryString()$gene_list
-        if (!is.null(pathway_gene_list)) {
-          gene_list_summary_ui(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+        custom_gene_list <- getQueryString()$custom_gene_list
+        if (!is.null(custom_gene_list)) {
+          gene_list_summary_ui(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
         } else {
           pathway_summary_ui(getQueryString()$go)
         }
