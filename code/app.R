@@ -407,21 +407,27 @@ detail_page <- fluidPage(
 
 #SERVER-----
 
+detail_page_visible <- function() {
+  getQueryString()$show == 'detail'
+}
+
 gene_callback <- function(input, output, session) {
   data <- reactive({
-    content <- getQueryString()$content
-    if (content == 'gene') {
-      gene_symbol <- getQueryString()$symbol
-      if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
-    } else {
-      pathway_gene_list <- getQueryString()$gene_list
-      if (!is.null(pathway_gene_list)) {
-        c(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+    if (detail_page_visible()) {
+      content <- getQueryString()$content
+      if (content == 'gene') {
+        gene_symbol <- getQueryString()$symbol
+        if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
       } else {
-        pathway_go <- getQueryString()$go
-        pathway_row <- pathways %>%
-          filter(go == pathway_go)
-        pathway_row$data[[1]]$gene        
+        pathway_gene_list <- getQueryString()$gene_list
+        if (!is.null(pathway_gene_list)) {
+          c(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+        } else {
+          pathway_go <- getQueryString()$go
+          pathway_row <- pathways %>%
+            filter(go == pathway_go)
+          pathway_row$data[[1]]$gene
+        }
       }
     }
   })
@@ -457,15 +463,17 @@ gene_callback <- function(input, output, session) {
   output$text_neg_enrich <- renderText({paste0("Pathways of genes with inverse dependencies as ", str_c(data(), collapse = ", "))})
 
   output$detail_summary <- renderUI({
-    content <- getQueryString()$content
-    if (content == 'gene') {
-      gene_summary_ui(data())
-    } else {
-      pathway_gene_list <- getQueryString()$gene_list
-      if (!is.null(pathway_gene_list)) {
-        gene_list_summary_ui(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+    if (detail_page_visible()) {
+      content <- getQueryString()$content
+      if (content == 'gene') {
+        gene_summary_ui(data())
       } else {
-        pathway_summary_ui(getQueryString()$go)   
+        pathway_gene_list <- getQueryString()$gene_list
+        if (!is.null(pathway_gene_list)) {
+          gene_list_summary_ui(str_split(pathway_gene_list, "\\s*,\\s*", simplify = TRUE))
+        } else {
+          pathway_summary_ui(getQueryString()$go)
+        }
       }
     }
     # render details about the gene symbol or pathway user chose
