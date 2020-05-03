@@ -52,13 +52,48 @@ make_pathway_table <- function(table_name = pathways) { #this makes a summary ta
   return(pathway_table)
 }
 
-make_query_results_table <- function(gene_summary, pathways, query_str, limit_pathways=10, limit_genes=10) {
+query_symbol_in_gene_summary <- function(gene_symbol, gene_summary) {
+  # Searches for exact match on approved_symbol in gene_summary, when not found returns row with only approved_symbol filled in
+  matches_gene_symbol_ignore_case <- regex(paste0('^', gene_symbol, '$'), ignore_case = TRUE)
+  gene_summary_row <- gene_summary %>%
+    filter(str_detect(approved_symbol, matches_gene_symbol_ignore_case))
+  if (nrow(gene_summary_row) > 0) {
+    gene_summary_row  %>%
+      add_column(known=TRUE)
+  } else {
+    tibble(approved_symbol=gene_symbol, known=FALSE)
+  }
+}
+
+gene_list_query_results_table <- function(gene_summary, query_str) {
+  # Splits query_str by ',' into a list of gene symbols.
+  # Search in gene_summary for matching approved_symbols
+  # Returns df with columns:
+  # - key - query_str passed in
+  # - contents - 'gene_list'
+  # - data - gene_summary row for the specified key each gene symbol, when not found only the approved_symbol will be populated
+  query_gene_symbols <- c(str_split(query_str, "\\s*,\\s*", simplify = TRUE))
+  
+  # create a df containing valid gene summary rows and just the approved_symbol filled in for unknown gene symbols
+  query_gene_symbols %>%
+    map_dfr(query_symbol_in_gene_summary, gene_summary=gene_summary) %>%
+    add_column(key=query_str) %>%
+    add_column(contents='gene_list') %>%
+    group_by(key, contents) %>%
+    nest()
+}
+
+gene_or_pathway_query_results_table <- function(gene_summary, pathways, query_str, limit_pathways=10, limit_genes=10) {
   # Searches for query_str in gene_summary and pathways and limits the number of rows returned from each.
   # Returns df with columns:
   # - key - pathways$go or gene_summary$approved_symbol
-  # - title - pathways$pathway or gene_summary$approved_name
   # - contents - 'pathway' or 'gene'
   # - data - variables from a single row of pathways or gene_summary
+  find_word_start_regex <- regex(paste0('(^', query_str, ')|(\\s', query_str, ')'), ignore_case=TRUE)
+  
+  if (str_detect(query_str, ",")) {
+    return(make_gene_list_query_results_table(gene_summary, query_str)) 
+  }
 
   # create regex that finds query at the start of the string(^) or after a space(\\s) and ignores case
   find_word_start_regex <- regex(paste0('(^', query_str, ')|(\\s', query_str, ')'), ignore_case=TRUE)
@@ -112,10 +147,9 @@ make_query_results_table <- function(gene_summary, pathways, query_str, limit_pa
   # nest gene data underneath generic key, title, and contents columns
   genes_data <- unique(bind_rows(genes_data_symbol, genes_data_aka, genes_data_name)) %>%
     head(limit_genes) %>%
-    mutate(key = approved_symbol,
-           title = approved_name) %>%
+    mutate(key = approved_symbol) %>%
     add_column(contents='gene') %>%
-    group_by(key, title, contents) %>%
+    group_by(key, contents) %>%
     nest()
 
   bind_rows(genes_data, pathways_data)
