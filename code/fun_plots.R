@@ -4,8 +4,8 @@ library(viridis)
 library(plotly)
 library(gganatogram)
 
-make_cellbins <- function(table, expression_table, gene_symbol) {
-  p <- table %>% #plot setup
+make_cellbins <- function(data_table, expression_table, gene_symbol) {
+  p <- data_table %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_table, by = "X1") %>%
     select(-X1) %>%
@@ -27,7 +27,7 @@ make_cellbins <- function(table, expression_table, gene_symbol) {
   } else {
     p
   }
-  return(ggplotly(p, tooltip = c("text")))
+  return(p)
 }
 
 make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
@@ -64,8 +64,8 @@ make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
 }
 
 # make cell anatogram
-make_cellanatogram <- function(dataset, gene_symbol) {
-  p <- dataset %>% 
+make_cellanatogram <- function(data_table, gene_symbol) {
+  p <- data_table %>% 
     filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
     filter(!is.na(type)) %>% 
     select(-value) %>% 
@@ -75,7 +75,7 @@ make_cellanatogram <- function(dataset, gene_symbol) {
     theme_void() +  
     coord_fixed() +
     scale_fill_viridis(discrete = TRUE) +
-    labs(fill = "Count") #, title = paste0("Plot for: ", str_c(str_sort(gene_symbol), collapse = ", ")))
+    labs(fill = "Count")
   
   if(length(gene_symbol) == 1){
     p  <- p +

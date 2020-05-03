@@ -67,6 +67,10 @@ search_panel <- function() {
   )
 }
 
+surprise_me <- function() {
+print("wait for it")  
+}
+
 query_result_row <- function(row) {
   if (row$contents == 'gene') {
     gene_query_result_row(row)
@@ -135,6 +139,8 @@ pathway_summary_details <- function(pathways_row) {
     tags$dl(
       tags$dt("Genes"),
       tags$dd(gene_symbols),
+      tags$dt("Pathway Description"), 
+      tags$dd(pathways_row$def)
     ),
     hr(),
     plotOutput(outputId = "cellanatogram"), 
@@ -161,7 +167,7 @@ pathway_summary_ui <- function(pathway_go) {
 }
 
 render_report_to_file <- function(file, gene_symbol) {
-  if (gene_symbol %in% colnames(achilles)) {
+  if (length(gene_symbol) == 1 && gene_symbol %in% colnames(achilles)) {
     src <- normalizePath('report_depmap_app.Rmd')
     
     # temporarily switch to the temp dir, in case you do not have write
@@ -201,8 +207,8 @@ render_complete_report <- function (file, gene_symbol) {
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(master_top_table, master_bottom_table, gene_symbol)
   rmarkdown::render("report_depmap_app.Rmd", output_file = file)
-
 }
+
 render_dummy_report <- function (file, gene_symbol) {
   fav_gene_summary <- gene_summary %>%
     filter(approved_symbol == gene_symbol)
@@ -380,10 +386,14 @@ gene_callback <- function(input, output, session) {
   })
   
   output$cellanatogram <- renderPlot({
+    validate(
+      need(data() %in% subcell$gene_name, "No subcellular location data for this gene."))
     make_cellanatogram(subcell, data())
   })
   
   output$cellanatogram_table <- DT::renderDataTable({
+    validate(
+      need(data() %in% subcell$gene_name, ""))
     DT::datatable(make_cellanatogram_table(subcell, data()), 
                   options = list(pageLength = 10))
   })
@@ -408,15 +418,21 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_top_table(master_top_table, data()) %>% dplyr::select("Query", "Gene", "Name", input$vars_dep_top), 
+      make_top_table(master_top_table, data()) %>% 
+        dplyr::mutate(link = paste0("<center><a href='https://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=", Gene,"' target='_blank'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
+        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top), 
+      escape = FALSE,
       options = list(pageLength = 25))
   })
   output$dep_bottom <- DT::renderDataTable({
     validate(
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_bottom_table(master_bottom_table, data()) %>% dplyr::select("Query", "Gene", "Name", input$vars_dep_bottom),
-    options = list(pageLength = 25))
+      make_bottom_table(master_bottom_table, data()) %>% 
+        dplyr::mutate(link = paste0("<center><a href='https://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=", Gene,"' target='_blank'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
+        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_bottom),
+      escape = FALSE,
+      options = list(pageLength = 25))
   })
   output$cell_deps <- renderPlotly({
     validate(
@@ -428,7 +444,7 @@ gene_callback <- function(input, output, session) {
   output$cell_bins <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "")) #""left blank
-    ggplotly(make_cellbins(achilles, expression_join, data()))
+    ggplotly(make_cellbins(achilles, expression_join, data()), tooltip = c("text"))
   })
   output$plot_celldeps_text <- renderUI({
     validate(

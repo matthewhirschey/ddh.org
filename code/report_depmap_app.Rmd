@@ -34,7 +34,9 @@ Data-driven hypothesis is a resource for identifying novel functions for human g
 ## Distribution of `r gene_symbol` dependency scores across `r length(achilles$X1)` cell lines  
   
 ```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
-p1 + p2
+p1 
+
+p2
 ```
   
 ### Cells that lose fitness when `r gene_symbol` is knocked out
