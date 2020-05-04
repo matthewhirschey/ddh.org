@@ -146,8 +146,8 @@ gene_list_query_result_row <- function(row) {
 
   list(
     h4(
-      tags$strong("Custom Gene List"),
-      tags$span(title)
+      tags$strong("Custom Gene List")#,
+      #tags$span(title)
     ),
     known_gene_symbols_tags,
     unknown_gene_symbols_tags,
@@ -196,7 +196,7 @@ pathway_summary_details <- function(pathways_row) {
 
 gene_list_summary_details <- function(custom_gene_list) {
   gene_symbols <- paste(custom_gene_list, collapse=', ')
-  title <- paste0("Custom Gene List: ", gene_symbols)
+  title <- paste0("Custom Gene List") #, gene_symbols
   list(
     h4(
       tags$strong(title),
@@ -316,7 +316,7 @@ save_data <- function(input) {
 head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
 
 ### universal elements
-main_title <- "Data-Driven Hypothesis"
+main_title <- HTML("<a href=\"http://www.datadrivenhypothesis.org\" style=\"color:black;\">Data-Driven Hypothesis</a>")
 
 search_tab_panel <- div(
   search_panel()
