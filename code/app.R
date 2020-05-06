@@ -328,14 +328,12 @@ search_tab_panel <- div(
 ### HOME (landing) PAGE
 home_page <- tagList(
   head_tags,
-  navbarPage(title = main_title),
-  HTML('<center><img src = "https://source.unsplash.com/y41FEMqdJ3A/800x600"></center>'),
+  HTML('<center><img src="hex_ddh.png"></center>'),
   tags$div(
     tags$br(),
     HTML('<center>Data-driven hypothesis is a resource developed by the <a href="http://www.hirscheylab.org" style="color:black;">Hirschey Lab</a> for predicting functional relationships for thousands of genes across the human genome.</center>'), 
     tags$br(),
     tags$br()),
-  #h4("Enter gene symbol, pathway name, or GO number"),
   HTML("<center>"),
   search_panel(), 
   actionLink(inputId = "example_click", "See some examples"), 
@@ -352,7 +350,7 @@ home_page <- tagList(
                    HTML('<h5>Search for</h5>
                         <ul>
                         <li>A single gene, such as <a href="http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=TP53">TP53</a> or <a href="http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=BRCA1">BRCA1</a></li>
-                        <li>A pathway name, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=cholesterol">cholesetrol</a>, which will lead you to <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=0006695">Cholesterol Biosynthetic Process</a></li>
+                        <li>A pathway name, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=cholesterol">cholesterol</a>, which will lead you to <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=0006695">Cholesterol Biosynthetic Process</a></li>
                         <li>The Gene Ontology biological process identifier, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=1901989">1901989</a>, which will find <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=1901989">Pathway: Positive Regulation Of Cell Cycle Phase Transition (GO:1901989)</a></li>
                         <li>A custom list of genes (separated by commas), such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=BRCA1,%20BRCA2">BRCA1, BRCA2</a>, which will search <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&custom_gene_list=BRCA1,BRCA2">a custom gene list</a></li>
                        </ul>')
