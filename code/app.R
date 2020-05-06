@@ -67,22 +67,12 @@ search_panel <- function() {
     btnSearch = icon("search")
   )
 }
-surprise_panel <- function() {
-  actionButton(
-    inputID = "surprise", 
-    label = "Surprise Me"
-  )
-}
+
 surprise <- function(table = master_top_table, surprise_vec = surprise_genes) {
   gene_symbol <- sample(surprise_vec, 1)
-  
-  # table %>%
-  #   dplyr::filter(fav_gene %in% gene_symbol) %>%
-  #   tidyr::unnest(data) %>%
-  #   dplyr::arrange(desc(r2)) 
-  return(gene_symbol)
+  gene_symbol_url <- paste0("http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=", gene_symbol)
+  return(gene_symbol_url)
 }
-#surprise(master_top_table, surprise_genes)
 
 query_result_row <- function(row) {
   if (row$contents == 'gene') {
@@ -349,8 +339,10 @@ home_page <- tagList(
   HTML("<center>"),
   search_panel(), 
   actionLink(inputId = "example_click", "See some examples"), 
-  "or", 
+  ", ", 
   actionLink(inputId = "pathway_click", "browse the pathways"), 
+  ", or",
+  tags$a("get lucky", href = surprise()), 
   HTML("</center>"),
   conditionalPanel(condition = 'input.example_click == 0',
                    ""),
