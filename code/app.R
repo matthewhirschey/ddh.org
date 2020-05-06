@@ -43,11 +43,12 @@ achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
 mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
 sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
 
-#read data from generate_depmap_pathways.R
+#read data from generate_depmap_tables & pathways.R
 master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
 master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
 master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
 master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
+surprise_genes <- readRDS(file=here::here("data", "surprise_genes.Rds"))
 
 #read data from generate_subcell_data.R
 subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))
@@ -62,14 +63,26 @@ source(here::here("code", "fun_graphs.R"))
 search_panel <- function() {
   searchInput(
     inputId = "gene_or_pathway",
-    placeholder = "search",
+    placeholder = "genes, pathways, or GO number", #search
     btnSearch = icon("search")
   )
 }
-
-surprise_me <- function() {
-print("wait for it")  
+surprise_panel <- function() {
+  actionButton(
+    inputID = "surprise", 
+    label = "Surprise Me"
+  )
 }
+surprise <- function(table = master_top_table, surprise_vec = surprise_genes) {
+  gene_symbol <- sample(surprise_vec, 1)
+  
+  # table %>%
+  #   dplyr::filter(fav_gene %in% gene_symbol) %>%
+  #   tidyr::unnest(data) %>%
+  #   dplyr::arrange(desc(r2)) 
+  return(gene_symbol)
+}
+#surprise(master_top_table, surprise_genes)
 
 query_result_row <- function(row) {
   if (row$contents == 'gene') {
@@ -326,21 +339,38 @@ search_tab_panel <- div(
 home_page <- tagList(
   head_tags,
   navbarPage(title = main_title),
-  tags$img(src = "https://source.unsplash.com/y41FEMqdJ3A/800x600"),
+  HTML('<center><img src = "https://source.unsplash.com/y41FEMqdJ3A/800x600"></center>'),
   tags$div(
     tags$br(),
-    "Data-driven hypothesis is a resource developed by the", a(href = "http://www.hirscheylab.org", "Hirschey Lab"), "for predicting pathways and functions for thousands of genes across the human genomes. A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across several measures, in order to discover novel genes in established processes or new functions for well-studied genes.", 
+    HTML('<center>Data-driven hypothesis is a resource developed by the <a href="http://www.hirscheylab.org" style="color:black;">Hirschey Lab</a> for predicting functional relationships for thousands of genes across the human genome.</center>'), 
     tags$br(),
     tags$br()),
-  h4("Enter gene symbol, pathway name, or GO number"),
+  #h4("Enter gene symbol, pathway name, or GO number"),
+  HTML("<center>"),
   search_panel(), 
-  actionLink(inputId = "pathway_click", "Or browse the pathways"), 
+  actionLink(inputId = "example_click", "See some examples"), 
+  "or", 
+  actionLink(inputId = "pathway_click", "browse the pathways"), 
+  HTML("</center>"),
+  conditionalPanel(condition = 'input.example_click == 0',
+                   ""),
+  conditionalPanel(condition = 'input.example_click != 0', 
+                   tags$br(),
+                   h4("Examples"),
+                   HTML('<h5>Search for</h5>
+                        <ul>
+                        <li>A single gene, such as <a href="http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=TP53">TP53</a> or <a href="http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=BRCA1">BRCA1</a></li>
+                        <li>A pathway name, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=cholesterol">cholesetrol</a>, which will lead you to <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=0006695">Cholesterol Biosynthetic Process</a></li>
+                        <li>The Gene Ontology biological process identifier, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=1901989">1901989</a>, which will find <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=1901989">Pathway: Positive Regulation Of Cell Cycle Phase Transition (GO:1901989)</a></li>
+                        <li>A custom list of genes (separated by commas), such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=BRCA1,%20BRCA2">BRCA1, BRCA2</a>, which will search <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&custom_gene_list=BRCA1,BRCA2">a custom gene list</a></li>
+                       </ul>')
+                   ),
   conditionalPanel(condition = 'input.pathway_click == 0',
                    ""),
   conditionalPanel(condition = 'input.pathway_click != 0', 
                    tags$br(),
                    h4("GO Biological Processes"),
-                   dataTableOutput(outputId = "pathway_table"))
+                   dataTableOutput(outputId = "pathway_table")), 
 )
 
 ### SEARCH PAGE
@@ -457,7 +487,9 @@ gene_callback <- function(input, output, session) {
     save_data(input)
   })
 
-  #pathways
+  #examples & pathways
+  observeEvent(input$example_click, { #event to store the 'click'
+  })
   observeEvent(input$pathway_click, { #event to store the 'click'
   })
   
