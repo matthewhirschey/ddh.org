@@ -339,10 +339,14 @@ detail_page <- fluidPage(
                tabPanel("Plots",
                         fluidRow(h4(textOutput("text_cell_dep_plot"))),
                         fluidRow(plotlyOutput(outputId = "cell_deps")),
-                        fluidRow(htmlOutput(outputId = "plot_celldeps_text")),
+                        tags$br(),
+                        fluidRow(tags$strong(plot_celldeps_title), plot_celldeps_legend),
                         tags$hr(),
                         fluidRow(plotlyOutput(outputId = "cell_bins")),
-                        fluidRow(htmlOutput(outputId = "plot_cellbins_text"))),
+                        tags$br(),
+                        fluidRow(tags$strong(plot_cellbins_title), plot_cellbins_legend),
+                        tags$br()
+                        ),
                tabPanel("Table",
                         fluidRow(h4(textOutput("text_cell_dep_table"))),
                         fluidRow(dataTableOutput(outputId = "target_achilles")))
@@ -507,16 +511,6 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% colnames(achilles), "")) #""left blank
     ggplotly(make_cellbins(achilles, expression_join, data()), tooltip = c("text"))
-  })
-  output$plot_celldeps_text <- renderUI({
-    validate(
-      need(data() %in% colnames(achilles), "")) #""left blank
-    HTML("<p></p><p><b>Cell Line Dependency Curve.</b> Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essential within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out.</p>")
-    })
-  output$plot_cellbins_text <- renderUI({
-    validate(
-      need(data() %in% colnames(achilles), "")) #""left blank
-    HTML("<p></p><p><b>Kernel density estimate.</b> A smoothed version of the histogram of Dependency Scores. Dependency scores across all cell lines for queried genes, revealing overall influence of a gene on cellular fitness</p>")
   })
   output$target_achilles <- DT::renderDataTable({
     validate(

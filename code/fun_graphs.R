@@ -194,3 +194,7 @@ make_graph_report <- function(top_table, bottom_table, gene_symbol, threshold = 
     guides(size = "none")
 }
 
+#figure legend
+graph_title <- "Network Graph."
+graph_legend <- if(length(gene_symbol) == 1) {"Each point represents a single gene taken from the top associated genes with the query gene. Genes with only one connection were removed."
+} else {"Each point represents one of the queried genes, and then the top and bottom associated genes with it. Genes with only one connection were removed."}

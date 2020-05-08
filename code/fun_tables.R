@@ -155,7 +155,7 @@ gene_or_pathway_query_results_table <- function(gene_summary, pathways, query_st
   bind_rows(genes_data, pathways_data)
 }
 
-make_cellanatogram_table <- function(dataset, gene_symbol) {
+make_cellanatogram_table <- function(dataset = subcell, gene_symbol) {
   dataset %>% 
     filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
     filter(!is.na(type)) %>%

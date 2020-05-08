@@ -20,28 +20,42 @@ source(here::here("code", "current_release.R"))
 `r lubridate::stamp("Report generated December 31, 1979")(now())`  
   
 ## Project Summary  
-Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). A typical use case starts by querying a gene, identifying genes that share similar patterns or behaviors across various measures, in order to discover new novel genes in established processes or new processes for well-studied genes.  This project leverages several high-quality publically available datasets, including release `r release` of the [Dependency Map](www.depmap.org) from the [Broad Institute](www.broadinstitute.org).  
+Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). This project leverages several high-quality publically available datasets, including release `r release` of the [Dependency Map](www.depmap.org) from the [Broad Institute](www.broadinstitute.org).  
   
 ## Query Summary  
-**Name**: `summary$identifier`: `r summary$name` 
+**Name**: `r summary$identifier`: `r summary$name`  
 **Summary**: `r summary$summary`  
   
 \newpage 
 ## Subcellular distribution of `r summary$identifier`  
   
-```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
+```{r anatogram, echo=FALSE, message=FALSE, warning=FALSE}
 cellanatogram
+```
+  
+```{r anatogram_table, echo=FALSE, message=FALSE, warning=FALSE}
+pander(cellanatogram_table, split.table = Inf)
 ```
 
 \newpage 
-## Distribution of `r summary$identifier` dependency scores across `r length(achilles$X1)` cell lines  
+## Range of `r summary$identifier` dependency scores across `r length(achilles$X1)` cell lines  
   
-```{r plot, echo=FALSE, message=FALSE, warning=FALSE}
+```{r plot1, echo=FALSE, message=FALSE, warning=FALSE}
 p1 
-
-p2
 ```
   
+  **`r plot_celldeps_title`** `r plot_celldeps_legend`
+  
+\newpage
+## Distribution of Dependency Scores
+```{r plot2, echo=FALSE, message=FALSE, warning=FALSE}
+p2
+```
+    
+  **`r plot_cellbins_title`** `r plot_cellbins_legend`
+  
+\newpage
+## Cell Line Dependency Information
 ### Cells that lose fitness when `r summary$identifier` is knocked out
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 pander(target_achilles_bottom, split.table = Inf)
@@ -52,6 +66,8 @@ pander(target_achilles_bottom, split.table = Inf)
 pander(target_achilles_top, split.table = Inf)
 ```
   
+  
+\newpage  
 ## Positive Ranked Dependency from DepMap  
 `r if(length(dep_top$Gene) > 0) {pander(paste("The", length(dep_top$Gene), "genes that show the highest postive correlation for similar genetic dependencies are listed here."))} else {}`  
 ```{r template_dep_top, echo=FALSE}
@@ -106,7 +122,7 @@ if(length(dep_bottom$Gene) > 0) {
 ```
 
 \newpage  
-## Graph  
+## Network Graph of `r summary$identifier`
    
 ```{r template_graph, echo=FALSE}
 if(length(dep_bottom$Gene) > 0) {
@@ -115,4 +131,7 @@ if(length(dep_bottom$Gene) > 0) {
   pander("Graph cannot be built")
 }
 ```
+    
+  **`r graph_title`** `r graph_legend`
+  
 

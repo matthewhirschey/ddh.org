@@ -30,6 +30,10 @@ make_cellbins <- function(data_table, expression_table, gene_symbol) {
   return(p)
 }
 
+#figure legend
+plot_cellbins_title <- "Kernel density estimate."
+plot_cellbins_legend <- "A smoothed version of the histogram of Dependency Scores. Dependency scores across all cell lines for queried genes, revealing overall influence of a gene on cellular fitness"
+
 make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
   p <- data_table %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
@@ -63,8 +67,12 @@ make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
   return(p)
 }
 
+#figure legend
+plot_celldeps_title <- "Cell Line Dependency Curve."
+plot_celldeps_legend <- "Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essential within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out"
+
 # make cell anatogram
-make_cellanatogram <- function(data_table, gene_symbol) {
+make_cellanatogram <- function(data_table = subcell, gene_symbol) {
   p <- data_table %>% 
     filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
     filter(!is.na(type)) %>% 
