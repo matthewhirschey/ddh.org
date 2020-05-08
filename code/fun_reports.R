@@ -1,33 +1,5 @@
 library(tidyverse)
 
-render_report_to_file <- function(file, gene_symbol, type) {
-  if (gene_symbol %in% colnames(achilles)) { #length(gene_symbol) == 1 && 
-    src <- normalizePath('report_depmap_app.Rmd')
-    
-    # temporarily switch to the temp dir, in case you do not have write
-    # permission to the current working directory
-    
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
-    out <- render_complete_report(file, gene_symbol, type)
-    file.rename(out, file)
-  } else {
-    src <- normalizePath('report_dummy_depmap.Rmd')
-    
-    # temporarily switch to the temp dir, in case you do not have write
-    # permission to the current working directory
-    
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_dummy_depmap.Rmd', overwrite = TRUE)
-    out <- render_dummy_report(file, gene_symbol, type)
-    file.rename(out, file)
-  }
-}
-
 make_summary <- function(gene_symbol, type) {
   if(type == "gene"){
     summary <- gene_summary %>% 
@@ -77,4 +49,32 @@ render_complete_report <- function (file, gene_symbol, type) {
 render_dummy_report <- function (file, gene_symbol, type) {
   summary <- make_summary(gene_symbol, type)
   rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
+}
+
+render_report_to_file <- function(file, gene_symbol, type) {
+  if (gene_symbol %in% colnames(achilles)) { #length(gene_symbol) == 1 && 
+    src <- normalizePath('report_depmap_app.Rmd')
+    
+    # temporarily switch to the temp dir, in case you do not have write
+    # permission to the current working directory
+    
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
+    out <- render_complete_report(file, gene_symbol, type)
+    file.rename(out, file)
+  } else {
+    src <- normalizePath('report_dummy_depmap.Rmd')
+    
+    # temporarily switch to the temp dir, in case you do not have write
+    # permission to the current working directory
+    
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_dummy_depmap.Rmd', overwrite = TRUE)
+    out <- render_dummy_report(file, gene_symbol, type)
+    file.rename(out, file)
+  }
 }

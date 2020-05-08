@@ -133,7 +133,7 @@ gene_list_query_result_row <- function(row) {
   known_gene_symbols_tags <- NULL
   if (has_known_gene_symbols) {
     gene_query_param <- paste0("custom_gene_list=", paste(known_gene_symbols, collapse=","))
-    href <- paste0("?show=detail&content=pathway&", gene_query_param)
+    href <- paste0("?show=detail&content=custom_gene_list&", gene_query_param)
     known_gene_symbols_tags <- list(
       tags$h6("Known Gene Symbols"),
       tags$a(paste(known_gene_symbols, collapse=", "), href=href)
@@ -304,7 +304,7 @@ home_page <- tagList(
                         <li>A single gene, such as <a href="?show=detail&content=gene&symbol=TP53">TP53</a> or <a href="?show=detail&content=gene&symbol=BRCA1">BRCA1</a></li>
                         <li>A pathway name, such as <a href="?show=search&query=cholesterol">cholesterol</a>, which will lead you to <a href="?show=detail&content=pathway&go=0006695">Cholesterol Biosynthetic Process</a></li>
                         <li>The Gene Ontology biological process identifier, such as <a href="?show=search&query=1901989">1901989</a>, which will find <a href="?show=detail&content=pathway&go=1901989">Pathway: Positive Regulation Of Cell Cycle Phase Transition (GO:1901989)</a></li>
-                        <li>A custom list of genes (separated by commas), such as <a href="?show=search&query=BRCA1,%20BRCA2">BRCA1, BRCA2</a>, which will search <a href="?show=detail&content=pathway&custom_gene_list=BRCA1,BRCA2">a custom gene list</a></li>
+                        <li>A custom list of genes (separated by commas), such as <a href="?show=search&query=BRCA1,%20BRCA2">BRCA1, BRCA2</a>, which will search <a href="?show=detail&content=custom_gene_list&custom_gene_list=BRCA1,BRCA2">a custom gene list</a></li>
                        </ul>')
                    ),
   conditionalPanel(condition = 'input.pathway_click == 0',
@@ -409,16 +409,14 @@ gene_callback <- function(input, output, session) {
       content <- getQueryString()$content
       if (content == 'gene') {
         gene_symbol <- getQueryString()$symbol
+      } else if (content == 'pathway') {
+        pathway_go <- getQueryString()$go
+        pathway_row <- pathways %>%
+          filter(go == pathway_go)
+        pathway_row$data[[1]]$gene
       } else {
         custom_gene_list <- getQueryString()$custom_gene_list
-        if (!is.null(custom_gene_list)) {
-          c(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
-        } else {
-          pathway_go <- getQueryString()$go
-          pathway_row <- pathways %>%
-            filter(go == pathway_go)
-          pathway_row$data[[1]]$gene
-        }
+        c(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
       }
     }
   })
@@ -469,13 +467,11 @@ gene_callback <- function(input, output, session) {
       content <- getQueryString()$content
       if (content == 'gene') {
         gene_summary_ui(data())
+      } else if (content == 'pathway') {
+        pathway_summary_ui(getQueryString()$go)
       } else {
         custom_gene_list <- getQueryString()$custom_gene_list
-        if (!is.null(custom_gene_list)) {
-          gene_list_summary_ui(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
-        } else {
-          pathway_summary_ui(getQueryString()$go)
-        }
+        gene_list_summary_ui(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
       }
     }
     # render details about the gene symbol or pathway user chose
