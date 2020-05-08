@@ -133,7 +133,7 @@ gene_list_query_result_row <- function(row) {
   known_gene_symbols_tags <- NULL
   if (has_known_gene_symbols) {
     gene_query_param <- paste0("custom_gene_list=", paste(known_gene_symbols, collapse=","))
-    href <- paste0("?show=detail&content=pathway&", gene_query_param)
+    href <- paste0("?show=detail&content=custom_gene_list&", gene_query_param)
     known_gene_symbols_tags <- list(
       tags$h6("Known Gene Symbols"),
       tags$a(paste(known_gene_symbols, collapse=", "), href=href)
@@ -409,16 +409,14 @@ gene_callback <- function(input, output, session) {
       content <- getQueryString()$content
       if (content == 'gene') {
         gene_symbol <- getQueryString()$symbol
+      } else if (content == 'pathway') {
+        pathway_go <- getQueryString()$go
+        pathway_row <- pathways %>%
+          filter(go == pathway_go)
+        pathway_row$data[[1]]$gene
       } else {
         custom_gene_list <- getQueryString()$custom_gene_list
-        if (!is.null(custom_gene_list)) {
-          c(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
-        } else {
-          pathway_go <- getQueryString()$go
-          pathway_row <- pathways %>%
-            filter(go == pathway_go)
-          pathway_row$data[[1]]$gene
-        }
+        c(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
       }
     }
   })
@@ -469,13 +467,11 @@ gene_callback <- function(input, output, session) {
       content <- getQueryString()$content
       if (content == 'gene') {
         gene_summary_ui(data())
+      } else if (content == 'pathway') {
+        pathway_summary_ui(getQueryString()$go)
       } else {
         custom_gene_list <- getQueryString()$custom_gene_list
-        if (!is.null(custom_gene_list)) {
-          gene_list_summary_ui(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
-        } else {
-          pathway_summary_ui(getQueryString()$go)
-        }
+        gene_list_summary_ui(str_split(custom_gene_list, "\\s*,\\s*", simplify = TRUE))
       }
     }
     # render details about the gene symbol or pathway user chose
