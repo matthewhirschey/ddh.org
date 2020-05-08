@@ -58,6 +58,7 @@ subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))
 source(here::here("code", "fun_tables.R"))
 source(here::here("code", "fun_plots.R"))
 source(here::here("code", "fun_graphs.R"))
+source(here::here("code", "fun_reports.R"))
 
 #shiny functions
 search_panel <- function() {
@@ -70,7 +71,7 @@ search_panel <- function() {
 
 surprise <- function(table = master_top_table, surprise_vec = surprise_genes) {
   gene_symbol <- sample(surprise_vec, 1)
-  gene_symbol_url <- paste0("http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=", gene_symbol)
+  gene_symbol_url <- paste0("?show=detail&content=gene&symbol=", gene_symbol)
   return(gene_symbol_url)
 }
 
@@ -240,55 +241,6 @@ gene_list_summary_ui <- function(custom_gene_list) {
   gene_list_summary_details(valid_gene_symbols)
 }
 
-render_report_to_file <- function(file, gene_symbol) {
-  if (length(gene_symbol) == 1 && gene_symbol %in% colnames(achilles)) {
-    src <- normalizePath('report_depmap_app.Rmd')
-    
-    # temporarily switch to the temp dir, in case you do not have write
-    # permission to the current working directory
-    
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
-    out <- render_complete_report(file, gene_symbol)
-    file.rename(out, file)
-  } else {
-    src <- normalizePath('report_dummy_depmap.Rmd')
-    
-    # temporarily switch to the temp dir, in case you do not have write
-    # permission to the current working directory
-    
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_dummy_depmap.Rmd', overwrite = TRUE)
-    out <- render_dummy_report(file, gene_symbol)
-    file.rename(out, file)
-  }
-}
-
-render_complete_report <- function (file, gene_symbol) {
-  fav_gene_summary <- gene_summary %>%
-    filter(approved_symbol %in% gene_symbol)
-  p1 <- make_celldeps(achilles, expression_join, gene_symbol, mean_virtual_achilles)
-  p2 <- make_cellbins(achilles, expression_join, gene_symbol)
-  target_achilles_bottom <- make_achilles_table(achilles, expression_join, gene_symbol) %>% head(10)
-  target_achilles_top <- make_achilles_table(achilles, expression_join, gene_symbol) %>% tail(10)
-  dep_top <- make_top_table(master_top_table, gene_symbol)
-  flat_top_complete <- make_enrichment_table(master_positive, gene_symbol)
-  dep_bottom <- make_bottom_table(master_bottom_table, gene_symbol)
-  flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
-  graph_report <- make_graph_report(master_top_table, master_bottom_table, gene_symbol)
-  rmarkdown::render("report_depmap_app.Rmd", output_file = file)
-}
-
-render_dummy_report <- function (file, gene_symbol) {
-  fav_gene_summary <- gene_summary %>%
-    filter(approved_symbol == gene_symbol)
-  rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
-}
-
 # Define the fields we want to save from the form
 fields <- c("first_name", "last_name", "email")
 
@@ -319,7 +271,7 @@ save_data <- function(input) {
 head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
 
 ### universal elements
-main_title <- HTML("<a href=\"http://www.datadrivenhypothesis.org\" style=\"color:black;\">Data-Driven Hypothesis</a>")
+main_title <- HTML('<a href="." style="color:black;">Data-Driven Hypothesis</a>')
 
 search_tab_panel <- div(
   search_panel()
@@ -336,11 +288,11 @@ home_page <- tagList(
     tags$br()),
   HTML("<center>"),
   search_panel(), 
-  actionLink(inputId = "example_click", "See some examples"), 
+  actionLink(inputId = "example_click", "See example searches"), 
   ", ", 
   actionLink(inputId = "pathway_click", "browse the pathways"), 
   ", or",
-  tags$a("get lucky", href = surprise()), 
+  htmlOutput("get_lucky", inline = TRUE),
   HTML("</center>"),
   conditionalPanel(condition = 'input.example_click == 0',
                    ""),
@@ -349,10 +301,10 @@ home_page <- tagList(
                    h4("Examples"),
                    HTML('<h5>Search for</h5>
                         <ul>
-                        <li>A single gene, such as <a href="http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=TP53">TP53</a> or <a href="http://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=BRCA1">BRCA1</a></li>
-                        <li>A pathway name, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=cholesterol">cholesterol</a>, which will lead you to <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=0006695">Cholesterol Biosynthetic Process</a></li>
-                        <li>The Gene Ontology biological process identifier, such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=1901989">1901989</a>, which will find <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&go=1901989">Pathway: Positive Regulation Of Cell Cycle Phase Transition (GO:1901989)</a></li>
-                        <li>A custom list of genes (separated by commas), such as <a href="http://www.datadrivenhypothesis.org/?show=search&query=BRCA1,%20BRCA2">BRCA1, BRCA2</a>, which will search <a href="http://www.datadrivenhypothesis.org/?show=detail&content=pathway&custom_gene_list=BRCA1,BRCA2">a custom gene list</a></li>
+                        <li>A single gene, such as <a href="?show=detail&content=gene&symbol=TP53">TP53</a> or <a href="?show=detail&content=gene&symbol=BRCA1">BRCA1</a></li>
+                        <li>A pathway name, such as <a href="?show=search&query=cholesterol">cholesterol</a>, which will lead you to <a href="?show=detail&content=pathway&go=0006695">Cholesterol Biosynthetic Process</a></li>
+                        <li>The Gene Ontology biological process identifier, such as <a href="?show=search&query=1901989">1901989</a>, which will find <a href="?show=detail&content=pathway&go=1901989">Pathway: Positive Regulation Of Cell Cycle Phase Transition (GO:1901989)</a></li>
+                        <li>A custom list of genes (separated by commas), such as <a href="?show=search&query=BRCA1,%20BRCA2">BRCA1, BRCA2</a>, which will search <a href="?show=detail&content=pathway&custom_gene_list=BRCA1,BRCA2">a custom gene list</a></li>
                        </ul>')
                    ),
   conditionalPanel(condition = 'input.pathway_click == 0',
@@ -457,7 +409,6 @@ gene_callback <- function(input, output, session) {
       content <- getQueryString()$content
       if (content == 'gene') {
         gene_symbol <- getQueryString()$symbol
-        if_else(str_detect(gene_symbol, "orf"), gene_symbol, str_to_upper(gene_symbol))
       } else {
         custom_gene_list <- getQueryString()$custom_gene_list
         if (!is.null(custom_gene_list)) {
@@ -472,7 +423,12 @@ gene_callback <- function(input, output, session) {
     }
   })
 
-  # When the Submit button is clicked, save the form data
+  #reactive 'get lucky' to dynamically update within a single session
+  output$get_lucky <- renderUI({
+    tags$a(href = surprise(), "get lucky")
+  })
+
+  #When the Submit button is clicked, save the form data
   observeEvent(input$submit, {
     save_data(input)
   })
@@ -539,7 +495,7 @@ gene_callback <- function(input, output, session) {
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_bottom_table(master_bottom_table, data()) %>% 
-        dplyr::mutate(link = paste0("<center><a href='https://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=", Gene,"' target='_blank'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
+        dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"' target='_blank'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
         dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_bottom),
       escape = FALSE,
       options = list(pageLength = 25))
@@ -601,13 +557,13 @@ gene_callback <- function(input, output, session) {
       progress_bar$set(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1)
       if (render_report_in_background) {
         result <- future({
-          render_report_to_file(file, gene_symbol)
+          render_report_to_file(file, gene_symbol, getQueryString()$content)
         })
         finally(result, function(){
           progress_bar$close()
         })
       } else {
-        render_report_to_file(file, gene_symbol)
+        render_report_to_file(file, gene_symbol, getQueryString()$content)
         progress_bar$close()
       }
     }
