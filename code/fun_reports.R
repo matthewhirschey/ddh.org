@@ -1,6 +1,9 @@
 library(tidyverse)
 
-make_summary <- function(gene_symbol, type) {
+make_summary <- function(gene_symbol, 
+                         type, 
+                         gene_summary = gene_summary, 
+                         pathways = pathways) {
   if(type == "gene"){
     summary_table <- gene_summary %>% 
       filter(approved_symbol %in% gene_symbol) %>% 
@@ -40,7 +43,20 @@ make_summary <- function(gene_symbol, type) {
 #make_summary(gene_symbol = c("GHRHR", "CDH3", "GHRH", "IGF1", "PHIP", "WNT1", "GH1"), type = "pathway")
 #make_summary(gene_symbol = c("SDHA", "SDHB"), type = "custom_gene_list")
 
-render_complete_report <- function (file, gene_symbol, type) {
+render_complete_report <- function (file, 
+                                    gene_symbol, 
+                                    type,
+                                    gene_summary = gene_summary, 
+                                    pathways = pathways,
+                                    subcell = subcell, 
+                                    achilles = achilles, 
+                                    expression_join = expression_join, 
+                                    mean_virtual_achilles = mean_virtual_achilles, 
+                                    master_top_table = master_top_table, 
+                                    master_bottom_table = master_bottom_table,
+                                    master_positive = master_positive, 
+                                    master_negative = master_negative
+                                    ) {
   summary <- make_summary(gene_symbol, type)
   cellanatogram <- make_cellanatogram(subcell, gene_symbol)
   cellanatogram_table <- make_cellanatogram_table(subcell, gene_symbol)
@@ -53,20 +69,39 @@ render_complete_report <- function (file, gene_symbol, type) {
   dep_bottom <- make_bottom_table(master_bottom_table, gene_symbol)
   flat_bottom_complete <- make_enrichment_table(master_negative, gene_symbol)
   graph_report <- make_graph_report(master_top_table, master_bottom_table, gene_symbol)
-  rmarkdown::render(here::here("code", "report_depmap_app.Rmd"), output_file = file)
+  rmarkdown::render(here::here("code", "report_app.Rmd"), output_file = file)
 }
 #render_complete_report(file = "tmp.pdf", gene_symbol = "SDHA", type = "gene")
 #render_complete_report(file = "tmp.pdf", gene_symbol = c("GHRHR", "CDH3", "GHRH", "IGF1", "PHIP", "WNT1", "GH1"), type = "pathway")
 #render_complete_report(file = "tmp.pdf", gene_symbol = c("SDHA", "SDHB"), type = "custom_gene_list")
 
-render_dummy_report <- function (file, gene_symbol, type) {
-  summary <- make_summary(gene_symbol, type)
-  rmarkdown::render("report_dummy_depmap.Rmd", output_file = file)
+render_dummy_report <- function (file, 
+                                 gene_symbol, 
+                                 type, 
+                                 gene_summary = gene_summary, 
+                                 pathways = pathways) {
+  summary <- make_summary(gene_symbol, 
+                          type, 
+                          gene_summary = gene_summary, 
+                          pathways = pathways)
+  rmarkdown::render("report_dummy_app.Rmd", output_file = file)
 }
 
-render_report_to_file <- function(file, gene_symbol, type) {
+render_report_to_file <- function(file, 
+                                  gene_symbol, 
+                                  type = type, 
+                                  gene_summary = gene_summary, 
+                                  pathways = pathways,
+                                  subcell = subcell, 
+                                  achilles = achilles, 
+                                  expression_join = expression_join, 
+                                  mean_virtual_achilles = mean_virtual_achilles, 
+                                  master_top_table = master_top_table, 
+                                  master_bottom_table = master_bottom_table,
+                                  master_positive = master_positive, 
+                                  master_negative = master_negative) {
   if (gene_symbol %in% colnames(achilles)) { #length(gene_symbol) == 1 && 
-    src <- normalizePath('report_depmap_app.Rmd')
+    src <- normalizePath('report_app.Rmd')
     
     # temporarily switch to the temp dir, in case you do not have write
     # permission to the current working directory
@@ -74,11 +109,23 @@ render_report_to_file <- function(file, gene_symbol, type) {
     owd <- setwd(tempdir())
     on.exit(setwd(owd))
     
-    file.copy(src, 'report_depmap_app.Rmd', overwrite = TRUE)
-    out <- render_complete_report(file, gene_symbol, type)
+    file.copy(src, 'report_app.Rmd', overwrite = TRUE)
+    out <- render_complete_report(file, 
+                                  gene_symbol, 
+                                  type = type, 
+                                  gene_summary = gene_summary, 
+                                  pathways = pathways,
+                                  subcell = subcell, 
+                                  achilles = achilles, 
+                                  expression_join = expression_join, 
+                                  mean_virtual_achilles = mean_virtual_achilles, 
+                                  master_top_table = master_top_table, 
+                                  master_bottom_table = master_bottom_table,
+                                  master_positive = master_positive, 
+                                  master_negative = master_negative)
     file.rename(out, file)
   } else {
-    src <- normalizePath('report_dummy_depmap.Rmd')
+    src <- normalizePath('report_dummy_app.Rmd')
     
     # temporarily switch to the temp dir, in case you do not have write
     # permission to the current working directory
@@ -86,8 +133,12 @@ render_report_to_file <- function(file, gene_symbol, type) {
     owd <- setwd(tempdir())
     on.exit(setwd(owd))
     
-    file.copy(src, 'report_dummy_depmap.Rmd', overwrite = TRUE)
-    out <- render_dummy_report(file, gene_symbol, type)
+    file.copy(src, 'report_dummy_app.Rmd', overwrite = TRUE)
+    out <- render_dummy_report(file, 
+                               gene_symbol, 
+                               type, 
+                               gene_summary = gene_summary, 
+                               pathways = pathways)
     file.rename(out, file)
   }
 }

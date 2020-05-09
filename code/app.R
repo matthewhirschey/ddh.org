@@ -540,20 +540,50 @@ gene_callback <- function(input, output, session) {
   })
   output$report <- downloadHandler(
     # create pdf report
-    filename = function() {paste0(data(), "_ddh.pdf")},
+    filename = function() {
+      type = getQueryString()$content
+      if(type == "gene"){
+      paste0(data(), "_ddh.pdf")
+      } else if (type == "pathway") {
+        go <- getQueryString()$go
+      paste0(go, "_ddh.pdf")
+      } else {
+        paste0("custom_", data(), "_ddh.pdf")
+      }
+        },
     content = function(file) {
       gene_symbol <- data() # reactive data must be read outside of a future
       progress_bar <- Progress$new()
       progress_bar$set(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1)
       if (render_report_in_background) {
         result <- future({
-          render_report_to_file(file, gene_symbol, type = getQueryString()$content)
+          render_report_to_file(file, 
+                                gene_symbol, 
+                                type = getQueryString()$content, 
+                                subcell = subcell, 
+                                achilles = achilles, 
+                                expression_join = expression_join, 
+                                mean_virtual_achilles = mean_virtual_achilles, 
+                                master_top_table = master_top_table, 
+                                master_bottom_table = master_bottom_table,
+                                master_positive = master_positive, 
+                                master_negative = master_negative)
         })
         finally(result, function(){
           progress_bar$close()
         })
       } else {
-        render_report_to_file(file, gene_symbol, type = getQueryString()$content)
+        render_report_to_file(file, 
+                              gene_symbol, 
+                              type = getQueryString()$content, 
+                              subcell = subcell, 
+                              achilles = achilles, 
+                              expression_join = expression_join, 
+                              mean_virtual_achilles = mean_virtual_achilles, 
+                              master_top_table = master_top_table, 
+                              master_bottom_table = master_bottom_table,
+                              master_positive = master_positive, 
+                              master_negative = master_negative)
         progress_bar$close()
       }
     }
