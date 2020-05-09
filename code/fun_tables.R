@@ -16,8 +16,17 @@ make_bottom_table <- function(bottomtable_data = master_bottom_table, gene_symbo
     dplyr::rename("Query" = "fav_gene", "Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
 
-make_enrichment_table <- function(enrichmenttable_data, gene_symbol) { #master_positive, master_negative
-  enrichmenttable_data %>%
+make_enrichment_top <- function(enrichmenttop_data, gene_symbol) { #master_positive
+  enrichmenttop_data %>%
+    dplyr::filter(fav_gene %in% gene_symbol) %>%
+    tidyr::unnest(data) %>%
+    dplyr::select(fav_gene, enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
+    dplyr::arrange(Adjusted.P.value) %>%
+    dplyr::rename("Query" = "fav_gene", "Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
+}
+
+make_enrichment_bottom <- function(enrichmentbottom_data, gene_symbol) { #master_negative
+  enrichmentbottom_data %>%
     dplyr::filter(fav_gene %in% gene_symbol) %>%
     tidyr::unnest(data) %>%
     dplyr::select(fav_gene, enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%

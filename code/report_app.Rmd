@@ -38,7 +38,7 @@ pander(cellanatogram_table, split.table = Inf)
 ```
 
 \newpage 
-## Range of `r summary$identifier` dependency scores across `r length(achilles$X1)` cell lines  
+## Range of `r summary$identifier` dependency scores across `r num` cell lines  
   
 ```{r plot1, echo=FALSE, message=FALSE, warning=FALSE}
 p1 

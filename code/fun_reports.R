@@ -55,9 +55,11 @@ render_complete_report <- function (file,
                                     cellanatogram_data = subcell,
                                     toptable_data = master_top_table, 
                                     bottomtable_data = master_bottom_table,
-                                    enrichmenttable_data, 
+                                    enrichmenttop_data = master_positive, 
+                                    enrichmentbottom_data = master_negative, 
                                     achilles_data = achilles
                                     ) {
+  num <- length(achilles_data$X1)
   summary <- make_summary(gene_symbol, type, summary1, summary2)
   cellanatogram <- make_cellanatogram(cellanatogram_data, gene_symbol)
   cellanatogram_table <- make_cellanatogram_table(cellanatogram_data, gene_symbol)
@@ -66,9 +68,9 @@ render_complete_report <- function (file,
   target_achilles_bottom <- make_achilles_table(achilles_data, expression_data, gene_symbol) %>% head(10)
   target_achilles_top <- make_achilles_table(achilles_data, expression_data, gene_symbol) %>% tail(10)
   dep_top <- make_top_table(toptable_data, gene_symbol)
-  flat_top_complete <- make_enrichment_table(enrichmenttable_data = master_positive, gene_symbol)
+  flat_top_complete <- make_enrichment_top(enrichmenttop_data, gene_symbol)
   dep_bottom <- make_bottom_table(bottomtable_data, gene_symbol)
-  flat_bottom_complete <- make_enrichment_table(enrichmenttable_data = master_negative, gene_symbol)
+  flat_bottom_complete <- make_enrichment_bottom(enrichmentbottom_data, gene_symbol)
   graph_report <- make_graph_report(toptable_data, bottomtable_data, gene_symbol)
   rmarkdown::render(here::here("code", "report_app.Rmd"), output_file = file)
 }
@@ -101,9 +103,10 @@ render_report_to_file <- function(file,
                                   cellanatogram_data = subcell,
                                   toptable_data = master_top_table, 
                                   bottomtable_data = master_bottom_table,
-                                  enrichmenttable_data, 
+                                  enrichmenttop_data = master_positive, 
+                                  enrichmentbottom_data = master_negative, 
                                   achilles_data = achilles) {
-  if (gene_symbol %in% colnames(achilles_data)) { #length(gene_symbol) == 1 && 
+  if (gene_symbol %in% colnames(achilles_data) && length(gene_symbol) == 1) {
     src <- normalizePath('report_app.Rmd')
     
     # temporarily switch to the temp dir, in case you do not have write
@@ -125,15 +128,34 @@ render_report_to_file <- function(file,
                                   cellanatogram_data,
                                   toptable_data, 
                                   bottomtable_data,
-                                  enrichmenttable_data, 
+                                  enrichmenttop_data, 
+                                  enrichmentbottom_data,  
+                                  achilles_data)
+    file.rename(out, file)
+  } else if (length(gene_symbol) > 1) {
+    src <- normalizePath('report_app.Rmd')
+    owd <- setwd(tempdir())
+    on.exit(setwd(owd))
+    
+    file.copy(src, 'report_app.Rmd', overwrite = TRUE)
+    out <- render_complete_report(file, 
+                                  gene_symbol, 
+                                  type,
+                                  summary1, 
+                                  summary2,
+                                  cellbins_data, 
+                                  expression_data, 
+                                  celldeps_data,
+                                  mean,
+                                  cellanatogram_data,
+                                  toptable_data, 
+                                  bottomtable_data,
+                                  enrichmenttop_data, 
+                                  enrichmentbottom_data,  
                                   achilles_data)
     file.rename(out, file)
   } else {
     src <- normalizePath('report_dummy_app.Rmd')
-    
-    # temporarily switch to the temp dir, in case you do not have write
-    # permission to the current working directory
-    
     owd <- setwd(tempdir())
     on.exit(setwd(owd))
     

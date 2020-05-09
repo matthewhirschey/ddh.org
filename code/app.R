@@ -485,7 +485,7 @@ gene_callback <- function(input, output, session) {
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_top_table(master_top_table, data()) %>% 
-        dplyr::mutate(link = paste0("<center><a href='https://www.datadrivenhypothesis.org/?show=detail&content=gene&symbol=", Gene,"' target='_blank'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
+        dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
         dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top), 
       escape = FALSE,
       options = list(pageLength = 25))
@@ -495,7 +495,7 @@ gene_callback <- function(input, output, session) {
       need(data() %in% master_bottom_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_bottom_table(master_bottom_table, data()) %>% 
-        dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"' target='_blank'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
+        dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
         dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_bottom),
       escape = FALSE,
       options = list(pageLength = 25))
@@ -521,14 +521,14 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% master_positive$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_enrichment_table(master_positive, data()),
+      make_enrichment_top(master_positive, data()),
     options = list(pageLength = 25))
   })
   output$neg_enrich <- DT::renderDataTable({
     validate(
       need(data() %in% master_negative$fav_gene, "No data found for this gene."))
     DT::datatable(
-      make_enrichment_table(master_negative, data()),
+      make_enrichment_bottom(master_negative, data()),
       options = list(pageLength = 25))
   })
   output$graph <- renderForceNetwork({
@@ -546,7 +546,7 @@ gene_callback <- function(input, output, session) {
       paste0(data(), "_ddh.pdf")
       } else if (type == "pathway") {
         go <- getQueryString()$go
-      paste0(go, "_ddh.pdf")
+      paste0("go_", go, "_ddh.pdf")
       } else {
         paste0("custom_", data(), "_ddh.pdf")
       }
@@ -569,7 +569,8 @@ gene_callback <- function(input, output, session) {
                                 cellanatogram_data = subcell,
                                 toptable_data = master_top_table, 
                                 bottomtable_data = master_bottom_table,
-                                enrichmenttable_data, 
+                                enrichmenttop_data = master_positive, 
+                                enrichmentbottom_data = master_negative, 
                                 achilles_data = achilles)
         })
         finally(result, function(){
@@ -588,7 +589,8 @@ gene_callback <- function(input, output, session) {
                               cellanatogram_data = subcell,
                               toptable_data = master_top_table, 
                               bottomtable_data = master_bottom_table,
-                              enrichmenttable_data, 
+                              enrichmenttop_data = master_positive, 
+                              enrichmentbottom_data = master_negative, 
                               achilles_data = achilles)
         progress_bar$close()
       }
