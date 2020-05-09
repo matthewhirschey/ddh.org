@@ -559,15 +559,18 @@ gene_callback <- function(input, output, session) {
         result <- future({
           render_report_to_file(file, 
                                 gene_symbol, 
-                                type = getQueryString()$content, 
-                                subcell = subcell, 
-                                achilles = achilles, 
-                                expression_join = expression_join, 
-                                mean_virtual_achilles = mean_virtual_achilles, 
-                                master_top_table = master_top_table, 
-                                master_bottom_table = master_bottom_table,
-                                master_positive = master_positive, 
-                                master_negative = master_negative)
+                                type = getQueryString()$content,
+                                summary1 = gene_summary, 
+                                summary2 = pathways,
+                                cellbins_data = achilles, 
+                                expression_data = expression_join, 
+                                celldeps_data = achilles,
+                                mean = mean_virtual_achilles,
+                                cellanatogram_data = subcell,
+                                toptable_data = master_top_table, 
+                                bottomtable_data = master_bottom_table,
+                                enrichmenttable_data, 
+                                achilles_data = achilles)
         })
         finally(result, function(){
           progress_bar$close()
@@ -575,15 +578,18 @@ gene_callback <- function(input, output, session) {
       } else {
         render_report_to_file(file, 
                               gene_symbol, 
-                              type = getQueryString()$content, 
-                              subcell = subcell, 
-                              achilles = achilles, 
-                              expression_join = expression_join, 
-                              mean_virtual_achilles = mean_virtual_achilles, 
-                              master_top_table = master_top_table, 
-                              master_bottom_table = master_bottom_table,
-                              master_positive = master_positive, 
-                              master_negative = master_negative)
+                              type = getQueryString()$content,
+                              summary1 = gene_summary, 
+                              summary2 = pathways,
+                              cellbins_data = achilles, 
+                              expression_data = expression_join, 
+                              celldeps_data = achilles,
+                              mean = mean_virtual_achilles,
+                              cellanatogram_data = subcell,
+                              toptable_data = master_top_table, 
+                              bottomtable_data = master_bottom_table,
+                              enrichmenttable_data, 
+                              achilles_data = achilles)
         progress_bar$close()
       }
     }

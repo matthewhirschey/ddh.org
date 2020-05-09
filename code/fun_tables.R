@@ -1,23 +1,23 @@
 library(tidyverse)
 
-make_top_table <- function(table, gene_symbol) {
-  table %>%
+make_top_table <- function(toptable_data = master_top_table, gene_symbol) {
+  toptable_data %>%
     dplyr::filter(fav_gene %in% gene_symbol) %>%
     tidyr::unnest(data) %>%
     dplyr::arrange(desc(r2)) %>%
     dplyr::rename("Query" = "fav_gene", "Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
 
-make_bottom_table <- function(table, gene_symbol) {
-  table %>%
+make_bottom_table <- function(bottomtable_data = master_bottom_table, gene_symbol) {
+  bottomtable_data %>%
     dplyr::filter(fav_gene %in% gene_symbol) %>%
     tidyr::unnest(data) %>%
     dplyr::arrange(r2) %>%
     dplyr::rename("Query" = "fav_gene", "Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
 
-make_enrichment_table <- function(table, gene_symbol) { #master_positive, master_negative
-  table %>%
+make_enrichment_table <- function(enrichmenttable_data, gene_symbol) { #master_positive, master_negative
+  enrichmenttable_data %>%
     dplyr::filter(fav_gene %in% gene_symbol) %>%
     tidyr::unnest(data) %>%
     dplyr::select(fav_gene, enrichr, Term, Overlap, Adjusted.P.value, Combined.Score, Genes) %>%
@@ -25,10 +25,10 @@ make_enrichment_table <- function(table, gene_symbol) { #master_positive, master
     dplyr::rename("Query" = "fav_gene", "Gene Set" = "enrichr", "Gene List" = "Term", "Adjusted p-value" = "Adjusted.P.value", "Combined Score" = "Combined.Score") #"Overlap", "Genes"
 }
 
-make_achilles_table <- function(table, expression_table, gene_symbol) { #achilles, expression_join, gene_symbol
-  target_achilles <- table %>%
+make_achilles_table <- function(achilles_data, expression_data, gene_symbol) { #achilles, expression_join, gene_symbol
+  target_achilles <- achilles_data %>%
     dplyr::select(X1, any_of(gene_symbol)) %>%
-    dplyr::left_join(expression_table, by = "X1") %>%
+    dplyr::left_join(expression_data, by = "X1") %>%
     dplyr::select(-X1) %>%
     dplyr::select(cell_line, lineage, everything()) %>% 
     dplyr::mutate_if(is.numeric, ~round(., digits = 3)) %>% 
@@ -155,8 +155,8 @@ gene_or_pathway_query_results_table <- function(gene_summary, pathways, query_st
   bind_rows(genes_data, pathways_data)
 }
 
-make_cellanatogram_table <- function(dataset = subcell, gene_symbol) {
-  dataset %>% 
+make_cellanatogram_table <- function(cellanatogram_data = subcell, gene_symbol) {
+  cellanatogram_data %>% 
     filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
     filter(!is.na(type)) %>%
     add_count(main_location) %>% 

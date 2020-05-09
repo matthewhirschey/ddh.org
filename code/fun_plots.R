@@ -4,10 +4,10 @@ library(viridis)
 library(plotly)
 library(gganatogram)
 
-make_cellbins <- function(data_table, expression_table, gene_symbol) {
-  p <- data_table %>% #plot setup
+make_cellbins <- function(cellbins_data = achilles, expression_data = expression_table, gene_symbol) {
+  p <- cellbins_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
-    left_join(expression_table, by = "X1") %>%
+    left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
     pivot_longer(cols = !any_of(c("cell_line", "lineage")), names_to = "gene_symbol", values_to = "dep_score") %>% 
     ggplot() +
@@ -34,10 +34,10 @@ make_cellbins <- function(data_table, expression_table, gene_symbol) {
 plot_cellbins_title <- "Kernel density estimate."
 plot_cellbins_legend <- "A smoothed version of the histogram of Dependency Scores. Dependency scores across all cell lines for queried genes, revealing overall influence of a gene on cellular fitness"
 
-make_celldeps <- function(data_table, expression_table, gene_symbol, mean) {
-  p <- data_table %>% #plot setup
+make_celldeps <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol, mean) {
+  p <- celldeps_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
-    left_join(expression_table, by = "X1") %>%
+    left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
     pivot_longer(cols = !any_of(c("cell_line", "lineage")), names_to = "gene_symbol", values_to = "dep_score") %>% 
     ggplot(aes(x = fct_reorder(cell_line, dep_score, .fun = max, .desc = FALSE), 
@@ -72,8 +72,8 @@ plot_celldeps_title <- "Cell Line Dependency Curve."
 plot_celldeps_legend <- "Each point shows the ranked dependency score for a given cell line. Cells with dependency scores less than -1 indicate a cell that the query gene is essential within. Cells with dependency scores close to 0 show no changes in fitness when the query gene is knocked out. Cells with dependency scores greater than 1 have a gain in fitness when the query gene is knocked-out"
 
 # make cell anatogram
-make_cellanatogram <- function(data_table = subcell, gene_symbol) {
-  p <- data_table %>% 
+make_cellanatogram <- function(cellanatogram_data = subcell, gene_symbol) {
+  p <- cellanatogram_data %>% 
     filter_all(any_vars(gene_name %in% gene_symbol)) %>% 
     filter(!is.na(type)) %>% 
     select(-value) %>% 

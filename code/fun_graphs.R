@@ -6,16 +6,16 @@ library(viridis)
 
 source(here::here("code", "fun_tables.R")) #for make_table funs
 
-setup_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10) {
+setup_graph <- function(toptable_data = master_top_table, bottomtable_data = master_bottom_table, gene_symbol, threshold = 10) {
   #make empty tibble
   dep_network <- tibble()
   #either find top/bottom correlated genes if given single gene, or take list to fill gene_list
   if(length(gene_symbol) == 1){
     #find top and bottom correlations for fav_gene
-    dep_top <- make_top_table(top_table, gene_symbol) %>%
+    dep_top <- make_top_table(toptable_data, gene_symbol) %>%
       slice(1:threshold)
     
-    dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>%
+    dep_bottom <- make_bottom_table(bottomtable_data, gene_symbol) %>%
       slice(1:threshold) #limit for visualization?
     
     #this takes the genes from the top and bottom, and pulls them to feed them into a for loop
@@ -23,14 +23,14 @@ setup_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10) {
       bind_rows(dep_bottom) %>%
       dplyr::pull("Gene")
   } else {
-    gene_list <- top_table %>% #this code ensures that the list of genes from a pathway are in the data
+    gene_list <- toptable_data %>% #this code ensures that the list of genes from a pathway are in the data
       dplyr::filter(fav_gene %in% gene_symbol) %>%
       dplyr::pull(fav_gene)
   }
   #this loop will take each gene, and get their top and bottom correlations, and build a df containing the top n number of genes for each gene
   for (i in gene_list){
     message("Getting correlations from ", i)
-    dep_top_related <- top_table %>%
+    dep_top_related <- toptable_data %>%
       dplyr::filter(fav_gene == i) %>%
       tidyr::unnest(data) %>%
       dplyr::select(-fav_gene) %>%
@@ -40,7 +40,7 @@ setup_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10) {
       dplyr::rename(y = gene) %>%
       dplyr::select(x, y, r2, origin)
     
-    dep_bottom_related <- bottom_table %>%
+    dep_bottom_related <- bottomtable_data %>%
       dplyr::filter(fav_gene == i) %>%
       tidyr::unnest(data) %>%
       dplyr::select(-fav_gene) %>%
@@ -60,13 +60,13 @@ setup_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10) {
   return(dep_network)
 }
   
-make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg = 2) {
+make_graph <- function(toptable_data = master_top_table, bottomtable_data = master_bottom_table, gene_symbol, threshold = 10, deg = 2) {
   #get dep_network object
-  dep_network <- setup_graph(top_table, bottom_table, gene_symbol, threshold)
+  dep_network <- setup_graph(toptable_data, bottomtable_data, gene_symbol, threshold)
   
   if(length(gene_symbol) == 1){
-    dep_top <- make_top_table(top_table, gene_symbol) %>% slice(1:threshold) #redundant with above, but need these objs
-    dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>% slice(1:threshold)
+    dep_top <- make_top_table(toptable_data, gene_symbol) %>% slice(1:threshold) #redundant with above, but need these objs
+    dep_bottom <- make_bottom_table(bottomtable_data, gene_symbol) %>% slice(1:threshold)
   } else {
     dep_network_top <- dep_network %>% filter(origin == "pos") %>% pull(y)
     dep_network_bottom <- dep_network %>% filter(origin == "neg") %>% pull(y)
@@ -130,14 +130,14 @@ make_graph <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg
                legend = TRUE)
 }
 
-make_graph_report <- function(top_table, bottom_table, gene_symbol, threshold = 10, deg = 2) {
+make_graph_report <- function(toptable_data = master_top_table, bottomtable_data = master_bottom_table, gene_symbol, threshold = 10, deg = 2) {
   #get dep_network object
-  dep_network <- setup_graph(top_table, bottom_table, gene_symbol, threshold)
+  dep_network <- setup_graph(toptable_data, bottomtable_data, gene_symbol, threshold)
   
   #make some objs for below
   if(length(gene_symbol) == 1){
-    dep_top <- make_top_table(top_table, gene_symbol) %>% slice(1:threshold) #redundant with above, but need these objs
-    dep_bottom <- make_bottom_table(bottom_table, gene_symbol) %>% slice(1:threshold)
+    dep_top <- make_top_table(toptable_data, gene_symbol) %>% slice(1:threshold) #redundant with above, but need these objs
+    dep_bottom <- make_bottom_table(bottomtable_data, gene_symbol) %>% slice(1:threshold)
   } else {
     dep_network_top <- dep_network %>% filter(origin == "pos") %>% pull(y)
     dep_network_bottom <- dep_network %>% filter(origin == "neg") %>% pull(y)
