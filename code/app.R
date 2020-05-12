@@ -376,12 +376,19 @@ detail_page <- fluidPage(
                         fluidRow(h4(textOutput("text_neg_enrich"))),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph",
-             #sidebarLayout( #UNCOMMENT THIS SECTION WHEN input$deg is working
-             #sidebarPanel(numericInput(inputId = "deg",
-             #label = "Minimum # of Connections",
-             #value = 2, min = 1, max = 50)),
-             mainPanel(forceNetworkOutput(outputId = "graph"))
-             #uncomment this parenthesis)
+             sidebarLayout(
+               sidebarPanel(sliderInput(inputId = "deg",
+                                        label = "Filter \nConnections (<)",
+                                        value = 2, min = 1, max = 10),
+                            sliderInput(inputId = "threshold",
+                                        label = "n related \nGenes",
+                                        value =10, min = 10, max = 20),
+               actionButton(inputId = "update", 
+                            label = "Update"),
+               width = 3),
+             mainPanel(forceNetworkOutput(outputId = "graph"),
+                       width = 9)
+    )
     ),
     tabPanel("Methods",
              includeHTML(here::here("code","methods.html"))),
@@ -531,11 +538,22 @@ gene_callback <- function(input, output, session) {
       make_enrichment_bottom(master_negative, data()),
       options = list(pageLength = 25))
   })
+  
+  #establish reactive value
+  rv <- reactiveValues(degree = 2, 
+                       threshold = 10)
+
+  #update value upon call
+  observeEvent(input$update, {
+    rv$degree <- input$deg
+    rv$threshold <- input$threshold
+  })
+  
   output$graph <- renderForceNetwork({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
-    make_graph(master_top_table, master_bottom_table, data())
+    make_graph(master_top_table, master_bottom_table, data(), threshold = rv$threshold, deg = rv$degree)
     })
   })
   output$report <- downloadHandler(
