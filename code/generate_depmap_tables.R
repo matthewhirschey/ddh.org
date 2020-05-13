@@ -100,5 +100,41 @@ for (fav_gene in gene_group) {
 saveRDS(master_top_table, file=here::here("data", "master_top_table.Rds"))
 saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table.Rds"))
 
+#make surprise gene list
+find_good_candidate <- function(gene_symbol) {
+  #this gets the top 10 correlation values
+  top_10 <- master_top_table %>%
+    dplyr::filter(fav_gene %in% gene_symbol) %>%
+    tidyr::unnest(data) %>%
+    dplyr::arrange(desc(r2)) %>% 
+    dplyr::slice(1:10)
+  #this looks for 'positive controls' in the top 10...smoking guns
+  above <- top_10 %>% 
+    dplyr::filter(concept_index > 90) %>% 
+    pull(fav_gene)
+  #this looks for genes within the top 10 that are under-studied
+  below <- top_10 %>% 
+    dplyr::filter(concept_index < 10) %>% 
+    pull(fav_gene)
+  #if both are true, then it's a good candidate for further study
+  if(length(above) > 0 && length(below) > 0){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+#TESTING
+#find_good_candidate("SDHA")
+#genes <- c("TP53", "TP53BP1")
+#map_lgl(genes, ~ find_good_candidate(.))
+
+surprise_genes <- master_top_table %>% 
+  mutate(good = purrr::map_lgl(fav_gene, ~ find_good_candidate(.))) %>% 
+  dplyr::filter(good == TRUE) %>% 
+  pull(fav_gene)
+
+saveRDS(surprise_genes, here::here("data", "surprise_genes.Rds"))
+
 #how long
 time_end_tables <- Sys.time()

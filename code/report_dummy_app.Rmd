@@ -1,0 +1,30 @@
+---
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(here)
+library(knitr)
+library(pander)
+library(patchwork)
+source(here::here("code", "current_release.R"))
+```
+
+## Report for `r summary$identifier`: `r summary$name`  
+### from datadrivenhypothesis.org  
+`r lubridate::stamp("Report generated December 31, 1979")(now())`  
+  
+## Project Summary  
+Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). This project leverages several high-quality publically available datasets, including release `r release` of the [Dependency Map](www.depmap.org) from the [Broad Institute](www.broadinstitute.org).  
+  
+## Query Summary  
+**Name**: `r summary$identifier`: `r summary$name`  
+**Summary**: `r summary$summary`  
+  
+## No dependency data from DepMap
+This gene query is not present in the `r release` of the data. This could be because the gene was not included in the raw data or because viability after gene ablation was measured in fewer than `r nrow(achilles) - na_cutoff` cell lines that contained its expression. Future data releases might result in `r summary$identifier` being included in the datadrivenhypothesis.org resource.
