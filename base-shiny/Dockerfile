@@ -21,7 +21,10 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  DT \
  ggraph \
  future \
+ shinyWidgets \
  promises
+
+RUN Rscript -e 'devtools::install_github("jespermaag/gganatogram")'
 
 COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /var/lib/shiny-server/

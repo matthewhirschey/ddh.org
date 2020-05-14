@@ -2,7 +2,7 @@
 ## Environment variable DDH_STEP can be used to control which steps are run.
 ## The step names are "gens", "pubm", "tbls", "path". They need to be run in this order.
 ## By default all steps are run in the correct order. These steps are broken up based on 
-## Their different resource requirments.
+## Their different resource requirements.
 
 library(here)
 source(here::here("code", "current_release.R"))
@@ -22,6 +22,7 @@ if ("gens" %in% steps_to_run) {
   source(here::here("code", "find_threshold.R")) #run this first to generate the na_cutoff
   source(here::here("code", "generate_depmap_data.R")) #script to generate ddh correlation matrix
   source(here::here("code", "generate_depmap_stats.R")) #script to generate ddh stats
+  source(here::here("code", "generate_subcell_data.R")) #script to generate subcell data
   message("DDH: Finished step 1.")
 }
 

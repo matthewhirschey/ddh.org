@@ -27,7 +27,7 @@ gene2pubtator <- read_tsv(pubtator_url, col_names = c("pmid", "type", "concept_i
 
 gene2pubtator$concept_id <- as.numeric(gene2pubtator$concept_id)
 
-#co-occurance of concepts: count which two genes co-occur in a paper, across all papers
+#co-occurrence of concepts: count which two genes co-occur in a paper, across all papers
 pubmed_concept_pairs <- gene2pubtator %>%
   pairwise_count(concept_id, pmid, sort = TRUE) %>% 
   left_join(gene_summary, by = c("item1" = "ncbi_gene_id")) %>% 
