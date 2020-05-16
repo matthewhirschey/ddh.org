@@ -10,9 +10,10 @@ library(moderndive)
 source(here::here("code", "current_release.R"))
 
 achilles <- read_csv(achilles_url, col_names = TRUE) %>% 
-  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)")) %>% 
+  rename(X1 = 1)
 
-expression <- read_csv(ccle_url, col_names = TRUE) %>% 
+expression <- read_tsv(ccle_url, col_names = TRUE) %>% 
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 achilles_long <- achilles %>% 

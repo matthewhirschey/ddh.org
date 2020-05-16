@@ -70,7 +70,8 @@ sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rd
 
 #generate raw data too
 achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>% 
-  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)")) %>% 
+  rename(X1 = 1)
 
 achilles_raw <- clean_colnames(achilles_raw)
 ```
@@ -500,8 +501,8 @@ dep_top <- make_top_table(master_top_table, fav_gene)
 dep_bottom <- make_bottom_table(master_bottom_table, fav_gene)
 
 #pathway enrichment analyses
-flat_top_complete <- make_enrichment_table(master_positive, fav_gene)
-flat_bottom_complete <- make_enrichment_table(master_negative, fav_gene)
+flat_top_complete <- make_enrichment_top(master_positive, fav_gene)
+flat_bottom_complete <- make_enrichment_bottom(master_negative, fav_gene)
 ```
 #### 1. Query YFG (your favorite gene)
 As an example, we will query the protein P53. Typing in the given protein name "P53" produces an error, because the official gene symbol needs to be entered. Querying TP53 (official gene symbol) generates a short summary of the gene, its name and list of aliases, and an Entrez gene summary paragraph when available.  

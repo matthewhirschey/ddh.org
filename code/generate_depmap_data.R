@@ -14,7 +14,8 @@ time_begin_data <- Sys.time()
 
 ##BROAD
 achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>% 
-  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
+  `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)")) %>% 
+  rename(X1 = 1)
 
 #add name cleaning step
 gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
@@ -25,7 +26,7 @@ achilles_long <- achilles %>%
   pivot_longer(-X1, names_to = "gene", values_to = "dep_score")
 
 #EXPRESSION(BROAD)
-expression <- read_csv(ccle_url, col_names = TRUE) %>% 
+expression <- read_tsv(ccle_url, col_names = TRUE) %>% 
   `colnames<-`(str_remove_all(names(.), "\\s\\(\\d+\\)"))
 
 #repeat cleaning step for expression

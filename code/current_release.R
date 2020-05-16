@@ -1,8 +1,8 @@
 #update each release
-release <- "20Q1"
-achilles_url <- "https://ndownloader.figshare.com/files/21521910" #achilles_gene_effect.csv
-ccle_url <- "https://ndownloader.figshare.com/files/21521940" #CCLE_expression.csv
-cclemeta_url <- "https://ndownloader.figshare.com/files/21781221" #sample_info.csv
+release <- "20Q2"
+achilles_url <- "https://ndownloader.figshare.com/files/22629068" #achilles_gene_effect.csv
+ccle_url <- "https://ndownloader.figshare.com/files/22629092" #CCLE_expression.csv
+cclemeta_url <- "https://ndownloader.figshare.com/files/22629137" #sample_info.csv
 fraction_cutoff <- 0.05 #~5% FDR
 na_cutoff_file = here::here("data", paste0(release, "_na_cutoff.Rds"))
 if (file.exists(na_cutoff_file)) {

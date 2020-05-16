@@ -12,6 +12,7 @@ source(here::here("code", "find_threshold.R")) #run this first to generate the n
 source(here::here("code", "generate_depmap_data.R")) #script to generate ddh correlation matrix
 source(here::here("code", "generate_depmap_stats.R")) #script to generate ddh stats
 source(here::here("code", "generate_pubmed_data.R")) #script to generate pubtator relationships
+source(here::here("code", "generate_subcell_data.R")) #script to generate subcell data
 
 #after running above sequential scripts, then run these two in either order
 source(here::here("code", "generate_depmap_tables.R")) #third script to generate ddh tables
