@@ -112,6 +112,9 @@ make_graph <- function(toptable_data = master_top_table, bottomtable_data = mast
   links_filtered$from <- match(links_filtered$from, nodes_filtered$id) - 1
   links_filtered$to <- match(links_filtered$to, nodes_filtered$id) - 1
   
+  #check to see if setting degree removed all links; if so, then throws error, so this fills a dummy links_filtered df to plot only nodes
+  if(nrow(links_filtered) == 0) {links_filtered <- tibble("from" = 0, "to" = 0, "r2" = 1, "origin" = "pos")}
+  
   #use color meter to get hexdec color values
   node_color <- 'd3.scaleOrdinal(["#0C2332", "#544097", "#AD677D", "#EDA555"])'
   

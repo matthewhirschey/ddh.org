@@ -551,7 +551,7 @@ gene_callback <- function(input, output, session) {
   
   output$graph <- renderForceNetwork({
     validate(
-      need(data() %in% colnames(achilles), "No data found for this gene."))
+      need(data() %in% colnames(achilles), "No data found."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
     make_graph(master_top_table, master_bottom_table, data(), threshold = rv$threshold, deg = rv$degree)
     })
