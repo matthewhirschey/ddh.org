@@ -1,5 +1,5 @@
 ## To generate positive_subset_*_of_*.Rds or negative_subset__*_of_*.Rds files call create_pathway_subset_file()
-## To generate master_posistive or master_negative TABLES call save_master_positive() or save_master_negative() with filepaths
+## To generate master_positive or master_negative TABLES call save_master_positive() or save_master_negative() with filepaths
 ## created via create_pathway_subset_file()
 
 #load libraries
@@ -61,10 +61,10 @@ get_gene_names_to_process <- function(subset_file_idx, num_subset_files, achille
 }
 
 read_input_data <- function() {
-  gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
+  gene_summary <- readRDS(file = here::here("data", paste0(release, "_gene_summary.Rds")))
   achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
-  achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
-  achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
+  achilles_lower <- readRDS(file = here::here("data", paste0(release, "_achilles_lower.Rds")))
+  achilles_upper <- readRDS(file = here::here("data", paste0(release, "_achilles_upper.Rds")))
   
   #convert cor
   class(achilles_cor) <- c("cor_df", "tbl_df", "tbl", "data.frame") 
@@ -185,11 +185,11 @@ merge_pathways_rds_files <- function(subset_filepaths) {
 save_master_positive <- function(subset_filepaths) {
   master_positive <- merge_pathways_rds_files(subset_filepaths)
   message("Saving master_positive to ", master_positive_filename)
-  saveRDS(master_positive, file=here::here("data", master_positive_filename))
+  saveRDS(master_positive, file=here::here("data", paste0(release, "_", master_positive_filename)))
 }
 
 save_master_negative <- function(subset_filepaths) {
   master_negative <- merge_pathways_rds_files(subset_filepaths)
   message("Saving master_negative to ", master_negative_filename)
-  saveRDS(master_negative, file=here::here("data", master_negative_filename))
+  saveRDS(master_negative, file=here::here("data", paste0(release, "_", master_negative_filename)))
 }

@@ -29,26 +29,26 @@ if (supportsMulticore()) {
 source(here::here("code", "current_release.R"))
 
 #read data from create_*.R
-gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
-pathways <- readRDS(here::here("data", "pathways.Rds"))
+gene_summary <- readRDS(here::here("data", paste0(release, "_gene_summary.Rds")))
+pathways <- readRDS(here::here("data", paste0(release, "_pathways.Rds")))
 
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
 expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
 
 #read data from generate_depmap_stats.R
-sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
-mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
-sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
+sd_threshold <- readRDS(file = here::here("data", paste0(release, "_sd_threshold.Rds")))
+achilles_lower <- readRDS(file = here::here("data", paste0(release, "_achilles_lower.Rds")))
+achilles_upper <- readRDS(file = here::here("data", paste0(release, "_achilles_upper.Rds")))
+mean_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_mean_virtual_achilles.Rds")))
+sd_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_sd_virtual_achilles.Rds")))
 
 #read data from generate_depmap_tables & pathways.R
-master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
-master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
-master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
-master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
-surprise_genes <- readRDS(file=here::here("data", "surprise_genes.Rds"))
+master_bottom_table <- readRDS(file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
+master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
+master_positive <- readRDS(file=here::here("data", paste0(release, "_master_positive.Rds")))
+master_negative <- readRDS(file=here::here("data", paste0(release, "_master_negative.Rds")))
+surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
 
 #read data from generate_subcell_data.R
 subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))

@@ -63,4 +63,4 @@ pathways <- pathways %>%
   def = str_trim(def, side = "both")) %>% 
   select(-name)
 
-saveRDS(pathways, file = here::here("data", "pathways.Rds"))
+saveRDS(pathways, file = here::here("data", paste0(release, "_pathways.Rds")))
