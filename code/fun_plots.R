@@ -93,3 +93,41 @@ make_cellanatogram <- function(cellanatogram_data = subcell, gene_symbol) {
   }
   return(p)
 }
+
+# make lineage plot
+make_boxLin <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
+  p <- celldeps_data %>% #plot setup
+    select(X1, any_of(gene_symbol)) %>%
+    left_join(expression_data, by = "X1") %>%
+    select(-X1) %>%
+    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>%
+    ggplot(aes(y = dep_score, 
+               x = reorder(lineage, dep_score, mean), 
+               text = paste0("Cell Line: ", cell_line))) +
+    geom_boxplot() +
+    coord_flip() +
+    labs(y = "Dependency Score", x = "Lineage") +
+    geom_point(alpha = 0.5) +
+    theme_bw()
+  
+  return(p)
+}
+
+# make sublineage plot
+make_boxSubLin <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
+  p <- celldeps_data %>% #plot setup
+    select(X1, any_of(gene_symbol)) %>%
+    left_join(expression_data, by = "X1") %>%
+    select(-X1) %>%
+    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>%
+    ggplot(aes(y = dep_score, 
+               x = reorder(lineage_subtype, dep_score, mean),
+               text = paste0("Cell Line: ", cell_line))) +
+    geom_boxplot() +
+    coord_flip() +
+    labs(y = "Dependency Score", x = "Lineage Subtype") +
+    geom_point(alpha = 0.5) +
+    theme_bw()
+  
+  return(p)
+}
