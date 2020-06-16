@@ -50,6 +50,7 @@ go_def <- read_delim(go_def_url, delim = "\n", col_names = "X1") %>%
   select(X1, X2, id) %>% 
   filter(X1 != "id") %>% 
   pivot_wider(names_from = X1, values_from = X2) %>% 
+  mutate_at(vars(def), unlist) %>% # unlist def column for rocker/tidyverse:3.6.1 compatibility
   mutate(def = str_remove_all(def, '\\"'))
 
 #join
