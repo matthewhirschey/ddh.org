@@ -37,6 +37,23 @@ expression_join <- read_csv(cclemeta_url, col_names = TRUE) %>%
   rename(X1 = dep_map_id, cell_line = stripped_cell_line_name) %>% 
   select(X1, cell_line, lineage)
 
+#expression for lineage plots
+expression_join_lin <- read_csv(cclemeta_url, col_names = TRUE) %>% 
+  clean_names() %>% 
+  rename(X1 = dep_map_id, cell_line = stripped_cell_line_name) %>% 
+  select(X1, cell_line, lineage, lineage_subtype) %>%
+  dplyr::mutate_at("lineage", function(str) {
+    str <- str_replace_all(str, "\\_", " ")
+    str <- str_to_title(str)
+    return(str)
+  }) %>%
+  dplyr::mutate_at("lineage_subtype", function(str) {
+    str <- str_replace_all(str, "\\_", " ")
+    str <- str_to_title(str)
+    return(str)
+  }) 
+
+
 #filter achilles to remove no expression dep scores(special sauce)
 expression_long <- expression %>% 
   filter(expression$X1 %in% achilles$X1 == TRUE) %>% #matches cells
@@ -73,6 +90,7 @@ achilles_cor <- achilles %>%
 saveRDS(achilles, file = here::here("data", paste0(release, "_achilles.Rds")))
 saveRDS(expression, file = here::here("data", paste0(release, "_expression.Rds")))
 saveRDS(expression_join, file = here::here("data", paste0(release, "_expression_join.Rds")))
+saveRDS(expression_join_lin, file = here::here("data", paste0(release, "_expression_join_lin.Rds")))
 saveRDS(achilles_cor, file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 
 #how long

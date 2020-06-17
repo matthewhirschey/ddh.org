@@ -17,7 +17,6 @@ library(DT)
 library(future)
 library(promises)
 library(gganatogram)
-library(janitor)
 
 render_report_in_background <- FALSE
 if (supportsMulticore()) {
@@ -36,21 +35,7 @@ pathways <- readRDS(here::here("data", "pathways.Rds"))
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
 expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
-# temporary fix for sublineage plots
-expression_join_lin <- read_csv(cclemeta_url, col_names = TRUE) %>% 
-  clean_names() %>% 
-  rename(X1 = dep_map_id, cell_line = stripped_cell_line_name) %>% 
-  select(X1, cell_line, lineage, lineage_subtype) %>%
-  dplyr::mutate_at("lineage", function(str) {
-    str <- str_replace_all(str, "\\_", " ")
-    str <- str_to_title(str)
-    return(str)
-  }) %>%
-  dplyr::mutate_at("lineage_subtype", function(str) {
-    str <- str_replace_all(str, "\\_", " ")
-    str <- str_to_title(str)
-    return(str)
-  }) 
+expression_join_lin <- readRDS(file=here::here("data", paste0(release, "_expression_join_lin.Rds")))
 
 #read data from generate_depmap_stats.R
 sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
@@ -545,14 +530,14 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
-      ggplotly(make_boxLin(achilles, expression_join_lin, data()), tooltip = "text")
+      ggplotly(make_lineage(achilles, expression_join_lin, data()), tooltip = "text")
     })
   })
   output$cell_deps_sublin <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
-      ggplotly(make_boxSubLin(achilles, expression_join_lin, data()), tooltip = "text")
+      ggplotly(make_sublineage(achilles, expression_join_lin, data()), height = 1000, tooltip = "text")
     })
   })
   output$target_achilles <- DT::renderDataTable({

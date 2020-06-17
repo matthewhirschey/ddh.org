@@ -95,7 +95,7 @@ make_cellanatogram <- function(cellanatogram_data = subcell, gene_symbol) {
 }
 
 # make lineage plot
-make_boxLin <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
+make_lineage <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
   p <- celldeps_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
@@ -114,7 +114,7 @@ make_boxLin <- function(celldeps_data = achilles, expression_data = expression_t
 }
 
 # make sublineage plot
-make_boxSubLin <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
+make_sublineage <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
   p <- celldeps_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
