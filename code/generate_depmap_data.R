@@ -35,24 +35,7 @@ expression <- clean_colnames(expression)
 expression_join <- read_csv(cclemeta_url, col_names = TRUE) %>% 
   clean_names() %>% 
   rename(X1 = dep_map_id, cell_line = stripped_cell_line_name) %>% 
-  select(X1, cell_line, lineage)
-
-#expression for lineage plots
-expression_join_lin <- read_csv(cclemeta_url, col_names = TRUE) %>% 
-  clean_names() %>% 
-  rename(X1 = dep_map_id, cell_line = stripped_cell_line_name) %>% 
-  select(X1, cell_line, lineage, lineage_subtype) %>%
-  dplyr::mutate_at("lineage", function(str) {
-    str <- str_replace_all(str, "\\_", " ")
-    str <- str_to_title(str)
-    return(str)
-  }) %>%
-  dplyr::mutate_at("lineage_subtype", function(str) {
-    str <- str_replace_all(str, "\\_", " ")
-    str <- str_to_title(str)
-    return(str)
-  }) 
-
+  select(X1, cell_line, lineage, lineage_subtype)
 
 #filter achilles to remove no expression dep scores(special sauce)
 expression_long <- expression %>% 

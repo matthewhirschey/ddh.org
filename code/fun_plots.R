@@ -4,7 +4,7 @@ library(viridis)
 library(plotly)
 library(gganatogram)
 
-make_cellbins <- function(cellbins_data = achilles, expression_data = expression_table, gene_symbol) {
+make_cellbins <- function(cellbins_data = achilles, expression_data = expression_join, gene_symbol) {
   p <- cellbins_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
@@ -34,7 +34,7 @@ make_cellbins <- function(cellbins_data = achilles, expression_data = expression
 plot_cellbins_title <- "Kernel density estimate."
 plot_cellbins_legend <- "A smoothed version of the histogram of Dependency Scores. Dependency scores across all cell lines for queried genes, revealing overall influence of a gene on cellular fitness"
 
-make_celldeps <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol, mean) {
+make_celldeps <- function(celldeps_data = achilles, expression_data = expression_join, gene_symbol, mean) {
   p <- celldeps_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
@@ -95,39 +95,65 @@ make_cellanatogram <- function(cellanatogram_data = subcell, gene_symbol) {
 }
 
 # make lineage plot
-make_lineage <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
-  p <- celldeps_data %>% #plot setup
+make_lineage <- function(celldeps_data = achilles, expression_data = expression_join, gene_symbol) {
+  d <- celldeps_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>%
-    ggplot(aes(y = dep_score, 
-               x = reorder(lineage, dep_score, mean), 
-               text = paste0("Cell Line: ", cell_line))) +
-    geom_boxplot() +
+    pivot_longer(cols = where(is.numeric), names_to = "gene_symbol", values_to = "dep_score") %>%
+    dplyr::mutate_at("lineage", function(str) {
+      str <- str_replace_all(str, "\\_", " ")
+      str <- str_to_title(str)
+      return(str)
+    }) %>% 
+    drop_na(lineage) %>% 
+    drop_na(dep_score)
+  
+  m <- d %>% 
+    group_by(lineage) %>% 
+    summarize(dep_score = mean(dep_score))
+  
+  p <- ggplot() +
+    geom_boxplot(data = d, aes(x = fct_reorder(lineage, dep_score, .fun = mean, .desc = TRUE), 
+                     y = dep_score
+                     )) +
+    geom_point(data = m, aes(x = lineage, y = dep_score), color = "red", alpha = 0.5) +
     coord_flip() +
     labs(y = "Dependency Score", x = "Lineage") +
-    geom_point(alpha = 0.5) +
-    theme_bw()
-  
+    theme_minimal_vgrid()
   return(p)
 }
 
+#figure legend
+plot_celllin_title <- "Cell Line Lineage Dependencies"
+plot_celllin_legend <- "Each point shows the mean dependency score for a given cell lineage, with box plots showing median, interquartile ranges, and outliers."
+
 # make sublineage plot
-make_sublineage <- function(celldeps_data = achilles, expression_data = expression_table, gene_symbol) {
-  p <- celldeps_data %>% #plot setup
+make_sublineage <- function(celldeps_data = achilles, expression_data = expression_join, gene_symbol) {
+  d <- celldeps_data %>% #plot setup
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>%
-    ggplot(aes(y = dep_score, 
-               x = reorder(lineage_subtype, dep_score, mean),
-               text = paste0("Cell Line: ", cell_line))) +
-    geom_boxplot() +
-    coord_flip() +
-    labs(y = "Dependency Score", x = "Lineage Subtype") +
-    geom_point(alpha = 0.5) +
-    theme_bw()
+    pivot_longer(cols = where(is.numeric), names_to = "gene_symbol", values_to = "dep_score") %>% 
+    dplyr::mutate_at("lineage_subtype", function(str) {
+      str <- str_replace_all(str, "\\_", " ")
+      str <- if_else(str_detect(str, "^[:lower:]"), str_to_title(str), str)
+      return(str)
+    })  %>% 
+    drop_na(lineage_subtype) %>% 
+    drop_na(dep_score)
   
+  m <- d %>% 
+    group_by(lineage_subtype) %>% 
+    summarize(dep_score = mean(dep_score))
+  
+  p <- ggplot() +
+    geom_boxplot(data = d, aes(x = fct_reorder(lineage_subtype, dep_score, .fun = mean, .desc = TRUE), 
+                               y = dep_score
+    )) +
+    geom_point(data = m, aes(x = lineage_subtype, y = dep_score), color = "red", alpha = 0.5) +
+    coord_flip() +
+    labs(y = "Dependency Score", x = "Sublineage") +
+    theme_minimal_vgrid()
   return(p)
 }

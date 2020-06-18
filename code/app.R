@@ -346,12 +346,10 @@ detail_page <- fluidPage(
                         fluidRow(plotlyOutput(outputId = "cell_bins")),
                         tags$br(),
                         fluidRow(tags$strong(plot_cellbins_title), plot_cellbins_legend),
-                        tags$br()
-                        ),
-               tabPanel("Lineage Plots",
+                        tags$hr(),
                         fluidRow(plotlyOutput(outputId = "cell_deps_lin")),
                         tags$br(),
-                        fluidRow(plotlyOutput(outputId = "cell_deps_sublin")),
+                        fluidRow(tags$strong(plot_celllin_title), plot_celllin_legend), #add conditional panel for subtype?
                         tags$br()
                         ),
                tabPanel("Table",
