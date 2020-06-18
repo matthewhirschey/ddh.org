@@ -35,6 +35,7 @@ pathways <- readRDS(here::here("data", paste0(release, "_pathways.Rds")))
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
 expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
+expression_join_lin <- readRDS(file=here::here("data", paste0(release, "_expression_join_lin.Rds")))
 
 #read data from generate_depmap_stats.R
 sd_threshold <- readRDS(file = here::here("data", paste0(release, "_sd_threshold.Rds")))
@@ -347,6 +348,12 @@ detail_page <- fluidPage(
                         fluidRow(tags$strong(plot_cellbins_title), plot_cellbins_legend),
                         tags$br()
                         ),
+               tabPanel("Lineage Plots",
+                        fluidRow(plotlyOutput(outputId = "cell_deps_lin")),
+                        tags$br(),
+                        fluidRow(plotlyOutput(outputId = "cell_deps_sublin")),
+                        tags$br()
+                        ),
                tabPanel("Table",
                         fluidRow(h4(textOutput("text_cell_dep_table"))),
                         fluidRow(dataTableOutput(outputId = "target_achilles")))
@@ -518,6 +525,20 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% colnames(achilles), "")) #""left blank
     ggplotly(make_cellbins(achilles, expression_join, data()), tooltip = c("text"))
+  })
+  output$cell_deps_lin <- renderPlotly({
+    validate(
+      need(data() %in% colnames(achilles), "No data found for this gene."))
+    withProgress(message = 'Wait for it...', value = 1, {
+      ggplotly(make_lineage(achilles, expression_join_lin, data()), tooltip = "text")
+    })
+  })
+  output$cell_deps_sublin <- renderPlotly({
+    validate(
+      need(data() %in% colnames(achilles), "No data found for this gene."))
+    withProgress(message = 'Wait for it...', value = 1, {
+      ggplotly(make_sublineage(achilles, expression_join_lin, data()), height = 1000, tooltip = "text")
+    })
   })
   output$target_achilles <- DT::renderDataTable({
     validate(
