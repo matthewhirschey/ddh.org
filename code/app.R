@@ -51,6 +51,9 @@ master_positive <- readRDS(file=here::here("data", paste0(release, "_master_posi
 master_negative <- readRDS(file=here::here("data", paste0(release, "_master_negative.Rds")))
 surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
 
+#read data from generate_censor.R
+censor_genes <- readRDS(file=here::here("data", paste0(release, "_censor_genes.Rds")))
+
 #read data from generate_subcell_data.R
 subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))
 
@@ -359,6 +362,12 @@ detail_page <- fluidPage(
     navbarMenu(title = "Similar",
                tabPanel("Genes",
                         fluidRow(h4(textOutput("text_dep_top"))),
+                        fluidRow(checkboxInput(inputId = "censor",
+                                               "Censor",
+                                               value = FALSE)),
+                        fluidRow(numericInput(inputId = "num_sim_genes",
+                                              "Greater than:",
+                                              value = 0)),
                         fluidRow(checkboxGroupInput(inputId = "vars_dep_top", 
                                                     "Select columns:",
                                                     c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
@@ -498,7 +507,8 @@ gene_callback <- function(input, output, session) {
     DT::datatable(
       make_top_table(master_top_table, data()) %>% 
         dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
-        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top), 
+        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top) %>%
+        censor(censor_genes, input$censor, input$num_sim_genes),
       escape = FALSE,
       options = list(pageLength = 25))
   })
