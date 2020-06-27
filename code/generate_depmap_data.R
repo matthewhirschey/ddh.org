@@ -73,7 +73,6 @@ achilles_cor <- achilles %>%
 saveRDS(achilles, file = here::here("data", paste0(release, "_achilles.Rds")))
 saveRDS(expression, file = here::here("data", paste0(release, "_expression.Rds")))
 saveRDS(expression_join, file = here::here("data", paste0(release, "_expression_join.Rds")))
-saveRDS(expression_join_lin, file = here::here("data", paste0(release, "_expression_join_lin.Rds")))
 saveRDS(achilles_cor, file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 
 #how long

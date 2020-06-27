@@ -35,7 +35,6 @@ pathways <- readRDS(here::here("data", paste0(release, "_pathways.Rds")))
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
 expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
-expression_join_lin <- readRDS(file=here::here("data", paste0(release, "_expression_join_lin.Rds")))
 
 #read data from generate_depmap_stats.R
 sd_threshold <- readRDS(file = here::here("data", paste0(release, "_sd_threshold.Rds")))
@@ -349,8 +348,14 @@ detail_page <- fluidPage(
                         tags$hr(),
                         fluidRow(plotlyOutput(outputId = "cell_deps_lin")),
                         tags$br(),
-                        fluidRow(tags$strong(plot_celllin_title), plot_celllin_legend), #add conditional panel for subtype?
-                        tags$br()
+                        fluidRow(tags$strong(plot_celllin_title), plot_celllin_legend, 
+                        actionLink(inputId = "sublin_click", "View sublineage plot below")), #add conditional panel for subtype
+                        tags$br(), 
+                        conditionalPanel(condition = 'input.sublin_click == 0',
+                                         ""),
+                        conditionalPanel(condition = 'input.sublin_click != 0', 
+                                         tags$br(),
+                                         fluidRow(plotlyOutput(outputId = "cell_deps_sublin")))
                         ),
                tabPanel("Table",
                         fluidRow(h4(textOutput("text_cell_dep_table"))),
@@ -528,14 +533,16 @@ gene_callback <- function(input, output, session) {
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
-      ggplotly(make_lineage(achilles, expression_join_lin, data()), tooltip = "text")
+      ggplotly(make_lineage(achilles, expression_join, data()), tooltip = "text")
     })
+  })
+  observeEvent(input$sublin_click, { #event to store the 'click'
   })
   output$cell_deps_sublin <- renderPlotly({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
     withProgress(message = 'Wait for it...', value = 1, {
-      ggplotly(make_sublineage(achilles, expression_join_lin, data()), height = 1000, tooltip = "text")
+      ggplotly(make_sublineage(achilles, expression_join, data()), height = 1100, tooltip = "text")
     })
   })
   output$target_achilles <- DT::renderDataTable({

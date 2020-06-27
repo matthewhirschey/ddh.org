@@ -20,7 +20,7 @@ source(here::here("code", "current_release.R"))
 `r lubridate::stamp("Report generated December 31, 1979")(now())`  
   
 ## Project Summary  
-Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). This project leverages several high-quality publically available datasets, including release `r release` of the [Dependency Map](www.depmap.org) from the [Broad Institute](www.broadinstitute.org).  
+Data-driven hypothesis is a resource for identifying novel functions for human genes developed by the [Hirschey Lab](www.hirscheylab.org). This project leverages several high-quality publicly available datasets, including release `r release` of the [Dependency Map](www.depmap.org) from the [Broad Institute](www.broadinstitute.org).  
   
 ## Query Summary  
 **Name**: `r summary$identifier`: `r summary$name`  
@@ -53,7 +53,18 @@ p2
 ```
     
   **`r plot_cellbins_title`** `r plot_cellbins_legend`
-  
+
+\newpage
+## Cell Lineage Distribution of Dependency Scores
+```{r plot3, echo=FALSE, message=FALSE, warning=FALSE}
+p3
+```
+  **`r plot_celllin_title`** `r plot_celllin_legend`
+\newpage
+```{r plot4, echo=FALSE, message=FALSE, warning=FALSE, fig.height=8.5}
+p4
+```
+  **`r plot_cellsublin_title`** `r plot_cellsublin_legend`
 \newpage
 ## Cell Line Dependency Information
 ### Cells that lose fitness when `r summary$identifier` is knocked out
