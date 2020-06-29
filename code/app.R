@@ -510,14 +510,17 @@ gene_callback <- function(input, output, session) {
     # render details about the gene symbol or pathway user chose
   })
   #censor reactive values
-  censor_status <- reactiveValues(go = FALSE)
+  censor_status <- reactiveValues(choice = FALSE, 
+                                  num_sim_genes = 1000)
   
   observeEvent(input$censor, {
-    censor_status$go <- TRUE
+    censor_status$choice <- TRUE
+    censor_status$num_sim_genes <- input$num_sim_genes
   })
   
   observeEvent(input$reset, {
-    censor_status$go <- FALSE
+    censor_status$choice <- FALSE
+    censor_status$num_sim_genes <- 1000
   })
   
   output$dep_top <- DT::renderDataTable({
@@ -527,7 +530,7 @@ gene_callback <- function(input, output, session) {
       make_top_table(master_top_table, data()) %>% 
         dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
         dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top) %>%
-        censor(censor_genes, censor_status$go, isolate(input$num_sim_genes)),
+        censor(censor_genes, censor_status$choice, censor_status$num_sim_genes),
       escape = FALSE,
       options = list(pageLength = 25))
   })

@@ -8,7 +8,7 @@ make_top_table <- function(toptable_data = master_top_table, gene_symbol) {
     dplyr::rename("Query" = "fav_gene", "Gene" = "gene", "Name" = "name", "R^2" = "r2", "Z Score" = "z_score", "Co-publication Count" = "concept_count", "Co-publication Index" = "concept_index")
 }
 
-censor <- function(top_table, censor_data = censor_genes, choice, greater_than) {
+censor <- function(top_table, censor_data = censor_genes, choice = FALSE, greater_than) {
   if(choice == TRUE){
     censor_data <- censor_data %>%
       dplyr::filter(num_sim > greater_than)
