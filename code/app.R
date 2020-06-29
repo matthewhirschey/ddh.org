@@ -521,6 +521,7 @@ gene_callback <- function(input, output, session) {
   observeEvent(input$reset, {
     censor_status$choice <- FALSE
     censor_status$num_sim_genes <- 1000
+    updateSliderInput(session, inputId = "num_sim_genes", value = 1000)
   })
   
   output$dep_top <- DT::renderDataTable({
