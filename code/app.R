@@ -49,8 +49,6 @@ master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top
 master_positive <- readRDS(file=here::here("data", paste0(release, "_master_positive.Rds")))
 master_negative <- readRDS(file=here::here("data", paste0(release, "_master_negative.Rds")))
 surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
-
-#read data from generate_censor.R
 censor_genes <- readRDS(file=here::here("data", paste0(release, "_censor_genes.Rds")))
 
 #read data from generate_subcell_data.R
