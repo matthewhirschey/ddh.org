@@ -49,6 +49,7 @@ master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top
 master_positive <- readRDS(file=here::here("data", paste0(release, "_master_positive.Rds")))
 master_negative <- readRDS(file=here::here("data", paste0(release, "_master_negative.Rds")))
 surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
+censor_genes <- readRDS(file=here::here("data", paste0(release, "_censor_genes.Rds")))
 
 #read data from generate_subcell_data.R
 subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))
@@ -363,13 +364,24 @@ detail_page <- fluidPage(
     ),
     navbarMenu(title = "Similar",
                tabPanel("Genes",
-                        fluidRow(h4(textOutput("text_dep_top"))),
-                        fluidRow(checkboxGroupInput(inputId = "vars_dep_top", 
-                                                    "Select columns:",
-                                                    c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
-                                                    selected = c("Z Score", "Co-publication Count"), 
-                                                    inline = TRUE)),
-                        fluidRow(dataTableOutput(outputId = "dep_top"))),
+                        headerPanel(fluidRow(h4(textOutput("text_dep_top")))),
+                        sidebarLayout(
+                          sidebarPanel(fluidRow(sliderInput(inputId = "num_sim_genes",
+                                                            "Censor Greater Than:",
+                                                            min = 50,
+                                                            max = 1000,
+                                                            value = 1000)),
+                                       fluidRow(column(5, actionButton(inputId = "censor",
+                                                                       "Submit")),
+                                                column(5, actionButton(inputId = "reset",
+                                                                       "Reset"))),
+                                       width = 3),
+                          mainPanel(fluidRow(checkboxGroupInput(inputId = "vars_dep_top", 
+                                                                "Select columns:",
+                                                                c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
+                                                                selected = c("Z Score", "Co-publication Count"), 
+                                                                inline = TRUE)),
+                                    fluidRow(dataTableOutput(outputId = "dep_top"))))),
                tabPanel("Pathways",
                         fluidRow(h4(textOutput("text_pos_enrich"))),
                         fluidRow(dataTableOutput(outputId = "pos_enrich")))),
@@ -497,13 +509,25 @@ gene_callback <- function(input, output, session) {
     }
     # render details about the gene symbol or pathway user chose
   })
+  #censor reactive values
+  censor_status <- reactiveValues(go = FALSE)
+  
+  observeEvent(input$censor, {
+    censor_status$go <- TRUE
+  })
+  
+  observeEvent(input$reset, {
+    censor_status$go <- FALSE
+  })
+  
   output$dep_top <- DT::renderDataTable({
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_top_table(master_top_table, data()) %>% 
         dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
-        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top), 
+        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top) %>%
+        censor(censor_genes, censor_status$go, isolate(input$num_sim_genes)),
       escape = FALSE,
       options = list(pageLength = 25))
   })
@@ -564,7 +588,7 @@ gene_callback <- function(input, output, session) {
       make_enrichment_bottom(master_negative, data()),
       options = list(pageLength = 25))
   })
-  
+
   #establish reactive value
   rv <- reactiveValues(degree = 2, 
                        threshold = 10)
