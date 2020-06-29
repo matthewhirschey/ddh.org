@@ -591,7 +591,7 @@ gene_callback <- function(input, output, session) {
       options = list(pageLength = 25))
   })
 
-  #establish reactive values
+  #establish reactive value
   rv <- reactiveValues(degree = 2, 
                        threshold = 10)
 
@@ -718,7 +718,6 @@ server <- shinyServer(function(input, output, session) {
   
   search_callback(input, output, session)
   gene_callback(input, output, session)
-  
 })
 
 shinyApp(ui, server)
