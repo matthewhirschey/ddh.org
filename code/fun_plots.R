@@ -9,7 +9,7 @@ make_cellbins <- function(cellbins_data = achilles, expression_data = expression
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = !any_of(c("cell_line", "lineage")), names_to = "gene_symbol", values_to = "dep_score") %>% 
+    pivot_longer(cols = where(is.numeric), names_to = "gene_symbol", values_to = "dep_score") %>% 
     ggplot() +
     geom_vline(xintercept = 1, color = "lightgray") +
     geom_vline(xintercept = -1, color = "lightgray") +
@@ -39,7 +39,7 @@ make_celldeps <- function(celldeps_data = achilles, expression_data = expression
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = !any_of(c("cell_line", "lineage")), names_to = "gene_symbol", values_to = "dep_score") %>% 
+    pivot_longer(cols = where(is.numeric), names_to = "gene_symbol", values_to = "dep_score") %>% 
     ggplot(aes(x = fct_reorder(cell_line, dep_score, .fun = max, .desc = FALSE), 
                y = dep_score, 
                text = paste0("Cell Line: ", cell_line), 
@@ -117,7 +117,7 @@ make_lineage <- function(celldeps_data = achilles, expression_data = expression_
     geom_boxplot(data = d, aes(x = fct_reorder(lineage, dep_score, .fun = mean, .desc = TRUE), 
                      y = dep_score
                      )) +
-    geom_point(data = m, aes(x = lineage, y = dep_score), color = "red", alpha = 0.5) +
+    geom_point(data = m, aes(x = lineage, y = dep_score), color = "blue", alpha = 0.5) +
     coord_flip() +
     labs(y = "Dependency Score", x = "Lineage") +
     theme_minimal_vgrid()
@@ -151,9 +151,14 @@ make_sublineage <- function(celldeps_data = achilles, expression_data = expressi
     geom_boxplot(data = d, aes(x = fct_reorder(lineage_subtype, dep_score, .fun = mean, .desc = TRUE), 
                                y = dep_score
     )) +
-    geom_point(data = m, aes(x = lineage_subtype, y = dep_score), color = "red", alpha = 0.5) +
+    geom_point(data = m, aes(x = lineage_subtype, y = dep_score), color = "lightblue", alpha = 0.5) +
     coord_flip() +
     labs(y = "Dependency Score", x = "Sublineage") +
     theme_minimal_vgrid()
   return(p)
 }
+
+#figure legend
+plot_cellsublin_title <- "Cell Line Sub-Lineage Dependencies"
+plot_cellsublin_legend <- "Each point shows the mean dependency score for a given cell sublineage, with box plots showing median, interquartile ranges, and outliers."
+
