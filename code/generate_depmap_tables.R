@@ -136,12 +136,7 @@ surprise_genes <- master_top_table %>%
 
 saveRDS(surprise_genes, here::here("data", paste0(release, "_surprise_genes.Rds")))
 
-#how long
-time_end_tables <- Sys.time()
-
 #Censor
-master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
-
 num_genes <- nrow(master_top_table)
 
 genes <- character(num_genes)
@@ -156,3 +151,6 @@ censor_genes <- tibble(genes, num_sim)
 
 #save
 saveRDS(censor_genes, here::here("data", paste0(release, "_censor_genes.Rds")))
+
+#how long
+time_end_tables <- Sys.time()
