@@ -273,6 +273,7 @@ head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
 
 ### universal elements
 main_title <- HTML('<a href="." style="color:black;">Data-Driven Hypothesis</a>')
+window_title <- "Data-Driven Hypothesis | A Hirschey Lab Resource"
 
 search_tab_panel <- div(
   search_panel()
@@ -319,7 +320,7 @@ home_page <- tagList(
 ### SEARCH PAGE
 search_page <- tagList(
   head_tags,
-  navbarPage(title = main_title, windowTitle = "Data-Driven Hypothesis | A Hirschey Lab Resource"),
+  navbarPage(title = main_title, windowTitle = window_title),
   div(search_panel(), style="float: right"),
   h3(textOutput("search_title")),
   div(div(h3("Results", class="panel-title"), class="panel-heading"),
@@ -331,7 +332,7 @@ search_page <- tagList(
 ### DETAILS PAGE: shows either gene or pathway data
 detail_page <- fluidPage(
   head_tags,
-  navbarPage(title = main_title, windowTitle = "Data-Driven Hypothesis | A Hirschey Lab Resource", 
+  navbarPage(title = main_title, windowTitle = window_title, 
     tabPanel("Home",
              div(search_panel(), style="float: right"),
              uiOutput("detail_summary")
