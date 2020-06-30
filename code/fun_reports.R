@@ -65,6 +65,8 @@ render_complete_report <- function (file,
   cellanatogram_table <- make_cellanatogram_table(cellanatogram_data, gene_symbol)
   p1 <- make_celldeps(celldeps_data, expression_data, gene_symbol, mean)
   p2 <- make_cellbins(cellbins_data, expression_data, gene_symbol)
+  p3 <- make_lineage(celldeps_data, expression_data, gene_symbol)
+  p4 <- make_sublineage(celldeps_data, expression_data, gene_symbol)
   target_achilles_bottom <- make_achilles_table(achilles_data, expression_data, gene_symbol) %>% head(10)
   target_achilles_top <- make_achilles_table(achilles_data, expression_data, gene_symbol) %>% tail(10)
   dep_top <- make_top_table(toptable_data, gene_symbol)

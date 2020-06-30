@@ -13,12 +13,12 @@ time_begin_tables <- Sys.time()
 source(here::here("code", "current_release.R"))
 
 #LOAD data 
-gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
+gene_summary <- readRDS(file = here::here("data", paste0(release, "_gene_summary.Rds")))
 achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
-mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
-sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
+achilles_lower <- readRDS(file = here::here("data", paste0(release, "_achilles_lower.Rds")))
+achilles_upper <- readRDS(file = here::here("data", paste0(release, "_achilles_upper.Rds")))
+mean_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_mean_virtual_achilles.Rds")))
+sd_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_sd_virtual_achilles.Rds")))
 pubmed_concept_pairs <- readRDS(file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
 
 #setup containers
@@ -97,8 +97,8 @@ for (fav_gene in gene_group) {
 }
 
 #save
-saveRDS(master_top_table, file=here::here("data", "master_top_table.Rds"))
-saveRDS(master_bottom_table, file=here::here("data", "master_bottom_table.Rds"))
+saveRDS(master_top_table, file=here::here("data", paste0(release, "_master_top_table.Rds")))
+saveRDS(master_bottom_table, file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
 
 #make surprise gene list
 find_good_candidate <- function(gene_symbol) {
@@ -134,7 +134,23 @@ surprise_genes <- master_top_table %>%
   dplyr::filter(good == TRUE) %>% 
   pull(fav_gene)
 
-saveRDS(surprise_genes, here::here("data", "surprise_genes.Rds"))
+saveRDS(surprise_genes, here::here("data", paste0(release, "_surprise_genes.Rds")))
+
+#Censor
+num_genes <- nrow(master_top_table)
+
+genes <- character(num_genes)
+num_sim <- numeric(num_genes)
+
+for (i in seq_along(genes)) {
+  genes[i] <- master_top_table$fav_gene[i]
+  num_sim[i] <- nrow(master_top_table[[2]][[i]])
+}
+
+censor_genes <- tibble(genes, num_sim)
+
+#save
+saveRDS(censor_genes, here::here("data", paste0(release, "_censor_genes.Rds")))
 
 #how long
 time_end_tables <- Sys.time()

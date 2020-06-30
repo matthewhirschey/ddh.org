@@ -29,26 +29,27 @@ if (supportsMulticore()) {
 source(here::here("code", "current_release.R"))
 
 #read data from create_*.R
-gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
-pathways <- readRDS(here::here("data", "pathways.Rds"))
+gene_summary <- readRDS(here::here("data", paste0(release, "_gene_summary.Rds")))
+pathways <- readRDS(here::here("data", paste0(release, "_pathways.Rds")))
 
 #read data from generate_depmap_data.R
 achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
 expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
 
 #read data from generate_depmap_stats.R
-sd_threshold <- readRDS(file = here::here("data", "sd_threshold.Rds"))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.Rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.Rds"))
-mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.Rds"))
-sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.Rds"))
+sd_threshold <- readRDS(file = here::here("data", paste0(release, "_sd_threshold.Rds")))
+achilles_lower <- readRDS(file = here::here("data", paste0(release, "_achilles_lower.Rds")))
+achilles_upper <- readRDS(file = here::here("data", paste0(release, "_achilles_upper.Rds")))
+mean_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_mean_virtual_achilles.Rds")))
+sd_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_sd_virtual_achilles.Rds")))
 
 #read data from generate_depmap_tables & pathways.R
-master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
-master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
-master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
-master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
-surprise_genes <- readRDS(file=here::here("data", "surprise_genes.Rds"))
+master_bottom_table <- readRDS(file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
+master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
+master_positive <- readRDS(file=here::here("data", paste0(release, "_master_positive.Rds")))
+master_negative <- readRDS(file=here::here("data", paste0(release, "_master_negative.Rds")))
+surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
+censor_genes <- readRDS(file=here::here("data", paste0(release, "_censor_genes.Rds")))
 
 #read data from generate_subcell_data.R
 subcell <- readRDS(file=here::here("data", paste0(release, "_subcell.Rds")))
@@ -272,6 +273,7 @@ head_tags <- tags$head(includeHTML("gtag.html"),includeScript("returnClick.js"))
 
 ### universal elements
 main_title <- HTML('<a href="." style="color:black;">Data-Driven Hypothesis</a>')
+window_title <- "Data-Driven Hypothesis | A Hirschey Lab Resource"
 
 search_tab_panel <- div(
   search_panel()
@@ -318,7 +320,7 @@ home_page <- tagList(
 ### SEARCH PAGE
 search_page <- tagList(
   head_tags,
-  navbarPage(title = main_title),
+  navbarPage(title = main_title, windowTitle = window_title),
   div(search_panel(), style="float: right"),
   h3(textOutput("search_title")),
   div(div(h3("Results", class="panel-title"), class="panel-heading"),
@@ -330,7 +332,7 @@ search_page <- tagList(
 ### DETAILS PAGE: shows either gene or pathway data
 detail_page <- fluidPage(
   head_tags,
-  navbarPage(title = main_title,
+  navbarPage(title = main_title, windowTitle = window_title, 
     tabPanel("Home",
              div(search_panel(), style="float: right"),
              uiOutput("detail_summary")
@@ -345,7 +347,17 @@ detail_page <- fluidPage(
                         fluidRow(plotlyOutput(outputId = "cell_bins")),
                         tags$br(),
                         fluidRow(tags$strong(plot_cellbins_title), plot_cellbins_legend),
-                        tags$br()
+                        tags$hr(),
+                        fluidRow(plotlyOutput(outputId = "cell_deps_lin")),
+                        tags$br(),
+                        fluidRow(tags$strong(plot_celllin_title), plot_celllin_legend, 
+                        actionLink(inputId = "sublin_click", "View sublineage plot below")), #add conditional panel for subtype
+                        tags$br(), 
+                        conditionalPanel(condition = 'input.sublin_click == 0',
+                                         ""),
+                        conditionalPanel(condition = 'input.sublin_click != 0', 
+                                         tags$br(),
+                                         fluidRow(plotlyOutput(outputId = "cell_deps_sublin")))
                         ),
                tabPanel("Table",
                         fluidRow(h4(textOutput("text_cell_dep_table"))),
@@ -354,11 +366,22 @@ detail_page <- fluidPage(
     navbarMenu(title = "Similar",
                tabPanel("Genes",
                         fluidRow(h4(textOutput("text_dep_top"))),
-                        fluidRow(checkboxGroupInput(inputId = "vars_dep_top", 
+                        fluidRow(
+                          column(6, checkboxGroupInput(inputId = "vars_dep_top", 
                                                     "Select columns:",
                                                     c("R^2", "Z Score", "Co-publication Count", "Co-publication Index"), 
                                                     selected = c("Z Score", "Co-publication Count"), 
                                                     inline = TRUE)),
+                          column(6, fluidRow(sliderInput(inputId = "num_sim_genes",
+                                                           "Censor genes with more than n associations:",
+                                                           min = 100,
+                                                           max = 1000,
+                                                           value = 1000,
+                                                           step = 100)), 
+                                      fluidRow(column(3, actionButton(inputId = "censor", "Submit")),
+                                               column(3, actionButton(inputId = "reset", "Reset"))))
+                          ),
+                        hr(),
                         fluidRow(dataTableOutput(outputId = "dep_top"))),
                tabPanel("Pathways",
                         fluidRow(h4(textOutput("text_pos_enrich"))),
@@ -487,13 +510,29 @@ gene_callback <- function(input, output, session) {
     }
     # render details about the gene symbol or pathway user chose
   })
+  #censor reactive values
+  censor_status <- reactiveValues(choice = FALSE, 
+                                  num_sim_genes = 1000)
+  
+  observeEvent(input$censor, {
+    censor_status$choice <- TRUE
+    censor_status$num_sim_genes <- input$num_sim_genes
+  })
+  
+  observeEvent(input$reset, {
+    censor_status$choice <- FALSE
+    censor_status$num_sim_genes <- 1000
+    updateSliderInput(session, inputId = "num_sim_genes", value = 1000)
+  })
+  
   output$dep_top <- DT::renderDataTable({
     validate(
       need(data() %in% master_top_table$fav_gene, "No data found for this gene."))
     DT::datatable(
       make_top_table(master_top_table, data()) %>% 
         dplyr::mutate(link = paste0("<center><a href='?show=detail&content=gene&symbol=", Gene,"'>", img(src="link out_25.png", width="10", height="10"),"</a></center>")) %>% 
-        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top), 
+        dplyr::select("Query", "Gene", "Gene \nLink" = "link", "Name", input$vars_dep_top) %>%
+        censor(censor_genes, censor_status$choice, censor_status$num_sim_genes),
       escape = FALSE,
       options = list(pageLength = 25))
   })
@@ -519,6 +558,22 @@ gene_callback <- function(input, output, session) {
       need(data() %in% colnames(achilles), "")) #""left blank
     ggplotly(make_cellbins(achilles, expression_join, data()), tooltip = c("text"))
   })
+  output$cell_deps_lin <- renderPlotly({
+    validate(
+      need(data() %in% colnames(achilles), "No data found for this gene."))
+    withProgress(message = 'Wait for it...', value = 1, {
+      ggplotly(make_lineage(achilles, expression_join, data()), tooltip = "text")
+    })
+  })
+  observeEvent(input$sublin_click, { #event to store the 'click'
+  })
+  output$cell_deps_sublin <- renderPlotly({
+    validate(
+      need(data() %in% colnames(achilles), "No data found for this gene."))
+    withProgress(message = 'Wait for it...', value = 1, {
+      ggplotly(make_sublineage(achilles, expression_join, data()), height = 1100, tooltip = "text")
+    })
+  })
   output$target_achilles <- DT::renderDataTable({
     validate(
       need(data() %in% colnames(achilles), "No data found for this gene."))
@@ -538,7 +593,7 @@ gene_callback <- function(input, output, session) {
       make_enrichment_bottom(master_negative, data()),
       options = list(pageLength = 25))
   })
-  
+
   #establish reactive value
   rv <- reactiveValues(degree = 2, 
                        threshold = 10)
@@ -551,7 +606,7 @@ gene_callback <- function(input, output, session) {
   
   output$graph <- renderForceNetwork({
     validate(
-      need(data() %in% colnames(achilles), "No data found for this gene."))
+      need(data() %in% colnames(achilles), "No data found."))
     withProgress(message = 'Running fancy algorithms', detail = 'Hang tight for 10 seconds', value = 1, {
     make_graph(master_top_table, master_bottom_table, data(), threshold = rv$threshold, deg = rv$degree)
     })

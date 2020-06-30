@@ -33,11 +33,11 @@ achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
 achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
 
 #save
-saveRDS(sd_threshold, file = here::here("data", "sd_threshold.Rds"))
-saveRDS(achilles_lower, file = here::here("data", "achilles_lower.Rds"))
-saveRDS(achilles_upper, file = here::here("data", "achilles_upper.Rds"))
-saveRDS(mean_virtual_achilles, file = here::here("data", "mean_virtual_achilles.Rds"))
-saveRDS(sd_virtual_achilles, file = here::here("data", "sd_virtual_achilles.Rds"))
+saveRDS(sd_threshold, file = here::here("data", paste0(release, "_sd_threshold.Rds")))
+saveRDS(achilles_lower, file = here::here("data", paste0(release, "_achilles_lower.Rds")))
+saveRDS(achilles_upper, file = here::here("data", paste0(release, "_achilles_upper.Rds")))
+saveRDS(mean_virtual_achilles, file = here::here("data", paste0(release, "_mean_virtual_achilles.Rds")))
+saveRDS(sd_virtual_achilles, file = here::here("data", paste0(release, "_sd_virtual_achilles.Rds")))
 
 #how long
 time_end_stats <- Sys.time()

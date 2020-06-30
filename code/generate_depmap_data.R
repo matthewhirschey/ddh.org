@@ -35,7 +35,7 @@ expression <- clean_colnames(expression)
 expression_join <- read_csv(cclemeta_url, col_names = TRUE) %>% 
   clean_names() %>% 
   rename(X1 = dep_map_id, cell_line = stripped_cell_line_name) %>% 
-  select(X1, cell_line, lineage)
+  select(X1, cell_line, lineage, lineage_subtype)
 
 #filter achilles to remove no expression dep scores(special sauce)
 expression_long <- expression %>% 
