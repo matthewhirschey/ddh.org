@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:4.0.0
+FROM rocker/shiny-verse:3.6.3
 LABEL maintainer="Dan Leehr <dan.leehr@duke.edu>"
 
 # Install texlive-xetex for PDF generation
@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y texlive-xetex
 
 RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  ggplot2 \
+ tidyselect \
  here \
  corrr  \
  lubridate \
