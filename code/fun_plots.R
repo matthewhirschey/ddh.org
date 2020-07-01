@@ -9,7 +9,7 @@ make_cellbins <- function(cellbins_data = achilles, expression_data = expression
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = is.numeric, names_to = "gene_symbol", values_to = "dep_score") %>% #replace is.numeric with where(is.numeric)
+    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>% #replace any_of with where(is.numeric)
     ggplot() +
     geom_vline(xintercept = 1, color = "lightgray") +
     geom_vline(xintercept = -1, color = "lightgray") +
@@ -39,7 +39,7 @@ make_celldeps <- function(celldeps_data = achilles, expression_data = expression
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = is.numeric, names_to = "gene_symbol", values_to = "dep_score") %>% 
+    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>% 
     ggplot(aes(x = fct_reorder(cell_line, dep_score, .fun = max, .desc = FALSE), 
                y = dep_score, 
                text = paste0("Cell Line: ", cell_line), 
@@ -100,7 +100,7 @@ make_lineage <- function(celldeps_data = achilles, expression_data = expression_
     select(X1, any_of(gene_symbol)) %>%
     left_join(expression_data, by = "X1") %>%
     select(-X1) %>%
-    pivot_longer(cols = is.numeric, names_to = "gene_symbol", values_to = "dep_score") %>%
+    pivot_longer(cols = !any_of(c("cell_line", "lineage", "lineage_subtype")), names_to = "gene_symbol", values_to = "dep_score") %>%
     dplyr::mutate_at("lineage", function(str) {
       str <- str_replace_all(str, "\\_", " ")
       str <- str_to_title(str)
