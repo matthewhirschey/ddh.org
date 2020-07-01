@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:3.6.3
+FROM rocker/shiny-verse:4.0.0
 LABEL maintainer="Dan Leehr <dan.leehr@duke.edu>"
 
 # Install texlive-xetex for PDF generation
