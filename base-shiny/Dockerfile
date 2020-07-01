@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y texlive-xetex
 
 RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  ggplot2 \
+ tidyselect \
  here \
  corrr  \
  lubridate \
@@ -25,6 +26,7 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  promises
 
 RUN Rscript -e 'devtools::install_github("jespermaag/gganatogram")'
+Run Rscript -e 'install.packages(c("dbplyr", "dplyr", "haven", "jsonlite", "modelr", "tidyr"))'
 
 COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /var/lib/shiny-server/
