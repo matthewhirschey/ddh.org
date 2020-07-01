@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y texlive-xetex
 
 RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  ggplot2 \
- tidyverse \
+ tidyselect \
  here \
  corrr  \
  lubridate \
