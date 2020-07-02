@@ -626,13 +626,14 @@ gene_callback <- function(input, output, session) {
         },
     content = function(file) {
       gene_symbol <- data() # reactive data must be read outside of a future
+      content_type <- getQueryString()$content
       progress_bar <- Progress$new()
       progress_bar$set(message = "Building your shiny report", detail = "Patience, young grasshopper", value = 1)
       if (render_report_in_background) {
         result <- future({
           render_report_to_file(file, 
                                 gene_symbol, 
-                                type = getQueryString()$content,
+                                type = content_type,
                                 summary1 = gene_summary, 
                                 summary2 = pathways,
                                 cellbins_data = achilles, 
