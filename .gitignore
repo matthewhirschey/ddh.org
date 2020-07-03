@@ -17,3 +17,4 @@ config.sh
 logs
 venv
 ddh-data
+report
