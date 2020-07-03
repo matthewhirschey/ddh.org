@@ -84,7 +84,8 @@ render_dummy_report <- function (file,
                                  gene_symbol, 
                                  type, 
                                  summary1 = gene_summary, 
-                                 summary2 = pathways) {
+                                 summary2 = pathways,
+                                 achilles = achilles) {
   summary <- make_summary(gene_symbol, 
                           type, 
                           summary1, 
@@ -109,15 +110,6 @@ render_report_to_file <- function(file,
                                   enrichmentbottom_data = master_negative, 
                                   achilles_data = achilles) {
   if (gene_symbol %in% colnames(achilles_data) && length(gene_symbol) == 1) {
-    src <- normalizePath('report_app.Rmd')
-    
-    # temporarily switch to the temp dir, in case you do not have write
-    # permission to the current working directory
-    
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_app.Rmd', overwrite = TRUE)
     out <- render_complete_report(file, 
                                   gene_symbol, 
                                   type,
@@ -135,11 +127,6 @@ render_report_to_file <- function(file,
                                   achilles_data)
     file.rename(out, file)
   } else if (length(gene_symbol) > 1) {
-    src <- normalizePath('report_app.Rmd')
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_app.Rmd', overwrite = TRUE)
     out <- render_complete_report(file, 
                                   gene_symbol, 
                                   type,
@@ -157,16 +144,12 @@ render_report_to_file <- function(file,
                                   achilles_data)
     file.rename(out, file)
   } else {
-    src <- normalizePath('report_dummy_app.Rmd')
-    owd <- setwd(tempdir())
-    on.exit(setwd(owd))
-    
-    file.copy(src, 'report_dummy_app.Rmd', overwrite = TRUE)
     out <- render_dummy_report(file, 
                                gene_symbol, 
                                type, 
                                summary1, 
-                               summary2)
+                               summary2,
+                               cellbins_data)
     file.rename(out, file)
   }
 }
