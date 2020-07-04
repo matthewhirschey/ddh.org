@@ -155,6 +155,8 @@ render_report_to_file <- function(file,
 }
 
 render_rmarkdown_in_tempdir <- function(rmd_path, output_file, envir = parent.frame()) {
+  # The rmd_path variable must be an absolute path.
+
   # make sure the base report directory exists
   report_base_dir = here::here("report")
   if (!file.exists(report_base_dir)) {
