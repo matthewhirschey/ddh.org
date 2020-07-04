@@ -44,6 +44,8 @@ items:
             name: ddh-data
           - mountPath: /srv/user-data
             name: ddh-user-data
+          - mountPath: /srv/reports
+            name: ddh-reports
         volumes:
         - name: ddh-data
           readOnly: true
@@ -52,6 +54,8 @@ items:
         - name: ddh-user-data
           persistentVolumeClaim:
             claimName: ddh-user-data-pvc
+        - name: ddh-reports
+          emptyDir: {}
     triggers:
     - imageChangeParams:
         automatic: true
