@@ -52,15 +52,20 @@ make_achilles_table <- function(achilles_data, expression_data, gene_symbol) { #
     dplyr::select(X1, any_of(gene_symbol)) %>%
     dplyr::left_join(expression_data, by = "X1") %>%
     dplyr::select(-X1) %>%
-    dplyr::select(cell_line, lineage, everything()) %>% 
+    dplyr::select(cell_line, lineage, lineage_subtype, everything()) %>% 
     dplyr::mutate_if(is.numeric, ~round(., digits = 3)) %>% 
     dplyr::mutate_at("lineage", function(str) {
       str <- str_replace_all(str, "\\_", " ")
       str <- str_to_title(str)
       return(str)
     }) %>% 
-    dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage") %>% 
-    dplyr::arrange(.[[3]])
+    dplyr::mutate_at("lineage_subtype", function(str) {
+      str <- str_replace_all(str, "\\_", " ")
+      str <- if_else(str_detect(str, "^[:lower:]"), str_to_title(str), str)
+      return(str)
+    }) %>% 
+    dplyr::rename("Cell Line" = "cell_line", "Lineage" = "lineage", "Subtype" = "lineage_subtype") %>% 
+    dplyr::arrange(.[[4]])
   return(target_achilles)
 }
 
