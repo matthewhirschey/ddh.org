@@ -1,0 +1,33 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: twitterbot
+spec:
+  schedule: "0 8 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            parent: "cronjobtwitterbot"
+        spec:
+          containers:
+          - name: twitterbot
+            image: ddh-shiny-app
+            command: ["Rscript",  "code/twitter_bot.R"]
+            volumeMounts:
+            - name: twitter-token
+              mountPath: /srv/code/token.R
+              readOnly: true
+              subPath: token.R
+            - name: ddh-data
+              mountPath: /srv/data
+          volumes:
+          - name: twitter-token
+            secret:
+              secretName: twitter-bot-token
+          - name: ddh-data
+            readOnly: true
+            persistentVolumeClaim:
+              claimName: ddh-data-pvc
+          restartPolicy: OnFailure
