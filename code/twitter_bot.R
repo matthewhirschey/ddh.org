@@ -4,11 +4,24 @@ library(tidyverse)
 library(rtweet)
 library(here)
 
+#read current release information
+source(here::here("code", "current_release.R"))
+
+#load data
+surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
+gene_summary <- readRDS(here::here("data", paste0(release, "_gene_summary.Rds")))
+achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
+expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
+master_bottom_table <- readRDS(file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
+master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
+
+#load functions
 source(here::here("code", "token.R"))
+source(here::here("code", "fun_plots.R"))
+source(here::here("code", "fun_graphs.R"))
 
 twitter_save <- function(tmp_file, plot_id) {
   ggsave(tmp_file, plot_id, width = 16, height = 9, units = "cm", dpi = 150, device = "png")
-  
 }
 
 #generate content
@@ -24,7 +37,7 @@ text <- paste0(twitter_summary$approved_symbol, ": ", twitter_summary$approved_n
 
 p1 <- make_celldeps(celldeps_data = achilles, expression_data = expression_join , gene_symbol, mean = 0)
 p1 <- p1 +
-  labs(title = "Cell Line Dependency Curve", subtitle = "Each point shows the normalized genetic dependency score for a given cell line")
+  labs(title = "Cell Line Dependency Curve", subtitle = "Each point shows a normalized genetic dependency score for a cell line")
 tmp_1 <- tempfile(fileext = ".png")
 twitter_save(tmp_1, plot = p1)
 
@@ -36,7 +49,8 @@ twitter_save(tmp_2, plot = p2)
 
 p3 <- make_lineage(celldeps_data = achilles, expression_data = expression_join, gene_symbol)
 p3 <- p3 +
-  labs(title = "Cell Lineage Dependencies", subtitle = "Lineage dependency score summaries")
+  labs(title = "Cell Lineage Dependencies", subtitle = "Lineage dependency score summaries") +
+  theme(axis.text.y = element_text(size = 8))
 tmp_3 <- tempfile(fileext = ".png")
 twitter_save(tmp_3, plot = p3)
 
