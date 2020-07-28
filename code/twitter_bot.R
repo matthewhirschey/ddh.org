@@ -4,11 +4,24 @@ library(tidyverse)
 library(rtweet)
 library(here)
 
+#read current release information
+source(here::here("code", "current_release.R"))
+
+#load data
+surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
+gene_summary <- readRDS(here::here("data", paste0(release, "_gene_summary.Rds")))
+achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
+expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
+master_bottom_table <- readRDS(file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
+master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
+
+#load functions
 source(here::here("code", "token.R"))
+source(here::here("code", "fun_plots.R"))
+source(here::here("code", "fun_graphs.R"))
 
 twitter_save <- function(tmp_file, plot_id) {
   ggsave(tmp_file, plot_id, width = 16, height = 9, units = "cm", dpi = 150, device = "png")
-  
 }
 
 #generate content
