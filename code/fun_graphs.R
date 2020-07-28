@@ -74,24 +74,28 @@ make_graph <- function(toptable_data = master_top_table, bottomtable_data = mast
   
   #make graph
   graph_network <- tidygraph::as_tbl_graph(dep_network)
-    if(length(gene_symbol) == 1){
+  if(length(gene_symbol) == 1){
       nodes <-  as_tibble(graph_network) %>%
         rowid_to_column("id") %>%
         mutate(degree = igraph::degree(graph_network),
              group = case_when(name %in% gene_symbol == TRUE ~ "Query Gene", 
                                name %in% dep_top$Gene ~ "Positive",
                                name %in% dep_bottom$Gene ~ "Negative",
-                               TRUE ~ "Connected"))  %>%
-        arrange(desc(degree))
+                               TRUE ~ "Connected"), 
+             group = as_factor(group), 
+             group = fct_relevel(group, c("Query Gene", "Positive", "Negative", "Connected")))  %>%
+        arrange(group)
     } else {
       nodes <-  as_tibble(graph_network) %>%
         rowid_to_column("id") %>%
         mutate(degree = igraph::degree(graph_network),
-                   group = case_when(name %in% gene_symbol == TRUE ~ "Query Gene", 
-                                     name %in% dep_network_top ~ "Positive",
-                                     name %in% dep_network_bottom ~ "Negative",
-                                     TRUE ~ "Connected")) %>% #you don't end up with "connected" in a multi-gene list
-        arrange(desc(degree))
+               group = case_when(name %in% gene_symbol == TRUE ~ "Query Gene", 
+                                 name %in% dep_network_top ~ "Positive",
+                                 name %in% dep_network_bottom ~ "Negative",
+                                 TRUE ~ NA),
+               group = as_factor(group), 
+               group = fct_relevel(group, c("Query Gene", "Positive", "Negative")))  %>% #you don't end up with "connected" in a multi-gene list
+        arrange(group) 
     }
   
   links <- graph_network %>%
@@ -116,8 +120,15 @@ make_graph <- function(toptable_data = master_top_table, bottomtable_data = mast
   if(nrow(links_filtered) == 0) {links_filtered <- tibble("from" = 0, "to" = 0, "r2" = 1, "origin" = "pos")}
   
   #use color meter to get hexdec color values
-  node_color <- 'd3.scaleOrdinal(["#0C2332", "#544097", "#AD677D", "#EDA555"])'
+  node_color <- 'd3.scaleOrdinal(["#EDA555","#AD677D", "#0C2332", "#544097"])'
   
+  #check to see if query gene is missing; if so, then adds a dummy so it shows up on graph, but disconnected
+  if(sum(str_detect(nodes_filtered$group, "Query Gene")) == 0){
+    dummy <- tibble("id" = max(nodes_filtered$id) + 1, "name" = gene_symbol, "degree" = 1, "group" = "Query Gene")
+    nodes_filtered <- bind_rows(nodes_filtered, dummy)
+    node_color <- 'd3.scaleOrdinal(["#AD677D", "#0C2332", "#544097", "#EDA555"])' #change color order for consistency
+  }
+
   forceNetwork(Links = links_filtered, 
                Nodes = nodes_filtered, 
                Source = "from", 
@@ -155,8 +166,10 @@ make_graph_report <- function(toptable_data = master_top_table, bottomtable_data
              group = case_when(name %in% gene_symbol == TRUE ~ "Query Gene", 
                                name %in% dep_top$Gene ~ "Positive",
                                name %in% dep_bottom$Gene ~ "Negative",
-                               TRUE ~ "Connected"))  %>%
-      arrange(desc(degree))
+                               TRUE ~ "Connected"), 
+             group = as_factor(group), 
+             group = fct_relevel(group, c("Query Gene", "Positive", "Negative", "Connected")))  %>%
+      arrange(group)
   } else {
     nodes <-  as_tibble(graph_network) %>%
       rowid_to_column("id") %>%
@@ -164,8 +177,10 @@ make_graph_report <- function(toptable_data = master_top_table, bottomtable_data
              group = case_when(name %in% gene_symbol == TRUE ~ "Query Gene", 
                                name %in% dep_network_top ~ "Positive",
                                name %in% dep_network_bottom ~ "Negative",
-                               TRUE ~ "Connected")) %>% #you don't end up with "connected" in a multi-gene list
-      arrange(desc(degree))
+                               TRUE ~ NA),
+             group = as_factor(group), 
+             group = fct_relevel(group, c("Query Gene", "Positive", "Negative")))  %>% #you don't end up with "connected" in a multi-gene list
+      arrange(group) 
   }
   
   links <- graph_network %>%
@@ -185,6 +200,15 @@ make_graph_report <- function(toptable_data = master_top_table, bottomtable_data
   links_filtered$from <- match(links_filtered$from, nodes_filtered$id)
   links_filtered$to <- match(links_filtered$to, nodes_filtered$id)
   
+  colors <- c("#EDA555","#AD677D", "#0C2332", "#544097")
+  
+  #check to see if query gene is missing; if so, then adds a dummy so it shows up on graph, but disconnected
+  if(sum(str_detect(nodes_filtered$group, "Query Gene")) == 0){
+    dummy <- tibble("id" = max(nodes_filtered$id) + 1, "name" = gene_symbol, "degree" = 1, "group" = "Query Gene")
+    nodes_filtered <- bind_rows(nodes_filtered, dummy)
+    #colors <- c("#AD677D", "#0C2332", "#544097", "#EDA555") #no need to reset colors; do that in 'breaks' below
+    }
+  
   graph_network_ggraph <- tidygraph::tbl_graph(nodes = nodes_filtered, edges = links_filtered)
   
   graph_network_ggraph %>%
@@ -192,9 +216,9 @@ make_graph_report <- function(toptable_data = master_top_table, bottomtable_data
     geom_edge_fan() + #edge_width = aes(abs(r2)), alpha = 0.3
     geom_node_point(aes(size = degree, color = group), alpha = 0.8) +
     geom_node_label(aes(filter = group != "Connected", label = name), repel = TRUE) +
-    scale_colour_viridis(discrete = TRUE, name = "Group", option = "A") +
+    scale_colour_manual(values = colors, breaks = c("Query Gene", "Positive", "Negative", "Connected")) +
     theme_graph(base_family = 'Helvetica') +
-    guides(size = "none")
+    guides(size = "none", color = guide_legend(""))
 }
 
 #figure legend
