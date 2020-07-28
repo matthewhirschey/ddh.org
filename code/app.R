@@ -399,6 +399,7 @@ detail_page <- fluidPage(
                         fluidRow(h4(textOutput("text_neg_enrich"))),
                         fluidRow(dataTableOutput(outputId = "neg_enrich")))),
     tabPanel("Graph",
+             fluidRow(h4(textOutput("text_graph"))),
              sidebarLayout(
                sidebarPanel(sliderInput(inputId = "deg",
                                         label = "Filter \nConnections (<)",
@@ -495,6 +496,7 @@ gene_callback <- function(input, output, session) {
   output$text_pos_enrich <- renderText({paste0("Pathways of genes with similar dependencies as ", str_c(data(), collapse = ", "))})
   output$text_dep_bottom <- renderText({paste0("Genes with inverse dependencies as ", str_c(data(), collapse = ", "))})
   output$text_neg_enrich <- renderText({paste0("Pathways of genes with inverse dependencies as ", str_c(data(), collapse = ", "))})
+  output$text_graph <- renderText({paste0("Network graph for ", str_c(data(), collapse = ", "))})
 
   output$detail_summary <- renderUI({
     if (detail_page_visible()) {
