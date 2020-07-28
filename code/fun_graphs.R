@@ -136,7 +136,7 @@ make_graph <- function(toptable_data = master_top_table, bottomtable_data = mast
                NodeID = "name", 
                Group = "group", 
                zoom = TRUE, 
-               bounded = FALSE, 
+               bounded = TRUE, 
                opacity = 0.8,
                opacityNoHover = 100, 
                Nodesize = "degree", 

@@ -37,7 +37,7 @@ text <- paste0(twitter_summary$approved_symbol, ": ", twitter_summary$approved_n
 
 p1 <- make_celldeps(celldeps_data = achilles, expression_data = expression_join , gene_symbol, mean = 0)
 p1 <- p1 +
-  labs(title = "Cell Line Dependency Curve", subtitle = "Each point shows the normalized genetic dependency score for a given cell line")
+  labs(title = "Cell Line Dependency Curve", subtitle = "Each point shows a normalized genetic dependency score for a cell line")
 tmp_1 <- tempfile(fileext = ".png")
 twitter_save(tmp_1, plot = p1)
 
@@ -49,7 +49,8 @@ twitter_save(tmp_2, plot = p2)
 
 p3 <- make_lineage(celldeps_data = achilles, expression_data = expression_join, gene_symbol)
 p3 <- p3 +
-  labs(title = "Cell Lineage Dependencies", subtitle = "Lineage dependency score summaries")
+  labs(title = "Cell Lineage Dependencies", subtitle = "Lineage dependency score summaries") +
+  theme(axis.text.y = element_text(size = 8))
 tmp_3 <- tempfile(fileext = ".png")
 twitter_save(tmp_3, plot = p3)
 
