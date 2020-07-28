@@ -53,6 +53,6 @@ text2 <- paste0("Check it out at ", gene_symbol_url)
 summary <- str_c(text, text2) #cat(paste(text, text2, sep="\n"))
 
 #generate tweet
-post_tweet(status = summary, media = c(tmp_1, tmp_2, tmp_3, tmp_5))
+post_tweet(status = summary, token = token, media = c(tmp_1, tmp_2, tmp_3, tmp_5))
 
 
