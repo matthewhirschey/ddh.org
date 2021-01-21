@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
-DOCKER_IMG="docker://matthewhirschey/ddh:latest"
 
-# numeric step to run
-export DDH_STEP=$1
+DOCKER_IMG="docker://matthewhirschey/ddh.com:latest"
 
-# make sure we have a data directory created
-mkdir data
-
-# setup singularity environment variables 
+# setup singularity environment variables
 SINGULARITY_BASE="singularity"
 export SINGULARITY_TMPDIR="${SINGULARITY_BASE}/tmp"
 export SINGULARITY_CACHEDIR="${SINGULARITY_BASE}/cache"
@@ -20,5 +15,4 @@ then
   singularity pull $SINGULARITY_IMAGEDIR/ddh.sif $DOCKER_IMG
 fi
 
-# run data generation step
-singularity exec $SINGULARITY_IMAGEDIR/ddh.sif Rscript code/generate_data.R
+singularity exec $SINGULARITY_IMAGEDIR/ddh.sif Rscript "$@"

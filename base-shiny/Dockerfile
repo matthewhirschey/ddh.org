@@ -11,7 +11,7 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  corrr  \
  lubridate \
  plotly \
- networkD3 \
+ visNetwork \
  feather \
  tidygraph \
  cowplot \
@@ -24,10 +24,26 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  future \
  shinyWidgets \
  promises \
- rtweet
+ shiny \
+ showtext \
+ dbplyr \
+ dplyr \
+ haven \
+ jsonlite \
+ modelr \
+ tidyr \
+ ggdist \
+ htmltools
 
 RUN Rscript -e 'devtools::install_github("jespermaag/gganatogram")'
-Run Rscript -e 'install.packages(c("dbplyr", "dplyr", "haven", "jsonlite", "modelr", "tidyr"))'
+
+# Install and register "Roboto Slab" and "Nunito Sans" fonts
+RUN mkdir /usr/share/fonts/googlefonts \
+    && wget --output-document=/tmp/RobotoSlab.zip https://fonts.google.com/download?family=Roboto%20Slab \
+    && unzip -d /usr/share/fonts/googlefonts /tmp/RobotoSlab.zip \
+    && wget --output-document=/tmp/NunitoSans.zip https://fonts.google.com/download?family=Nunito%20Sans \
+    && unzip -d /usr/share/fonts/googlefonts /tmp/NunitoSans.zip \
+    && fc-cache -fv
 
 COPY ./shiny-server.conf /etc/shiny-server/shiny-server.conf
 RUN chown -R shiny /var/lib/shiny-server/
@@ -42,4 +58,3 @@ RUN chmod a+rx /usr/bin/shiny-server.sh
 # Make sure the directory for individual app logs exists and is usable
 RUN chmod -R a+rwX /var/log/shiny-server
 RUN chmod -R a+rwX /var/lib/shiny-server
-
