@@ -34,7 +34,9 @@ items:
       contextDir: "base-shiny"
       git:
         ref: master
-        uri: https://github.com/hirscheylab/depmap.git
+        uri: https://github.com/matthewhirschey/ddh.com.git
+      sourceSecret:
+        name: github-secret
       type: Git
     strategy:
       dockerStrategy:
@@ -59,7 +61,9 @@ items:
     source:
       git:
         ref: master
-        uri: https://github.com/hirscheylab/depmap.git
+        uri: https://github.com/matthewhirschey/ddh.com.git
+      sourceSecret:
+        name: github-secret
       type: Git
     strategy:
       dockerStrategy:

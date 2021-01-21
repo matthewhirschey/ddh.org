@@ -1,0 +1,113 @@
+apiVersion: v1
+items:
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ddh
+    name: nginx-116-centos7
+  spec:
+    tags:
+    - annotations:
+        openshift.io/imported-from: centos/nginx-116-centos7
+      from:
+        kind: DockerImage
+        name: centos/nginx-116-centos7
+      name: latest
+      referencePolicy:
+        type: ""
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ddh
+    name: ddh-nginx
+  spec:
+    lookupPolicy:
+      local: true
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ddh
+    name: ddh-nginx
+  spec:
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ddh-nginx:latest
+    source:
+      contextDir: nginx
+      git:
+        ref: master
+        uri: https://github.com/matthewhirschey/ddh.com.git
+      sourceSecret:
+        name: github-secret
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: nginx-116-centos7:latest
+      type: Source
+    triggers:
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ddh
+    name: ddh-nginx
+  spec:
+    replicas: 1
+    selector:
+      app: ddh
+      deploymentconfig: ddh-nginx
+    template:
+      metadata:
+        labels:
+          app: ddh
+          deploymentconfig: ddh-nginx
+      spec:
+        containers:
+        - image: ddh-nginx:latest
+          name: ddh-nginx
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 8443
+            protocol: TCP
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ddh-nginx
+        from:
+          kind: ImageStreamTag
+          name: ddh-nginx:latest
+      type: ImageChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ddh
+    name: ddh-nginx
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+    selector:
+      app: ddh
+      deploymentconfig: ddh-nginx
+kind: List
+metadata: {}

@@ -5,10 +5,8 @@ output: html_fragment
 ```{r setup, include=FALSE}
 ###knit this document to generate methods.html, which then is served by the Shiny app; html fragments only contain <body></body> content, and are designed to be served in other pages###
 ##upon each release, run 
-#find_threshold.R, 
-#generate_depmap_data.R 
-#generate_pubmed_data.R
-#generate_depmap_stats.R
+#generate_methods.R, 
+
 #then knit
 knitr::opts_chunk$set(echo = TRUE)
 library(janitor)
@@ -26,7 +24,8 @@ library(ggraph)
 library(patchwork)
 library(ggrepel)
 library(kableExtra)
-library(networkD3)
+library(visNetwork)
+library(htmltools)
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -35,38 +34,38 @@ library(networkD3)
 
 time_begin_data <- Sys.time()
 
-#Load functions
-source(here::here("code", "fun_tables.R"))
-source(here::here("code", "fun_plots.R"))
-source(here::here("code", "fun_graphs.R"))
-source(here::here("code", "fix_names.R"))
-
 #read current release information 
 source(here::here("code", "current_release.R"))
 
+#Load functions
+source(here::here("code", "fix_names.R"))
+
 ##LOAD DATA
 fav_gene <- "TP53"
-gene_summary <- readRDS(file = here::here("data", "gene_summary.Rds"))
+gene_summary <- readRDS(file = here::here("data", paste0(release, "_gene_summary.Rds")))
 achilles <- readRDS(file = here::here("data", paste0(release, "_achilles.Rds")))
 achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
 achilles_cor_long <- achilles_cor %>% 
   pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation")
 expression <- readRDS(file = here::here("data", paste0(release, "_expression.Rds")))
-expression_join <- readRDS(file = here::here("data", paste0(release, "_expression_join.Rds")))
+expression_join <- readRDS(file = here::here("data", paste0(release, "_expression_names.Rds"))) #fix the code below...can I make it use the functions, instead of manually calling them here?
 pubmed_concept_pairs <- readRDS(file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
 
 #read data from generate_depmap_pathways.R
-master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
-master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
-master_positive <- readRDS(file=here::here("data", "master_positive.Rds"))
-master_negative <- readRDS(file=here::here("data", "master_negative.Rds"))
+master_bottom_table <- readRDS(file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
+master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
+
+master_positive <- readRDS(file=here::here("data", paste0(release, "_master_positive.Rds")))
+master_negative <- readRDS(file=here::here("data", paste0(release, "_master_negative.Rds")))
 
 #LOAD STATS
-sd_threshold <- readRDS(file = here::here("data", "sd_threshold.rds"))
-achilles_lower <- readRDS(file = here::here("data", "achilles_lower.rds"))
-achilles_upper <- readRDS(file = here::here("data", "achilles_upper.rds"))
-mean_virtual_achilles <- readRDS(file = here::here("data", "mean_virtual_achilles.rds"))
-sd_virtual_achilles <- readRDS(file = here::here("data", "sd_virtual_achilles.rds"))
+sd_threshold <- readRDS(file = here::here("data", paste0(release, "_sd_threshold.rds")))
+achilles_lower <- readRDS(file = here::here("data", paste0(release, "_achilles_lower.rds")))
+achilles_upper <- readRDS(file = here::here("data", paste0(release, "_achilles_upper.rds")))
+mean_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_mean_virtual_achilles.rds")))
+sd_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_sd_virtual_achilles.rds")))
+mean_virtual_expression <- 0 #set to zero for now, to prevent knitting error; fix when you add this to the methods
+expression_upper <- 0 #set to zero for now, to prevent knitting error; fix when you add this to the methods
 
 #generate raw data too
 achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>% 
@@ -74,6 +73,11 @@ achilles_raw <- read_csv(achilles_url, col_names = TRUE) %>%
   rename(X1 = 1)
 
 achilles_raw <- clean_colnames(achilles_raw)
+
+
+source(here::here("code", "fun_tables.R"))
+source(here::here("code", "fun_plots.R"))
+source(here::here("code", "fun_graphs.R"))
 ```
 
 ![](`r "https://source.unsplash.com/y41FEMqdJ3A/800x600"`)  
@@ -334,7 +338,8 @@ achilles_clean <- achilles_no0 %>% select(-one_of(toomanyNAs)) #this is now the 
 count_v_max_no0 <- achilles_no0 %>% 
   select(-X1) %>% 
   correlate() %>% 
-  pivot_longer(-rowname, names_to = "genes_no0", values_to = "correlations_no0") %>% 
+  pivot_longer(-1, names_to = "genes_no0", values_to = "correlations_no0") %>% 
+  rename(rowname = 1) %>% 
   filter(correlations_no0 > achilles_upper) %>%  #| achilles_correlation_raw < achilles_lower) %>% 
   dplyr::group_by(rowname) %>% 
   summarize(count = n(), 
@@ -379,10 +384,11 @@ achilles_cor_raw_shave <- shave(achilles_cor_raw)
 
 #pivot both longer, but use shaved dataset to plot only one gene-gene pair
 achilles_cor_shave_long <- achilles_cor_shave %>% 
-  pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
+  pivot_longer(-1, names_to = "achilles_gene", values_to = "achilles_correlation") %>% 
   filter(!is.na(achilles_correlation))
 
 achilles_cor_raw_shave_long <- achilles_cor_raw_shave %>% 
+  rename(rowname = 1) %>% 
   pivot_longer(-rowname, names_to = "achilles_gene", values_to = "achilles_correlation_raw") %>% 
   filter(!is.na(achilles_correlation_raw))
 
@@ -616,12 +622,25 @@ How to interpret these genes and pathways is more variable than the positively c
 #### 5. Graph
 Identifying genes that share similar patterns of dependency to a queried unknown gene generates strong hypotheses about new functional annotations and maps to new pathways. However, the strength of the hypothesis cannot be fully inferred from single gene list. If a new gene is associated with the queried gene, then you might infer a functional relationship. However, if you inspect the top 10 genes with the queried gene, then inspect the top 10 genes of each of those, building a functional network graph of the top related genes might reveal a stronger association of the new gene with your queried gene *and* its top ranked genes.  
   
-```{r static_graph, echo=FALSE, message=FALSE, warning=FALSE}
+```{r graph, echo=FALSE, message=FALSE, warning=FALSE}
 # from fun_tables.R and fun_graphs.R
-p53graph <- make_graph_report(master_top_table, master_bottom_table, fav_gene)
+# p53graph <- make_graph_report(gene_symbol = fav_gene)
 
-p53graph
-ggsave(here::here("results", "fig4c_p53graph.png"), plot = p53graph, dpi = 300)
+# p53graph
+
+make_graph(master_top_table, master_bottom_table, fav_gene, 
+           displayHeight = '80vh', displayWidth = '100%', tooltipLink = TRUE) %>% 
+  visLegend(position = "right", width = .25, zoom = F) %>% 
+  visSave(here::here("tempNetwork.html"))
+# display the network
+  htmltools::includeHTML(here::here("tempNetwork.html"))
+
+# ggsave(here::here("results", "fig4c_p53graph.png"), plot = p53graph, dpi = 300)
+```
+
+```{r remove_graph, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# Remove the temp network
+file.remove(here::here("tempNetwork.html"))
 ```
   
 The image here is a representative static, albeit busy, network graph; data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration.
