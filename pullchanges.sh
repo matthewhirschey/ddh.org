@@ -7,6 +7,21 @@ DESTBRANCH=ddh-com-$(date +"%Y-%m-%d_%H%M")
 # upstream branch to pull changes from
 UPBRANCH=org-reorg
 
+unstagefiles () {
+  PATTERN=$1
+  echo "Unstaging files for pattern $PATTERN"
+  for ADDED_FILE in $(git diff --staged --name-only --diff-filter=A | grep "$PATTERN")
+  do
+    echo "Removing $ADDED_FILE"
+    git rm -f $ADDED_FILE
+  done
+  for MODIFIED_FILE in $(git diff --staged --name-only --diff-filter=M | grep "$PATTERN")
+  do
+    echo "Removing changes for $MODIFIED_FILE"
+    git checkout HEAD -- $MODIFIED_FILE
+  done
+}
+
 echo "Switching to master branch and pulling"
 # make sure we are on the ddh.org master branch and up to date
 git checkout master
@@ -23,6 +38,9 @@ else
    git remote add upstream git@github.com:matthewhirschey/ddh.com.git
 fi
 
+# turn on error checking
+set -e 
+
 echo "Fetching $UPBRANCH remote changes"
 git fetch upstream $UPBRANCH
 
@@ -33,11 +51,16 @@ echo "Merging all changes from upstream/$UPBRANCH"
 git merge --squash --no-commit -X theirs upstream/$UPBRANCH
 
 echo "Removing private files from staged changes"
-PRIVATE_FILES=$(git diff --staged --name-only | grep '_private.R$')
-for PRIVATE_FILE in $PRIVATE_FILES
-do
-   git rm -f $PRIVATE_FILE
-done
+unstagefiles '_private.R$'
+
+echo "Removing openshift files from staged changes"
+unstagefiles "openshift/*"
+
+echo "Removing tests/data files from staged changes"
+unstagefiles "tests/data/*"
+
+echo "Removing README changes from staged changes"
+unstagefiles "README.md$"
 
 echo "Committing changes to $DESTBRANCH"
 MSGFILE=$(mktemp)
