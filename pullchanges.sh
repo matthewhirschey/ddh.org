@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
-# Creates a new branch and pulls changes from ddh.com
+# Creates a new branch, pulls changes from ddh.com, pushes the branch
+# and creates a github pull request.
+# This script requires the gh command can be installed.
+# See https://cli.github.com/ to install gh.
+# You should run `gh auth login` once to authenticate with github before
+# running this script.
+
+# turn on command exit status checking
+set -e
 
 # branch to hold changes
 DESTBRANCH=ddh-com-$(date +"%Y-%m-%d_%H%M")
@@ -27,6 +35,9 @@ echo "Switching to master branch and pulling"
 git checkout master
 git pull
 
+# turn off command exit status checking for git ls-remote
+set +e
+
 # add a remote named upstream pointing to ddh.com
 git ls-remote --exit-code upstream 2>/dev/null >/dev/null
 RETVAL=$?
@@ -38,8 +49,8 @@ else
    git remote add upstream git@github.com:matthewhirschey/ddh.com.git
 fi
 
-# turn on error checking
-set -e 
+# turn on command exit status checking
+set -e
 
 echo "Fetching $UPBRANCH remote changes"
 git fetch upstream $UPBRANCH
@@ -74,6 +85,12 @@ git log -1 --stat upstream/$UPBRANCH >> $MSGFILE
 echo "" >> $MSGFILE
 git commit --file=$MSGFILE
 rm $MSGFILE
+
+echo "Pushing branch to origin(github)"
+git push -u origin $DESTBRANCH
+
+echo "Creating a pull request on github"
+gh pr create --base master -w
 
 echo "Done"
 
