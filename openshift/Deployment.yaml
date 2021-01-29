@@ -4,7 +4,7 @@ items:
   kind: DeploymentConfig
   metadata:
     annotations:
-      description: DDH Shiny Server deployment
+      description: DDH Commercial Shiny Server
       template.alpha.openshift.io/wait-for-ready: "true"
     labels:
       app: ddh
@@ -25,8 +25,7 @@ items:
             httpGet:
               path: /
               port: 3838
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
+            timeoutSeconds: 60
           name: ddh-shiny-app
           ports:
           - containerPort: 3838
@@ -34,8 +33,7 @@ items:
             httpGet:
               path: /
               port: 3838
-            initialDelaySeconds: 30
-            timeoutSeconds: 30
+            timeoutSeconds: 60
           resources:
             requests:
               memory: 1G
@@ -87,7 +85,7 @@ items:
       app: ddh
     name: ddh-shiny-route
   spec:
-    host: www.datadrivenhypothesis.org
+    host: www.datadrivenhypothesis.com
     path: /
     to:
       kind: Service

@@ -6,6 +6,9 @@ library(tidyverse)
 library(here)
 library(corrr)
 
+#methods
+methods = FALSE
+
 #rm(list=ls()) 
 time_begin_tables <- Sys.time()
 
@@ -31,26 +34,68 @@ master_bottom_table <- tibble(
   data = list()
 )
 
+#table funs
+get_concept_table <- function(concept_table = pubmed_concept_pairs, query_gene) {
+  concept_tmp <- concept_table %>% 
+    filter(target_gene %in% query_gene) %>% 
+    unnest(nested)
+  return(concept_tmp)
+}
+
+make_dep_table <- function(dep_table = achilles_cor, 
+                              summary_table = gene_summary, 
+                              query_gene, 
+                              upper = achilles_upper, 
+                              lower = achilles_lower, 
+                              top = TRUE) {
+  dep <- 
+    dep_table %>% 
+    dplyr::select(1, query_gene) %>% 
+    {if (top == TRUE) filter(., .[[2]] > upper) else filter(., .[[2]] < lower)} %>% #mean +/- 3sd
+    arrange(desc(.[[2]])) %>% #use column index
+    left_join(gene_summary, by = c("rowname" = "approved_symbol")) %>% 
+    rename(rowname = 1) %>% 
+    select(1:3) 
+  return(dep)
+}
+
 #define list
 #sample <- sample(names(achilles_cor), size = 100) #comment this out
 r <- "rowname" #need to drop "rowname"
 full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
+gene_group <- full #(~60' on a laptop); change to sample for testing, or methods
 
-gene_group <- full #(~60' on a laptop); change to sample for testing
+#methods
+make_graph_group <- function(graph_gene) {
+  top10 <- make_dep_table(query_gene = graph_gene, top = TRUE) %>% 
+    top_n(10, wt = .[[2]]) %>% 
+    pull(var = 1)
+  bottom10 <- make_dep_table(query_gene = graph_gene, top = FALSE) %>% 
+    top_n(-10, wt = .[[2]]) %>% 
+    pull(var = 1)
+  graph_list <- c(graph_gene, top10, bottom10)
+  return(graph_list)
+}
 
-#master_tables
+if(methods == TRUE) {
+  methods_gene_query <- make_graph_group(graph_gene = "TP53")
+  methods_gene_group <- methods_gene_query
+  for (i in methods_gene_query) {
+    methods_list <- make_graph_group(graph_gene = i)
+    methods_gene_group <- c(methods_gene_group, methods_list)
+  }
+  gene_group <- unique(methods_gene_group) #this overwrites gene_group with the methods subset
+}
+
+
+#make master_tables
 for (fav_gene in gene_group) {
-  concept_tmp <- pubmed_concept_pairs %>% 
-    filter(target_gene == fav_gene) %>% 
-    unnest(nested)
+  concept_tmp <- get_concept_table(query_gene = fav_gene)
   
   message(" Dep tables for ", fav_gene)
-  dep_top <- achilles_cor %>% 
-    focus(fav_gene) %>% 
-    arrange(desc(.[[2]])) %>% #use column index
-    filter(.[[2]] > achilles_upper) %>% #mean +/- 3sd
-    left_join(gene_summary, by = c("rowname" = "approved_symbol")) %>% 
-    select(rowname, approved_name, fav_gene) %>% 
+  dep_top <- make_dep_table(query_gene = fav_gene, top = TRUE)
+  dep_top <- 
+    dep_top %>% 
     left_join(concept_tmp, by = c("rowname" = "target_gene_pair")) %>% 
     rename(gene = rowname, 
            name = approved_name, 
@@ -70,12 +115,10 @@ for (fav_gene in gene_group) {
     master_top_table <- master_top_table %>% 
       bind_rows(top_table)
 
-  dep_bottom <- achilles_cor %>% 
-    focus(fav_gene) %>% 
-    arrange(desc(.[[2]])) %>% #use column index
-    filter(.[[2]] < achilles_lower) %>% #mean +/- 3sd
-    left_join(gene_summary, by = c("rowname" = "approved_symbol")) %>% 
-    select(rowname, approved_name, fav_gene) %>% 
+  dep_bottom <- make_dep_table(query_gene = fav_gene, top = FALSE)
+    
+  dep_bottom <-
+    dep_bottom %>% 
     left_join(concept_tmp, by = c("rowname" = "target_gene_pair")) %>% 
     rename(gene = rowname, 
            name = approved_name, 
@@ -125,7 +168,7 @@ find_good_candidate <- function(gene_symbol) {
 }
 
 #TESTING
-#find_good_candidate("SDHA")
+#find_good_candidate("SSNA1")
 #genes <- c("TP53", "TP53BP1")
 #map_lgl(genes, ~ find_good_candidate(.))
 

@@ -11,6 +11,9 @@ Openshift deployment of ddh application using shiny server
 - DownloadJob.yaml: Batch Job for downloading data from DDS
 - DownloadJobTemplate.yaml: Openshift template for creating a batch job for a specific release of data
 - Storage.yaml: Configuration for requesting persistent storage to house data
+- Django.yaml: Deploys [johnbradley/ddh_auth](https://github.com/johnbradley/ddh_auth) to authenticate users
+- Postgres.yaml: Deploys postgres used by ddh_auth Django app
+- Nginx.yaml: Deploys nginx that directs traffic to Django and shiny-app based on authentication uses nginx/nginx.conf
 
 ## Deployment
 
@@ -24,6 +27,10 @@ Openshift deployment of ddh application using shiny server
 3. Create Build and image configurations `oc create -f Build.yaml`
 4. Deploy application: `oc create -f Deployment.yaml`
 5. Ask openshift for the application route: `oc get route ddh-shiny-route`
+6. Edit Django.yaml TODO secret values
+7. Create Django configuration `oc create -f Django.yaml`
+8. Create Django configuration `oc create -f Postgres.yaml`
+9. Create Django configuration `oc create -f Nginx.yaml`
 
 ## Development
 
@@ -37,3 +44,8 @@ The base image takes about 25 minutes to build, and the application image builds
 If additional Linux or R packages are needed, they should be added to the base image, since they are unlikely to change very often.
 
 Note that the application image build is linked to the base image, so rebuilding the base will trigger a rebuild of the application.
+
+The authentication is organized into several components.
+- Django https://github.com/johnbradley/ddh_auth
+- Postgres https://github.com/bitnami/bitnami-docker-postgresql 12.3.0
+- Nginx with config from https://github.com/matthewhirschey/ddh.com/blob/master/openshift/nginx/nginx.conf

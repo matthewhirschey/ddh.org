@@ -23,7 +23,7 @@ data:
 
     for ddh_file in ddh_files:
       print(ddh_file)
-      DukeDS.download_file('ddh-data', 'data/{}'.format(ddh_file))
+      DukeDS.download_file('ddh-com-data', 'data/{}'.format(ddh_file))
 kind: ConfigMap
 metadata:
   creationTimestamp: null
