@@ -13,7 +13,7 @@ set -e
 DESTBRANCH=ddh-com-$(date +"%Y-%m-%d_%H%M")
 
 # upstream branch to pull changes from
-UPBRANCH=org-reorg
+UPBRANCH=master
 
 unstagefiles () {
   PATTERN=$1
