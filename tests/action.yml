@@ -1,0 +1,7 @@
+name: "Run Tests"
+description: "Run testthat tests"
+author: "johnbradley2008@gmail.com"
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
