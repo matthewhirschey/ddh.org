@@ -6,5 +6,4 @@ release <- "20Q4"
 app_data_dir <- "data"
 
 # Boolean to set whether public or private
-#private <- FALSE
-private <- TRUE
+private <- FALSE

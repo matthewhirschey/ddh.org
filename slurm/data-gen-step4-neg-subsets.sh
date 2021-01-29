@@ -6,4 +6,4 @@
 
 source config.sh
 
-DDH_STEP="4.neg" DDH_IDX=$SLURM_ARRAY_TASK_ID slurm/rscript.sh code/generate_data_private.R
+DDH_STEP="4.neg" DDH_IDX=$SLURM_ARRAY_TASK_ID slurm/rscript.sh code/generate_data.R

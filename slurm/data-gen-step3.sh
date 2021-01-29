@@ -7,4 +7,4 @@ source config.sh
 
 export ENTREZ_KEY
 
-DDH_STEP=3 slurm/rscript.sh code/generate_data_private.R
+DDH_STEP=3 slurm/rscript.sh code/generate_data.R
