@@ -4,6 +4,9 @@ library(janitor)
 library(rentrez)
 library(feather)
 
+# read ENTREZ_KEY from environment variable
+entrez_key = Sys.getenv("ENTREZ_KEY")
+
 gene_names_url <- "https://www.genenames.org/cgi-bin/download/custom?col=gd_hgnc_id&col=gd_app_sym&col=gd_app_name&col=gd_prev_sym&col=gd_aliases&col=gd_pub_chrom_map&col=gd_pub_refseq_ids&col=md_eg_id&col=gd_locus_type&col=md_mim_id&col=md_prot_id&status=Approved&hgnc_dbtag=on&order_by=gd_app_sym_sort&format=text&submit=submit"
 source(here::here("code", "current_release.R"))
 gene_summary_output_filename <- "gene_summary.Rds"
@@ -12,6 +15,24 @@ fetch_batch_size <- 100   # batch size of 500 was too high. 200 worked, using 10
 #FOR TESTING: import gene_summary, and select original columns
 #gene_summary <- readRDS(here::here("data", "gene_summary.Rds")) %>% 
 #  select ("approved_symbol", "approved_name", "aka", "ncbi_gene_id", "hgnc_id", "chromosome", "ref_seq_i_ds", "locus_type", "omim_id_supplied_by_omim", "uni_prot_id_supplied_by_uni_prot", "entrez_summary")
+
+retry_entrez_summary <- function(db, id, retries=entrez_retries, retry_sleep_seconds=entrez_retry_sleep_seconds) {
+  result <- NULL
+  for (i in 0:retries) {
+    tryCatch({
+      result <- entrez_summary(db=db, id=id)
+    }, error = function(err_msg) {
+      message(err_msg)
+    })
+    if (!is.null(result)) {
+      break
+    }
+  }
+  if (is.null(result)) {
+    stop("Unable to fetch entrez_summary for ", paste0(id, collapse=" "))
+  }
+  result
+}
 
 # returns a data frame based on gene_names_url and summaries from entrez "gene" database.
 build_gene_summary <- function(gene_names_url, entrez_key) {
@@ -37,7 +58,7 @@ build_gene_summary <- function(gene_names_url, entrez_key) {
   fetched_cnt <- 0
   # Fetch each batch
   for (id_batch in ids_batches) {
-    summary_batch <- entrez_summary(db="gene", id=id_batch)
+    summary_batch <- retry_entrez_summary(db="gene", id=id_batch)
     # summary_batch is a list of summaries, so loop and handle each individually
     for (summary in summary_batch) {
       fetched_cnt <- fetched_cnt + 1

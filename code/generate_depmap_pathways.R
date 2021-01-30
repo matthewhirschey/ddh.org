@@ -31,19 +31,50 @@ master_negative_filename <- "master_negative.Rds"
 sleep_seconds_between_requests <- 1.0
 focused_lib <- c("Achilles_fitness_decrease", "Achilles_fitness_increase", "Aging_Perturbations_from_GEO_down", "Aging_Perturbations_from_GEO_up", "Allen_Brain_Atlas_down", "Allen_Brain_Atlas_up", "ARCHS4_Cell-lines", "ARCHS4_IDG_Coexp", "ARCHS4_Kinases_Coexp", "ARCHS4_TFs_Coexp", "ARCHS4_Tissues", "BioCarta_2016", "BioPlex_2017", "Cancer_Cell_Line_Encyclopedia", "ChEA_2016", "Chromosome_Location_hg19", "CORUM", "Data_Acquisition_Method_Most_Popular_Genes", "Disease_Perturbations_from_GEO_down", "Disease_Perturbations_from_GEO_up", "Disease_Signatures_from_GEO_up_2014", "Drug_Perturbations_from_GEO_down", "Drug_Perturbations_from_GEO_up", "DrugMatrix", "DSigDB", "ENCODE_and_ChEA_Consensus_TFs_from_ChIP-X", "ENCODE_Histone_Modifications_2015", "ENCODE_TF_ChIP-seq_2015", "Enrichr_Libraries_Most_Popular_Genes", "Enrichr_Submissions_TF-Gene_Coocurrence", "Epigenomics_Roadmap_HM_ChIP-seq", "ESCAPE", "GeneSigDB", "GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018", "GTEx_Tissue_Sample_Gene_Expression_Profiles_down", "GTEx_Tissue_Sample_Gene_Expression_Profiles_up", "GWAS_Catalog_2019", "HMDB_Metabolites", "HomoloGene", "Human_Gene_Atlas", "Human_Phenotype_Ontology", "HumanCyc_2015", "HumanCyc_2016", "huMAP", "InterPro_Domains_2019", "Jensen_COMPARTMENTS", "Jensen_DISEASES", "Jensen_TISSUES", "KEA_2015", "KEGG_2019_Human", "KEGG_2019_Mouse", "Kinase_Perturbations_from_GEO_down", "Kinase_Perturbations_from_GEO_up", "Ligand_Perturbations_from_GEO_down", "Ligand_Perturbations_from_GEO_up", "LINCS_L1000_Chem_Pert_down", "LINCS_L1000_Chem_Pert_up", "LINCS_L1000_Kinase_Perturbations_down", "LINCS_L1000_Kinase_Perturbations_up", "LINCS_L1000_Ligand_Perturbations_down", "LINCS_L1000_Ligand_Perturbations_up", "MCF7_Perturbations_from_GEO_down", "MCF7_Perturbations_from_GEO_up", "MGI_Mammalian_Phenotype_Level_4_2019", "Microbe_Perturbations_from_GEO_down", "Microbe_Perturbations_from_GEO_up", "miRTarBase_2017", "Mouse_Gene_Atlas", "MSigDB_Computational", "MSigDB_Oncogenic_Signatures", "NCI-60_Cancer_Cell_Lines", "NURSA_Human_Endogenous_Complexome", "Old_CMAP_down", "Old_CMAP_up", "OMIM_Disease", "OMIM_Expanded", "Panther_2016", "Pfam_Domains_2019", "Pfam_InterPro_Domains", "Phosphatase_Substrates_from_DEPOD", "PPI_Hub_Proteins", "Rare_Diseases_AutoRIF_ARCHS4_Predictions", "Rare_Diseases_AutoRIF_Gene_Lists", "Rare_Diseases_GeneRIF_ARCHS4_Predictions", "Rare_Diseases_GeneRIF_Gene_Lists", "Reactome_2016", "RNA-Seq_Disease_Gene_and_Drug_Signatures_from_GEO", "SILAC_Phosphoproteomics", "Single_Gene_Perturbations_from_GEO_down", "Single_Gene_Perturbations_from_GEO_up", "SubCell_BarCode", "SysMyo_Muscle_Gene_Sets", "TargetScan_microRNA_2017", "TF_Perturbations_Followed_by_Expression", "TF-LOF_Expression_from_GEO", "Tissue_Protein_Expression_from_Human_Proteome_Map", "Tissue_Protein_Expression_from_ProteomicsDB", "Transcription_Factor_PPIs", "TRANSFAC_and_JASPAR_PWMs", "TRRUST_Transcription_Factors_2019", "UK_Biobank_GWAS", "Virus_Perturbations_from_GEO_down", "Virus_Perturbations_from_GEO_up", "VirusMINT", "WikiPathways_2019_Human", "WikiPathways_2019_Mouse")
 
-cast_term_to_character <- function (df) {
-  df$Term <- as.character(df$Term);
+cast_enrichr_data <- function (df) {
+  df$Term <- as.character(df$Term)
+  df$Overlap <- as.character(df$Overlap)
+  df$Genes <- as.character(df$Genes)
   df
+}
+
+valid_enrichr_result <- function(result) {
+  if (is.null(result)) {
+    return(FALSE)
+  }
+  # every library item in the result list must include a Adjusted.P.value column
+  if (all(lapply(result, function(x) "Adjusted.P.value" %in%  colnames(x)))) {
+    return(TRUE)
+  }
+  return(FALSE)
+}
+
+enrichr_with_retry <- function(gene_list, databases, retries=enrichr_retries, 
+                               retry_sleep_seconds=enrichr_retry_sleep_seconds) {
+  for (i in 0:retries) {
+    result <- enrichr(gene_list, databases)
+    if (!valid_enrichr_result(result)) {
+      message("Retrying enrich for ", paste0(gene_list, collapse=" "))
+      Sys.sleep(retry_sleep_seconds)
+    } else {
+      # enrichr was successful
+      break
+    }
+  }
+  if (!valid_enrichr_result(result)) {
+    stop("Unable to fetch enrichr for ", paste0(gene_list, collapse=" "))
+  }
+  result
 }
 
 #define pathway enrichment analysis loop function
 enrichr_loop <- function(gene_list, databases){
   if(is_empty(gene_list)){
-    return(as_tibble())
+    return(tibble(Adjusted.P.value=numeric()))
   } else {
     flat_complete <- as_tibble()
-    enriched <- enrichr(gene_list, databases)
-    enriched <- lapply(enriched, cast_term_to_character)
+    enriched <- enrichr_with_retry(gene_list, databases)
+    enriched <- lapply(enriched, cast_enrichr_data)
     flat_complete <- bind_rows(enriched, .id = "enrichr")
     flat_complete <- flat_complete %>% 
       arrange(Adjusted.P.value) 
@@ -87,7 +118,7 @@ generate_positive_data <- function(gene_group, achilles_cor, achilles_upper, gen
   for (fav_gene in gene_group) {
     message("Top pathway enrichment analyses for ", fav_gene)
     flat_top_complete <- achilles_cor %>%
-      focus(fav_gene) %>%
+      dplyr::select(1, fav_gene) %>%
       arrange(desc(.[[2]])) %>% #use column index
       filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
       rename(approved_symbol = rowname) %>%
@@ -123,7 +154,7 @@ generate_negative_data <- function(gene_group, achilles_cor, achilles_lower, gen
   for (fav_gene in gene_group) {
     message("Bottom pathway enrichment analyses for ", fav_gene)
     flat_bottom_complete <- achilles_cor %>%
-      focus(fav_gene) %>%
+      dplyr::select(1, fav_gene) %>%
       arrange(.[[2]]) %>% #use column index
       filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
       rename(approved_symbol = rowname) %>%

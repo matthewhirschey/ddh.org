@@ -4,14 +4,15 @@
 .Ruserdata
 .DS_Store
 *.Rproj
+results/
+tmp/
+/data/
+doc/
 depmap.pdf
 misc/
 results/
-tmp/
-data/
 user-data/
 validation/
-doc/
 singularity/
 config.sh
 logs
@@ -19,3 +20,4 @@ venv
 ddh-data
 token.R
 report
+tempNetwork_files/
