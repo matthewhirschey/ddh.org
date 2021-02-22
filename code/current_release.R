@@ -1,15 +1,15 @@
 ## THIS FILE SETS PARAMETERS AND VARIABLES FOR DATA GENERATION
 
 #update each release
-release <- "20Q4"
-achilles_url <- "https://ndownloader.figshare.com/files/25494359" #achilles_gene_effect.csv
-ccle_url <- "https://ndownloader.figshare.com/files/25494389" #CCLE_expression.csv
-cclemeta_url <- "https://ndownloader.figshare.com/files/25494443" #sample_info.csv
+release <- "21Q1"
+achilles_url <- "https://ndownloader.figshare.com/files/26261293" #achilles_gene_effect.csv
+ccle_url <- "https://ndownloader.figshare.com/files/26261476" #CCLE_expression.csv
+cclemeta_url <- "https://ndownloader.figshare.com/files/26261569" #sample_info.csv
 prism_url <- "https://ndownloader.figshare.com/files/17741420" #primary-screen-replicate-collapsed-logfold-change.csv (same as 19Q4)
 prismmeta_url <- "https://ndownloader.figshare.com/files/20237715" #primary-screen-replicate-collapsed-treatment-info.csv (same as 19Q4)
-achilles_log_url <- "https://ndownloader.figshare.com/files/20234319" #for drug data
-achilles_guide_map_url <- "https://ndownloader.figshare.com/files/20234082" #for drug data
-achilles_rep_map_url <- "https://ndownloader.figshare.com/files/20234331" #for drug data
+achilles_log_url <- "https://ndownloader.figshare.com/files/26261431" #achilles_logfold_change.csv (for drug data)
+achilles_guide_map_url <- "https://ndownloader.figshare.com/files/26261287" #achilles_guide_map.csv (for drug data)
+achilles_rep_map_url <- "https://ndownloader.figshare.com/files/26261434" #achilles_replicate_mpa.csv (for drug data)
 
 fraction_cutoff <- 0.05 #~5% FDR
 na_cutoff_file = here::here("data", paste0(release, "_na_cutoff.Rds"))

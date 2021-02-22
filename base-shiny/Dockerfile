@@ -33,7 +33,8 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  modelr \
  tidyr \
  ggdist \
- htmltools
+ htmltools \
+ gt
 
 RUN Rscript -e 'devtools::install_github("jespermaag/gganatogram")'
 

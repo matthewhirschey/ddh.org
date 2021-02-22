@@ -144,14 +144,14 @@ make_celldeps <- function(celldeps_data = achilles, expression_data = expression
     geom_hline(yintercept = -1, size = .2, color = "grey70", linetype = "dashed") +
     geom_hline(yintercept = 0, size = .2, color = "grey50") +
     ## dot plot
-    geom_point(size = 1.1, stroke = .1, alpha = 0.4) +
+    geom_point(size = 1.1, stroke = .25, alpha = 0.6) +
     ## scales + legends
     scale_x_discrete(expand = expansion(mult = 0.02), na.translate = FALSE) +
     scale_color_manual(values = cols, guide = "legend") +
     scale_fill_manual(values = cols, guide = "legend") +
     guides(
-      color = guide_legend(reverse = TRUE, override.aes = list(size = 5)),
-      fill = guide_legend(reverse = TRUE, override.aes = list(size = 5))
+      color = guide_legend(reverse = TRUE, override.aes = list(size = 4, stroke = .8)),
+      fill = guide_legend(reverse = TRUE, override.aes = list(size = 3.8, stroke = .8))
     ) +
     ## titles
     labs(
@@ -159,7 +159,7 @@ make_celldeps <- function(celldeps_data = achilles, expression_data = expression
       color = "Query Gene", fill = "Query Gene"
     ) +
     ## theme changes
-    theme_cowplot(font_size = 16) +
+    theme_cowplot(font_size = 12) +
     theme(
       text = element_text(family = "Nunito Sans"),
       axis.text = element_text(family = "Roboto Slab"),
@@ -232,8 +232,8 @@ make_lineage <- function(celldeps_data = achilles, expression_data = expression_
     mutate(lineage = fct_reorder(lineage, -mean))
   
   data_mean <- data_full %>% 
-    group_by(lineage) %>% 
-    summarize(dep_score = mean(dep_score))
+    dplyr::group_by(lineage) %>% 
+    dplyr::summarize(dep_score = mean(dep_score))
   
   plot_complete <- 
     ggplot(data_mean, aes(dep_score, lineage)) +
@@ -328,8 +328,8 @@ make_sublineage <- function(celldeps_data = achilles, expression_data = expressi
     mutate(lineage_subtype = fct_reorder(lineage_subtype, -mean))
   
   data_mean <- data_full %>% 
-    group_by(lineage_subtype) %>% 
-    summarize(dep_score = mean(dep_score))
+    dplyr::group_by(lineage_subtype) %>% 
+    dplyr::summarize(dep_score = mean(dep_score))
   
   plot_complete <- 
     ggplot(data_mean, aes(dep_score, lineage_subtype)) +
@@ -447,10 +447,10 @@ plot_cellexp_legend <- paste0("Each point shows the ranked expression value for 
 ## PROTEIN SIZE PLOT --------------------------------------------------------
 # make_proteinsize <- function(protein_data = proteins, gene_symbol) {
 # 
-proteins %>% 
-  ggplot() +
-  geom_histogram(aes(x = mass), bins = 50)
-
+# proteins %>% 
+#   ggplot() +
+#   geom_histogram(aes(x = mass), bins = 50)
+# 
 #   return(plot_complete)
 # }
 # 
@@ -482,7 +482,7 @@ make_correlation <- function(table_data = achilles_cor_nest, gene_symbol, mean =
     ## sd square
     geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = upper_limit, ymax = lower_limit), fill = "gray90") +
     geom_hline(yintercept = 0, color = "gray80") +
-    annotate("text", x = Inf, y = 0.005, label = "Gene Rank", color = "gray50", hjust = 1 ,vjust = 0) +
+    annotate("text", x = Inf, y = 0.005, label = "Gene Rank", color = "gray50", hjust = 1.15 ,vjust = 0) +
     ## dot plot
     geom_point(aes(x = rank, 
                    y = r2, 
@@ -540,7 +540,6 @@ plot_genecorrelations_title <- "Gene Correlation Curve."
 plot_genecorrelations_legend <- paste0("Each point shows the ranked gene correlation value ordered from high to low for each gene correlation set. Genes with correlation values outside the gray box and greather than ", round(achilles_upper, 2)," indicates the gene has a correlation value greater than ", sd_threshold, " standard deviations away from the mean. Conversely, genes with correlation values outside the gray box and less than ", round(achilles_lower, 2)," indicates the gene has a correlation value lower than ", sd_threshold, " standard deviations away from the mean.")
 
 ## EXPvDEP PLOT --------------------------------------------------------
-# This is just cell expression; add dependency data; consider multiple genes
 make_expdep <- function(expression_data = expression, celldeps_data = achilles, expression_join = expression_names, gene_symbol) {
   ## use main color in case of 1 selected gene, otherwise use palette function
   if(length(gene_symbol) == 1) { 
