@@ -67,6 +67,12 @@ unstagefiles '_private.R$'
 echo "Removing openshift files from staged changes"
 unstagefiles "openshift/*"
 
+echo "Removing slurm files from staged changes"
+unstagefiles "slurm/*"
+
+echo "Removing tests/test_app_params.R from staged changes"
+unstagefiles "tests/test_app_params.R"
+
 echo "Removing tests/data files from staged changes"
 unstagefiles "tests/data/*"
 
