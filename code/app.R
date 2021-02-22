@@ -19,6 +19,7 @@ library(gganatogram)
 library(ggdist)
 library(showtext)
 library(htmltools)
+library(gt)
 
 #LOAD DATA-----
 #read params
@@ -37,7 +38,7 @@ expression_meta <- readRDS(file=here::here(app_data_dir, paste0(release, "_expre
 expression_names <- readRDS(file=here::here(app_data_dir, paste0(release, "_expression_names.Rds")))
 
 #read drug names for search
-prism_names <- readRDS(here::here("data", paste0(release, "_prism_names.Rds"))) 
+prism_names <- readRDS(here::here(app_data_dir, paste0(release, "_prism_names.Rds"))) 
 
 #read data from generate_depmap_stats.R
 sd_threshold <- readRDS(file = here::here(app_data_dir, paste0(release, "_sd_threshold.Rds")))

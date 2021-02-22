@@ -3,8 +3,10 @@
 #read current release information 
 source(here::here("code", "current_release.R"))
 
+source(here::here("code", "create_gene_summary.R"))
+create_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)), gene_symbol = "TP53")
 #copy file (no need to regenerate)
-file.copy(from = here::here("data","20Q3_gene_summary.Rds"), to = here::here("data", paste0(release, "_gene_summary.Rds")), overwrite = TRUE)
+#file.copy(from = here::here("data","20Q3_gene_summary.Rds"), to = here::here("data", paste0(release, "_gene_summary.Rds")), overwrite = TRUE)
 
 source(here::here("code", "find_threshold.R"))
 source(here::here("code", "generate_depmap_data.R"))
@@ -15,6 +17,9 @@ source(here::here("code", "generate_subcell_data.R")) #script to generate subcel
 #generate table data
 #go to generate_depmap_tables.R
 #set methods = TRUE in header, and then source
+if (!file.exists(here::here("data", paste0(release, "_master_top_table.Rds")))) {
+  stop("you forgot to generate tables")
+}
 
 #generate pathway data
 source(here::here("code", "generate_depmap_pathways.R"))

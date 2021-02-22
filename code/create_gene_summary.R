@@ -35,47 +35,60 @@ retry_entrez_summary <- function(db, id, retries=entrez_retries, retry_sleep_sec
 }
 
 # returns a data frame based on gene_names_url and summaries from entrez "gene" database.
-build_gene_summary <- function(gene_names_url, entrez_key) {
+build_gene_summary <- function(gene_names_url, entrez_key, gene_symbol = NULL) {
   if (!is.null(entrez_key)) {
     set_entrez_key(entrez_key)
   }
-
-  hugo <- vroom(gene_names_url, delim = "\t", col_names = TRUE) %>%
-    clean_names()
-
-  ids <- hugo %>%
-    drop_na(ncbi_gene_id_supplied_by_ncbi) %>%
-    pull(ncbi_gene_id_supplied_by_ncbi)
-
-  # split the list of NCBI gene IDs into batches of size fetch_batch_size
-  # so that entrez_summary can be called with batches instead of single IDs
-  ids_batches <-split(ids, ceiling(seq_along(ids)/fetch_batch_size))
-
-  entrez <- tibble(
-    ncbi_gene_id_supplied_by_ncbi = numeric(),
-    entrez_summary = character()
-  )
-  fetched_cnt <- 0
-  # Fetch each batch
-  for (id_batch in ids_batches) {
-    summary_batch <- retry_entrez_summary(db="gene", id=id_batch)
-    # summary_batch is a list of summaries, so loop and handle each individually
-    for (summary in summary_batch) {
-      fetched_cnt <- fetched_cnt + 1
-      tmp <- tibble(ncbi_gene_id_supplied_by_ncbi=as.numeric(summary$uid), entrez_summary=summary$summary)
-      entrez <- entrez %>%
-        bind_rows(tmp)
+  
+  if (is.null(gene_symbol)) {
+    hugo <- vroom(gene_names_url, delim = "\t", col_names = TRUE) %>%
+      clean_names()
+    
+    ids <- hugo %>%
+      drop_na(ncbi_gene_id_supplied_by_ncbi) %>%
+      pull(ncbi_gene_id_supplied_by_ncbi)
+    
+    # split the list of NCBI gene IDs into batches of size fetch_batch_size
+    # so that entrez_summary can be called with batches instead of single IDs
+    ids_batches <-split(ids, ceiling(seq_along(ids)/fetch_batch_size))
+    
+    entrez <- tibble(
+      ncbi_gene_id_supplied_by_ncbi = numeric(),
+      entrez_summary = character()
+    )
+    fetched_cnt <- 0
+    # Fetch each batch
+    for (id_batch in ids_batches) {
+      summary_batch <- retry_entrez_summary(db="gene", id=id_batch)
+      # summary_batch is a list of summaries, so loop and handle each individually
+      for (summary in summary_batch) {
+        fetched_cnt <- fetched_cnt + 1
+        tmp <- tibble(ncbi_gene_id_supplied_by_ncbi=as.numeric(summary$uid), entrez_summary=summary$summary)
+        entrez <- entrez %>%
+          bind_rows(tmp)
       }
-    if (fetched_cnt %% 1000 == 0) {
-      message("Fetched ", fetched_cnt)
+      if (fetched_cnt %% 1000 == 0) {
+        message("Fetched ", fetched_cnt)
+      }
     }
+    
+  } else {
+    #this allows gene_symbol to be specified for methods generation in create_methods.R
+    hugo <- vroom(gene_names_url, delim = "\t", col_names = TRUE) %>%
+      clean_names() %>% 
+      filter(approved_symbol %in% gene_symbol)
+    
+    gene_symbol_id <- hugo$ncbi_gene_id_supplied_by_ncbi
+    
+    summary <- retry_entrez_summary(db = "gene", id = gene_symbol_id, retries = 1, retry_sleep_seconds = 1)
+    entrez <- tibble(ncbi_gene_id_supplied_by_ncbi=as.numeric(summary$uid), entrez_summary=summary$summary)
   }
-
+  
   # Join hugo and the entrez fetched results
   gene_summary <- hugo %>%
     left_join(entrez) %>%
     rename(ncbi_gene_id = ncbi_gene_id_supplied_by_ncbi)
-
+  
   gene_summary$entrez_summary <- replace_na(gene_summary$entrez_summary, "No NCBI summary")
   gene_summary$locus_type <- str_to_sentence(gene_summary$locus_type)
   gene_summary$locus_type <- str_replace(gene_summary$locus_type, "Rna", "RNA")
@@ -124,11 +137,14 @@ update_gene_summary <- function(gene_summary_input, gene2pubmed_url, pubtator_ur
   return(gene_summary_output)
 }
 
-create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_path) {
+create_gene_summary <- function(gene_names_url, entrez_key, gene_summary_output_path, gene_symbol = NULL) {
   # Specify an entrez key to speed up fetching data. To create an entrez key see "Using API Keys" at https://cran.r-project.org/web/packages/rentrez/vignettes/rentrez_tutorial.html
-  gene_summary <- build_gene_summary(gene_names_url, entrez_key) 
+  gene_summary <- build_gene_summary(gene_names_url, entrez_key, gene_symbol) 
   gene_summary <- update_gene_summary(gene_summary, gene2pubmed_url, pubtator_url)
   saveRDS(gene_summary, file = gene_summary_output_path)
 }
 
-create_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)))
+#testing for full gene set (top) or single gene for methods (bottom); these are now called in generate_data or create_methods
+#create_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)), gene_symbol = NULL)
+#create_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)), gene_symbol = "TP53")
+

@@ -10,6 +10,7 @@ generate_data_step1 <- function() {
   # Requires 64G of memory
   message("DDH: Running step 1 - Gene summary and other files.")
   source(here::here("code", "create_gene_summary.R"))
+  create_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)), gene_symbol = NULL)
   source(here::here("code", "create_pathways.R"))
   source(here::here("code", "find_threshold.R")) #run this first to generate the na_cutoff
   source(here::here("code", "generate_depmap_data.R")) #script to generate ddh correlation matrix
@@ -21,8 +22,8 @@ generate_data_step1 <- function() {
 
 generate_data_step2 <- function() {
   # Requires 212G of memory
-  message("DDH: Running step 2 - pubmed data.")
-  source(here::here("code", "generate_drug_data_names.R")) #script to generate proteins data
+  message("DDH: Running step 2 - pubmed data & drug names.")
+  source(here::here("code", "generate_drug_data.R")) #script to generate proteins data
   source(here::here("code", "generate_pubmed_data.R")) #script to generate pubtator relationships
   message("DDH: Finished step 2.")
 }

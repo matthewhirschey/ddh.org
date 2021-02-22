@@ -4,6 +4,11 @@ source(here::here("code", "current_release.R"))
 pathway_go <-  "1902965"
 tests_data_dir <- "tests/data"
 no_data_gene <- "WASH7P"
+cell_line <- "HELA"
+all_drugs <- "aspirin"
+
+# remove tests/data direction, to nuke old data
+unlink(here::here(tests_data_dir), recursive = TRUE)
 
 # create tests/data directory if it doesn't exist
 dir.create(here::here(tests_data_dir), showWarnings = FALSE, recursive = TRUE)
@@ -50,10 +55,6 @@ achilles_filename <- paste0(release, "_achilles.Rds")
 achilles <- readRDS(file=here::here("data", achilles_filename)) %>% 
   select(any_of(all_genes_and_x1))
 
-# achilles_cor_filename <- paste0(release, "_achilles_cor.Rds")
-# achilles_cor <- readRDS(file=here::here("data", achilles_cor_filename)) %>% 
-#   select(any_of(all_genes_and_x1))
-
 achilles_cor_nest_filename <- paste0(release, "_achilles_cor_nest.Rds")
 achilles_cor_nest <- readRDS(file=here::here("data", achilles_cor_nest_filename)) %>% 
   filter(fav_gene %in% all_genes)
@@ -71,6 +72,10 @@ expression_names <- readRDS(file=here::here("data", expression_names_filename)) 
 proteins_filename <- paste0(release, "_proteins.Rds")
 proteins <- readRDS(file=here::here("data", proteins_filename)) %>%
   filter(gene_name %in% all_genes)
+
+prism_names_filename <- paste0(release, "_prism_names.Rds")
+prism_names <- readRDS(file=here::here("data", prism_names_filename)) %>%
+  filter(name %in% all_drugs)
 
 master_bottom_table <- master_bottom_table_orig %>%
   filter(fav_gene %in% all_genes)
@@ -136,9 +141,6 @@ saveRDS(gene_summary, here::here(tests_data_dir, gene_summary_filename))
 message("Saving achilles")
 saveRDS(achilles, here::here(tests_data_dir, achilles_filename))
 
-# message("Saving achilles cor")
-# saveRDS(achilles_cor, here::here(tests_data_dir, achilles_cor_filename))
-
 message("Saving achilles cor nest")
 saveRDS(achilles_cor_nest, here::here(tests_data_dir, achilles_cor_nest_filename))
 
@@ -153,6 +155,9 @@ saveRDS(expression_names, here::here(tests_data_dir, expression_names_filename))
 
 message("Saving proteins")
 saveRDS(proteins, here::here(tests_data_dir, proteins_filename))
+
+message("Saving drugs")
+saveRDS(prism_names, here::here(tests_data_dir, prism_names_filename))
 
 #read data from generate_depmap_stats.R
 file_suffixes_to_copy <- c("_sd_threshold.Rds",
