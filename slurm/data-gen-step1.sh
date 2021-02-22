@@ -5,4 +5,4 @@
 
 source config.sh
 
-DDH_STEP=1 slurm/rscript.sh code/generate_data.R
+DDH_STEP=1 slurm/rscript.sh code/generate_data_private.R

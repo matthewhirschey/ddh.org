@@ -26,6 +26,7 @@ library(ggrepel)
 library(kableExtra)
 library(visNetwork)
 library(htmltools)
+library(gt)
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -113,13 +114,10 @@ Such tools allow researchers to identify new hypotheses for well-studied genes, 
   
 This project aims to address this challenge. Welcome to data-driven hypothesis.  
    
-## What is this project?
-The overall goal of the data-driven hypothesis (DDH) project is to use new tools in Data Science to generate hypotheses supported by data that can be tested in the lab. Several high-quality, functional genomic datasets are published online and made available with Creative Commons Attribution 4.0 International [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses. Functional genomics is a field of molecular biology that aims to understand the function of all genes and proteins in a genome -- a stated goal of much basic science research. In functional genomics, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach. The advent and rapid adoption of data-sharing platforms, such as [figshare.com](https://figshare.com) have provided high-quality data sets for public interrogation.  
+## What is this project? {.tabset}
+The overall goal of the data-driven hypothesis (DDH) project is to use new tools in Data Science to generate hypotheses supported by data that can be tested in the lab. Several high-quality, publicly available datasets are published online and made available with Creative Commons Attribution 4.0 International [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licenses. The advent and rapid adoption of data-sharing platforms, such as [figshare.com](https://figshare.com) have provided high-quality data sets for public interrogation.  
   
-We present here a comprehensive resource for functionally mapping thousands of genes across the human genome. Importantly, this method integrates gene essentiality, gene expression, and literature mining to identify candidate functions of known or unknown genes.  The DDH project holds tremendous promise to generate hypotheses, data, and knowledge in order to provide a deep understanding of the dynamic properties of an organism.  We provide this resource via an intuitive online interface, which will provide the scientific community a platform to query and prioritize experimental hypotheses to test in the lab.  
-  
-## How does it work?
-This project began as an extension of a simple and common concept in molecular biology called gene co-expression analysis. When a gene of unknown function is identified, one strategy to learn something about the new gene is to identify shared patterns of expression with other genes. If unknown Gene X is expressed with known genes A, B, and C, then you can infer that Gene X might be part of a functional module with A, B, C. This approach is particularly powerful when genes A, B, and C are part of a known biological pathway, which leads to the hypothesis that Gene X might also be part of that same pathway.  
+This project began as an extension of a simple and common concept called pattern recognition -- looking for patterns in large datasets that might reveal similarities between common genes. As one simple example, commong gene expression patterns can be revealed using gene co-expression analysis. When a gene of unknown function is identified, one strategy to learn something about the new gene is to identify shared patterns of expression with other genes. If unknown Gene X is expressed with known genes A, B, and C, then you can infer that Gene X might be part of a functional module with A, B, C. This approach is particularly powerful when genes A, B, and C are part of a known biological pathway, which leads to the hypothesis that Gene X might also be part of that same pathway.  
   
 ```{r gene_coexpression, echo=FALSE, message=FALSE, warning=FALSE}
 # Dummy data
@@ -163,8 +161,13 @@ heatmap_gene <- ggplot(data, aes(X, fct_rev(Y), fill= Z)) +
 heatmap_gene
 ggsave(here::here("results", "fig1a_heatmap_gene.png"), plot = heatmap_gene, dpi = 300)
 ```
+    
+Beyond this simple exmaple, we aim to leverage several different types of data glean information about known and unknown genes. We present here a comprehensive resource for mapping the structure or function of thousands of genes across the human genome. Importantly, this method integrates several data types, including gene essentiality, gene expression, and literature mining to identify candidate functions of known or unknown genes.  The DDH project holds tremendous promise to generate hypotheses, data, and knowledge in order to provide a deep understanding of the dynamic properties of an organism.  We provide this resource via an intuitive online interface, which will provide the scientific community a platform to query and prioritize experimental hypotheses to test in the lab.  
   
-Following on this idea, we set out to map genes to common functional pathways based on dependence of a pathway for cell viability. Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) as part of a larger ['DepMap' project](http://www.depmap.org) aimed at identifying and cataloging gene essentiality across hundreds of well-characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Using computational modeling, a normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be essential in a given cell line. A score of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness and often identifies tumor suppressor genes.  
+### Dependency Mapping  
+Following on the idea of looking for patterns in data, we set out to map genes to common functional pathways based on functional genomic data. Functional genomics is a field of molecular biology that aims to understand the function of all genes and proteins in a genome -- a stated goal of much basic science research. In functional genomics, experimental strategies generally involve high-throughput, genome-wide approaches rather than a more traditional “gene-by-gene” approach.  
+  
+Project Achilles is a systematic effort by the [Broad Institute](https://www.broadinstitute.org) as part of a larger ['DepMap' project](http://www.depmap.org) aimed at identifying and cataloging gene essentiality across hundreds of well-characterized cancer cell lines using highly standardized pooled genome-scale loss-of-function screens. This project uses lentiviral-based pooled RNAi or CRISPR/Cas9 libraries to systematically knock-out each gene in the genome, which allows for the stable suppression/ablation of each gene individually in a subset of cells within a pooled format allowing for genome wide interrogation of gene essentiality. Using computational modeling, a normalized value of gene essentiality is given for each gene in a single cell line. A lower score means that a gene is more likely to be essential in a given cell line. A score of -1 corresponds to the median of all common essential genes, whereas a score of 0 is equivalent to a gene that is not essential; a positive score indicates a gain in fitness and often identifies tumor suppressor genes.  
   
 It is well-known that human cancer cell lines rely on different pathways for their viability. Indeed this is the entire rationale for personalized, precision medicine in cancer. The overall goal of the 'DepMap' project is to identify all essential genes in 2000 cell lines over the 5-year project period to identify new therapeutic targets in various cancers. Despite not knowing the mechanistic basis for why some cell lines require specific genes while other cell lines do not, we reasoned that intrinsic reliance of a cell on a pathway might allow unbiased detection of novel genes participating in specific pathways.  
   
@@ -210,7 +213,7 @@ heatmap_dep
 ggsave(here::here("results", "fig1b_heatmap_dep.png"), plot = heatmap_dep, dpi = 300)
 ```
   
-## What did I do?
+#### What did I do?
 Essential gene data from Project Achilles were downloaded from the DepMap portal at:  [depmap.org](https://depmap.org/portal/download/). The `r release` release contains gene essentiality scores for `r ncol(achilles)` genes across `r nrow(achilles)` cell lines, and was used for this project. 
   
 ```{r dep_scores, echo=FALSE, message=FALSE, warning=FALSE}
@@ -431,7 +434,7 @@ ggsave(here::here("results", "fig2f_effect_of_cleaning.png"), plot = effect_of_c
 ```
 
   
-## How does it work?
+#### How does it work?
 To identify genes that shared similar patterns of essentiality with other genes, thereby placing genes in functional pathways, we generated a gene-by-gene Pearson correlation matrix on these prioritized data to quantify the similarity in dependency patterns and annotate genes in functional pathways.  
 
 ```{r r2, echo=FALSE, message=FALSE, warning=FALSE}
@@ -482,7 +485,7 @@ PubMed contains 30 million publication records containing article metadata and a
   
 Next, we leveraged a PubMed resource from the National Library of Medicine (NLM) called gene2pubmed that links unique NCBI gene ids to a PubMed id. This resource is part of the NLM's Indexing Initiative (IND) is working to automate indexing methods partially or completely manual indexing practices. Using gene2pubmed, we again measured all human gene-gene co-occurrences across all PubMed records. While this method overcomes the challenges associated with gene nomenclature by providing gene ids, it is still limited in its ability to curate genes associated with scientific papers by the same challenges in gene nomenclature.  
   
-A new machine learning (ML)-based resource developed by the Computational Biology Branch at the NLM/NCBI called [Pubtator](https://www.ncbi.nlm.nih.gov/research/pubtator/) aims to overcome these challenges by providing automatic annotations of biomedical concepts such as genes and mutations in PubMed abstracts and PMC full-text articles. Using advanced text-mining techniques, Pubtator goes beyond assigning genes to paper by developing a ML model that generates automated annotations for genes/proteins, genetic variants, diseases, chemicals, species and cell lines in a single paper, across all PubMed (30 million) abstracts and the PMC Text Mining subset of (3 million full text) articles.Improved concept identification systems and a new disambiguation module based on deep learning provides best-in-class annotation accuracy. Using these data, we filtered "concept ids" that matched official NCBI gene IDs, and then took the same approach described above to determine the number of times a gene was annotated with scientific paper, and the pairwise count of each gene with each other gene in a single paper, across all papers. Because of the wide range of annotated gene co-occurrences (`r paste0("0 to ", pubmed_concept_pairs %>% filter(target_gene == "INS") %>% unnest() %>% summarize(max(n)) %>% pull())`), we also generated a relative index [(co-occurrence count/max co-occurrence)*100] normalized to 100. The co-occurrence count and co-occurrence index provides useful, and unbiased information about the level of prior knowledge for gene-gene relationship identified by the analytic approach detailed above.  
+A new machine learning (ML)-based resource developed by the Computational Biology Branch at the NLM/NCBI called [Pubtator](https://www.ncbi.nlm.nih.gov/research/pubtator/) aims to overcome these challenges by providing automatic annotations of biomedical concepts such as genes and mutations in PubMed abstracts and PMC full-text articles. Using advanced text-mining techniques, Pubtator goes beyond assigning genes to paper by developing a ML model that generates automated annotations for genes/proteins, genetic variants, diseases, chemicals, species and cell lines in a single paper, across all PubMed (30 million) abstracts and the PMC Text Mining subset of (3 million full text) articles.Improved concept identification systems and a new disambiguation module based on deep learning provides best-in-class annotation accuracy. Using these data, we filtered "concept ids" that matched official NCBI gene IDs, and then took the same approach described above to determine the number of times a gene was annotated with scientific paper, and the pairwise count of each gene with each other gene in a single paper, across all papers. Because of the wide range of annotated gene co-occurrences, we also generated a relative index [(co-occurrence count/max co-occurrence)*100] normalized to 100. The co-occurrence count and co-occurrence index provides useful, and unbiased information about the level of prior knowledge for gene-gene relationship identified by the analytic approach detailed above.  
   
 #### Pathway Analyses
 ```{r focused_lib, echo=FALSE, message=FALSE, warning=FALSE}
@@ -494,7 +497,7 @@ To identify clusters of genes with shared relationships, we performed gene set e
 #### Network Analyses
 As an alternative approach to prioritize further study of novel functional mappings, an interactive network graph of gene-gene relationships can be built. A single gene query results in a list of top and bottom associated genes based on patterns of gene dependency scores. The top 10 and bottom 10 genes are then queried for each of their top and bottom correlated genes. These resulting 400 gene pairs (20 genes * 20 genes) are then used to build a network graph, which can reveal if a top associated gene with the query gene, also has the query gene in its top (or bottom) 10. In this way, strong functional networks can be identified and prioritized for further study.  
   
-## How do I use this?
+#### How do I use this?
 In order to identify the functional annotation of a single gene, begin with a query. Entering a single gene in the search box produces a series of tables and plots that identifies a functional map of the processes that gene *might* be involved in. In some cases, querying a gene with known functions will identify genes with well-established connections to the query gene; in other cases, new genes and new biological process might be identified, suggesting there is more to discover for well-known pathways. Querying unknown genes is especially powerful, as the associated genes and pathways provide a starting point for an otherwise difficult problem to prioritize experimentally.  
   
 ```{r p53_code, message=FALSE, warning=FALSE, include=FALSE}
@@ -547,8 +550,9 @@ achilles_raw_long %>%
   select(cell_line, lineage, dep_score) %>% 
   top_n(dep_score, n = 10) %>% 
   mutate(dep_score = round(dep_score, 2)) %>% 
-  knitr::kable(col.names = c("Cell Line", "Lineage", "Dependency Score")) %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+  rename("Cell Line" = "cell_line", "Lineage"= "lineage", "Dependency Score" = "dep_score") %>% 
+  gt() %>% 
+  opt_row_striping
 ```
   
   
@@ -562,8 +566,9 @@ achilles_raw_long %>%
   top_n(dep_score, n = -10) %>% 
   arrange(dep_score) %>% 
   mutate(dep_score = round(dep_score, 2)) %>% 
-  knitr::kable(col.names = c("Cell Line", "Lineage", "Dependency Score")) %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+  rename("Cell Line" = "cell_line", "Lineage"= "lineage", "Dependency Score" = "dep_score") %>% 
+  gt() %>% 
+  opt_row_striping
 ```
   
   
@@ -578,8 +583,8 @@ One data source that can help prioritize genes for study is to compare gene-gene
   
 ```{r dep_top, echo=FALSE, message=FALSE, warning=FALSE}
 head(dep_top, 10) %>% 
-  knitr::kable() %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = FALSE)
+  gt() %>% 
+  opt_row_striping
 ```
   
   
@@ -589,8 +594,8 @@ These `r paste0(length(dep_top$Gene))` genes were queried for gene set enrichmen
 ```{r flat_top_complete, echo=FALSE, message=FALSE, warning=FALSE}
 flat_top_complete %>% 
   slice(1:10) %>% 
-  knitr::kable() %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = FALSE)
+  gt() %>% 
+  opt_row_striping
 ```
   
   
@@ -600,8 +605,8 @@ Like the analysis for genes that share similar patterns, this analysis can be us
   
 ```{r dep_bottom, echo=FALSE, message=FALSE, warning=FALSE}
 head(dep_bottom, 10) %>% 
-  knitr::kable() %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"))
+  gt() %>% 
+  opt_row_striping
 ```
   
   
@@ -611,8 +616,8 @@ These `r paste0(length(dep_bottom$Gene))` genes were also queried for gene set e
 ```{r flat_bottom_complete, echo=FALSE, message=FALSE, warning=FALSE}
 flat_bottom_complete %>% 
   slice(1:10) %>% 
-  knitr::kable() %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "responsive"), full_width = FALSE)
+  gt() %>% 
+  opt_row_striping
 ```
   
   
@@ -623,11 +628,6 @@ How to interpret these genes and pathways is more variable than the positively c
 Identifying genes that share similar patterns of dependency to a queried unknown gene generates strong hypotheses about new functional annotations and maps to new pathways. However, the strength of the hypothesis cannot be fully inferred from single gene list. If a new gene is associated with the queried gene, then you might infer a functional relationship. However, if you inspect the top 10 genes with the queried gene, then inspect the top 10 genes of each of those, building a functional network graph of the top related genes might reveal a stronger association of the new gene with your queried gene *and* its top ranked genes.  
   
 ```{r graph, echo=FALSE, message=FALSE, warning=FALSE}
-# from fun_tables.R and fun_graphs.R
-# p53graph <- make_graph_report(gene_symbol = fav_gene)
-
-# p53graph
-
 make_graph(master_top_table, master_bottom_table, fav_gene, 
            displayHeight = '80vh', displayWidth = '100%', tooltipLink = TRUE) %>% 
   visLegend(position = "right", width = .25, zoom = F) %>% 
@@ -635,7 +635,6 @@ make_graph(master_top_table, master_bottom_table, fav_gene,
 # display the network
   htmltools::includeHTML(here::here("tempNetwork.html"))
 
-# ggsave(here::here("results", "fig4c_p53graph.png"), plot = p53graph, dpi = 300)
 ```
 
 ```{r remove_graph, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
@@ -644,6 +643,7 @@ file.remove(here::here("tempNetwork.html"))
 ```
   
 The image here is a representative static, albeit busy, network graph; data presented on datadrivenhypothesis.org is an interactive image that can be zoomed, dragged, and manipulated for data exploration.
+## {-}
 
 ## Broader Implications
 Like the proverbial man [searching for his lost keys under the lamp post](https://www.matthewhirschey.com/articles/exploratory-mind) because the light shines there, searching for biological truths often occurs under 'lamp posts' because that's where scientists can see. But what if your keys are not under the light? Or your gene is totally unknown? What do you do?  
@@ -655,19 +655,13 @@ New tools in Data Science -- a combination of computer programming, math & stati
 Imagine having strong data to support your new hypothesis *before* testing it. This is data-driven hypothesis.
   
 ## Where do I get more information? 
-```{r include=FALSE}
-#add publication data here first
-```
-Code is available on the [Hirschey Lab github account](https://github.com/matthewhirschey/ddh), including links to download the raw data, and run the analyses in R from scratch. Furthermore, the Broad Institute has a lot of information on their [website](http://www.broadinstitute.org) and the website dedicated to the [Dependency Map project](http://www.depmap.org) about how the raw data were generated, and provide a list of references.  
+The Hirschey lab wrote a [pre-print](https://www.biorxiv.org/content/10.1101/2020.07.17.208751v1) describing this early resource. Furthermore, the Broad Institute has information on their website dedicated to the [Dependency Map project](http://www.depmap.org) about how the raw data were generated, and provide a list of references.  
   
 #### Code Availability  
 ```{r include=FALSE}
 #how long
 time_end_data <- Sys.time()
 ```
-[Generate Data](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_data.R)  
-[Statistical Analyses](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_stats.R)  
-[Table Generator](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_tables.R)  
-[Pathway Generator](https://github.com/matthewhirschey/ddh/blob/master/code/generate_depmap_pathways.R)  
+Code is available on the [Hirschey Lab github account](https://github.com/matthewhirschey/ddh), including the ability to download the raw data, and run the analyses from scratch.  
   
 `r lubridate::stamp("Methods updated December 31, 1979")(now()) `
