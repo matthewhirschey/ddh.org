@@ -36,6 +36,9 @@ RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
  htmltools \
  gt
 
+# install rtweet for twitter bot
+RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE rtweet
+
 RUN Rscript -e 'devtools::install_github("jespermaag/gganatogram")'
 
 # Install and register "Roboto Slab" and "Nunito Sans" fonts
