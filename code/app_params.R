@@ -1,9 +1,9 @@
 #DDH PARAMS-----
 # Boolean to set whether private (ddh.com) or public (ddh.org)
-privateMode <- TRUE
+privateMode <- FALSE
 
 # Boolean to set whether test data or all data
-testMode <- TRUE
+testMode <- FALSE
 
 ##############################################################################################
 ## DO NOT EDIT MANUALLY! This path is automatically generated based on "testMode" parameter ##
