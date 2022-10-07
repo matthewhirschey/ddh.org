@@ -1,84 +1,122 @@
 #twitter_bot R script
+source(here::here("code", "install_libraries.R"))
+#library(rtweet)
 
-library(tidyverse)
-library(rtweet)
-library(here)
+#LOAD DATA --------------------------------------------------------------------
+source(here::here("code", "current_release.R")) #read current release information
+app_data_dir <- "data" #hard code
+source(here::here("code", "app_data.R"))
 
-#read current release information
-source(here::here("code", "current_release.R"))
+#LOAD FUNS --------------------------------------------------------------------
+sd_threshold <- 3 #need for fun_plots.R
+mean_virtual_achilles <- 0 #need for fun_plots.R
+source(here::here("code", "token.R"), local = TRUE)
+source(here::here("code", "fun_plots.R"), local = TRUE)
+source(here::here("code", "fun_graphs.R"), local = TRUE)
+source(here::here("code", "fun_colors.R"), local = TRUE) #colors
+source(here::here("code", "fun_ggplot_theme.R"), local = TRUE) #themes
 
-#load data
-surprise_genes <- readRDS(file=here::here("data", paste0(release, "_surprise_genes.Rds")))
-gene_summary <- readRDS(here::here("data", paste0(release, "_gene_summary.Rds")))
-achilles <- readRDS(file=here::here("data", paste0(release, "_achilles.Rds")))
-#expression_join <- readRDS(file=here::here("data", paste0(release, "_expression_join.Rds")))
-expression_names <- readRDS(file=here::here("data", paste0(release, "_expression_names.Rds")))
-master_bottom_table <- readRDS(file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
-master_top_table <- readRDS(file=here::here("data", paste0(release, "_master_top_table.Rds")))
+#FUNS DF --------------------------------------------------------------------
+function_df <- 
+  tibble(fun_name = c("make_celldeps", #always include this one, 
+                      "make_ideogram", 
+                      "make_colorful_female", 
+                      "make_sequence", #only card
+                      "make_radial", 
+                      "make_proteinsize", 
+                      #"make_structure", #only card, plot already exists as jpeg
+                      "make_pubmed", 
+                      "make_cellanatogram", 
+                      "make_tissue",
+                      "make_cellbins", 
+                      "make_lineage", 
+                      "make_sublineage", 
+                      "make_cellexpression", 
+                      "make_cellgeneprotein"), 
+         fun_title = c("Is my gene essential in any cells?", #always include this one
+                       "Where is my gene located?", 
+                       "Where is my gene expressed?", 
+                       "What can the protein sequence tell me?", #only card
+                       "Does my protein have a signature?", 
+                       "How big is my protein?", 
+                       #"What could my protein look like?", #only card, plot already exists as jpeg
+                       "What's known about my gene?", 
+                       "Where is my protein located in a cell?", 
+                       "Where is my protein expressed?",
+                       "How many cells is my gene essential in?", 
+                       "Which cell lineages care about my gene?", 
+                       "Which cell sublineages care about my gene?", 
+                       "Is my gene highly expressed in cancer cells?", 
+                       "How does gene vs. protein expression compare?"))
 
-#load functions
-source(here::here("code", "token.R"))
-source(here::here("code", "fun_plots.R"))
-source(here::here("code", "fun_graphs.R"))
+#TWITTER FUNS --------------------------------------------------------------------
+make_status <- function(summary_df = gene_summary, 
+                        input = list()){
+  twitter_summary <- 
+    summary_df %>% 
+    dplyr::filter(approved_symbol %in% input$query)
+  
+  adverb_list <- c("an interesting", "an unexpected", "an unusual", "a surprising", "a strong", "a mind-bending")
+  adverb <- sample(adverb_list, 1)
+  
+  text <- glue::glue('{twitter_summary$approved_symbol}:{twitter_summary$approved_name} has {adverb} association with other genes. ')
+  text_url <- glue::glue('Check it out at https://www.datadrivenhypothesis.org/?show=gene&query={input$query}')
+  
+  tweet_body <- stringr::str_c(text, text_url, collapse ="\n")
+  return(tweet_body)
+}
 
+get_functions <- function(df = function_df, 
+                          n_functions = 3){
+  #possible functions
+  random_functions <- sample(df$fun_name[2:length(df$fun_name)], n_functions, replace = FALSE) #subset make sure to skip 1
+  selected_functions <- c(random_functions, "make_celldeps") #because it's always included
+  return(selected_functions)
+}
+
+
+#save parameters
 twitter_save <- function(tmp_file, plot_id) {
   ggsave(tmp_file, plot_id, width = 16, height = 9, units = "cm", dpi = 150, device = "png")
 }
 
 #generate content
-make_tweet <- function() { #, random = TRUE
-  gene_symbol <- sample(surprise_genes, 1)
+make_media <- function(input_query = query,
+                       df = function_df,
+                       function_name){
+  image <- rlang::exec(function_name, 
+                       input = input_query, 
+                       card = TRUE)
+  plot_title <- 
+    df %>% 
+    dplyr::filter(fun_name %in% function_name) %>% 
+    dplyr::pull(fun_title)
   
-  twitter_summary <- gene_summary %>% 
-    filter(approved_symbol == gene_symbol)
+  image <-
+    image +
+    labs(title = plot_title)
   
-  adverb_list <- c("an interesting", "an unexpected", "an unusual", "a surprising")
-  adverb <- sample(adverb_list, 1)
-  
-  text <- paste0(twitter_summary$approved_symbol, ": ", twitter_summary$approved_name, " has ", adverb, " association with other genes. ")
-  
-  p1 <- make_celldeps(celldeps_data = achilles, expression_data = expression_names , gene_symbol, mean = 0)
-  p1 <- p1 +
-    labs(title = paste0("Cell Line Dependency Curve for ", gene_symbol), subtitle = "Always look at your raw data!")
-  celldeps <- tempfile(fileext = ".png")
-  twitter_save(celldeps, plot = p1)
-  
-  p2 <- make_cellbins(cellbins_data = achilles, expression_data = expression_names, gene_symbol)
-  p2 <- p2 +
-    labs(title = paste0("How much do cells care about ", gene_symbol, "?"), subtitle = "Histogram estimate of dependency scores")
-  cellbins <- tempfile(fileext = ".png")
-  twitter_save(cellbins, plot = p2)
-  
-  p3 <- make_lineage(celldeps_data = achilles, expression_data = expression_names, gene_symbol)
-  p3 <- p3 +
-    labs(title = paste0("Does a cell lineage care about ", gene_symbol, "?"), subtitle = "Lineage dependency score summaries") +
-    theme(axis.text.y = element_text(size = 4.5))
-  lineage <- tempfile(fileext = ".png")
-  twitter_save(lineage, plot = p3)
-  
-  #replace graph image with another image? 
-  #sample other images?
-  # p5 <- make_graph_report(toptable_data = master_top_table, bottomtable_data = master_bottom_table, gene_symbol, threshold = 10, deg = 2)
-  # p5 <- p5 +
-  #   labs(title = "Network Graph of Dependencies", subtitle = "Shared top and bottom 10 dependency correlations")
-  # graph <- tempfile(fileext = ".png")
-  # twitter_save(graph, plot = p5)
-  
-  gene_symbol_url <- paste0("https://www.datadrivenhypothesis.org?show=detail&content=gene&symbol=", gene_symbol)
-  
-  text2 <- paste0("Check it out at ", gene_symbol_url)
-  
-  tweet_body <- str_c(text, text2) #cat(paste(text, text2, sep="\n"))
-  tweet_vec <- c(tweet_body, celldeps, cellbins, lineage) #, graph
-  
-  return(tweet_vec)
+  twitter_plot <- tempfile(fileext = ".png")
+  twitter_save(twitter_plot, plot = image)
+  return(twitter_plot)
 }
 
-tweet_vec <- make_tweet()
+#test single function
+#make_media(input_query = query, function_name = "make_ideogram")
+#make_media(input_query = query, function_name = "make_tissue")
+#make_media(input_query = query, function_name = "make_structure")
 
-#post tweet
-#post_tweet(status = tweet_body, token = token, media = c(celldeps, cellbins, lineage)) #, graph
-post_tweet(status = tweet_vec[1], token = token, media = c(tweet_vec[2], tweet_vec[3], tweet_vec[4])) #, graph
+#GET QUERY GENE --------------------------------------------------------------------
+query <- list(type = "gene",
+              query = sample(surprise_genes, 1))
 
 
+selected_functions <- get_functions()
+tweet_vec <- 
+  purrr::map_chr(.x = selected_functions, ~ make_media(input_query = query, function_name = .x))
 
+#POST TWEET --------------------------------------------------------------------
+post_tweet(status = make_status(input = query), 
+           token = token,
+           media = c(tweet_vec[1], tweet_vec[2], tweet_vec[3], tweet_vec[4])
+)

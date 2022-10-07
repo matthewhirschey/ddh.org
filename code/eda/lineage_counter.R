@@ -7,8 +7,8 @@ library(furrr)
 source(here::here("code", "current_release.R"))
 
 #read data from generate_depmap_data.R
-achilles <- readRDS(file=here::here(app_data_dir, paste0(release, "_achilles.Rds")))
-expression_meta <- readRDS(file=here::here(app_data_dir, paste0(release, "_expression_meta.Rds")))
+achilles <- readRDS(file=here::here(app_data_dir, "achilles.Rds"))
+expression_meta <- readRDS(file=here::here(app_data_dir, "expression_meta.Rds"))
 
 lineage_counter <- function(expression_data = expression_meta, achilles_data = achilles, gene_symbol) {
   achilles_ids <- 

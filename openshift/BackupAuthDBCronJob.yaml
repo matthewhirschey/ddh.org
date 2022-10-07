@@ -1,0 +1,67 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: backupdb
+spec:
+  schedule: "0 0 1 * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            parent: "cronjobtbackupdb"
+        spec:
+          initContainers:
+          - name: backup-ddh-auth-pg
+            image: bitnami/postgresql:12.3.0
+            command:
+            - pg_dump
+            - -f
+            - /data/backup.sql
+            volumeMounts:
+            - name: shared-data
+              mountPath: /data
+            env:
+            - name: PGHOST
+              value: ddh-auth-postgres.ddh-com.svc
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  key: database-user
+                  name: ddh-auth-postgres
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: ddh-auth-postgres
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: database-name
+                  name: ddh-auth-postgres
+          containers:
+          - name: upload-ddh-auth-pg
+            image: 'dukegcb/lando-util:0.5.4'
+            command:
+            - ddsclient
+            - upload
+            - -p
+            - ddh-com-backups
+            - /data/backup.sql
+            volumeMounts:
+            - name: shared-data
+              mountPath: /data
+            - name: ddsclient-config
+              mountPath: "/etc/ddsclient"
+              readOnly: true
+            env:
+            - name: DDSCLIENT_CONF
+              value: "/etc/ddsclient/ddsclient-config"
+          restartPolicy: OnFailure
+          volumes:
+          - name: shared-data
+            emptyDir: {}
+          - name: ddsclient-config
+            secret:
+              secretName: ddsclient-config-secret
+

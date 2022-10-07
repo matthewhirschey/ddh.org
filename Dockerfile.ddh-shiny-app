@@ -1,6 +1,10 @@
 FROM base-shiny:latest
 LABEL maintainer="Dan Leehr <dan.leehr@duke.edu>"
 
+# Install and verify libraries
+ADD code/install_libraries.R /code/install_libraries.R
+RUN Rscript /code/install_libraries.R
+
 COPY ./code /srv/code
 RUN touch /srv/.here
 RUN chown -R shiny /srv/

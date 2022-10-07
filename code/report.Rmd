@@ -1,0 +1,97 @@
+---
+title: "Secret Reports"
+output: html_document
+runtime: shiny_prerendered
+---
+
+```{r context="setup", include=FALSE}
+#guide is here
+# https://rmarkdown.rstudio.com/authoring_shiny_prerendered.html
+# https://pkgs.rstudio.com/learnr/articles/publishing.html
+
+#install libraries
+library(tidyverse)
+library(shiny)
+library(ddh)
+library(glue)
+library(here)
+library(jsonlite)
+library(paws)
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r data, include=FALSE}
+
+```
+
+```{r}
+#all images must be in images dir
+
+```
+
+```{r, context="render"}
+# Create output for our router in main UI of Shiny app.
+tagList(
+  shinyjs::useShinyjs(),
+  h2("Report Generator"),
+  br(),
+  conditionalPanel(condition = paste0("input.send_report_msg == 0"),
+                   "Enter your name and email address to receive a report", 
+                   br(),
+                   br(),
+                   textInput("first_name", "First Name", "Matthew"), 
+                   textInput("last_name", "Last Name", "Hirschey"), 
+                   textInput("email_address", "Email Address", "matthew.hirschey@duke.edu"),
+                   selectInput("select_greeting", 
+                               "Greeting", 
+                               choices = c("default", "seminar", "paper"), 
+                               selected = "default"),
+                   textAreaInput("gene_list", "Gene List", ""),
+                   actionButton(inputId = "send_report_msg", 
+                                label = "Generate")), 
+  conditionalPanel(condition = paste0("input.send_report_msg != 0"),
+                   textOutput("confirmation_message"))
+)
+```
+
+
+```{r, context="server"}
+#disable send_report_msg if email is empty, from https://deanattali.com/shinyjs/overview
+observe({
+  if (is.null(input$email_address) || input$email_address == "") {
+    shinyjs::disable("send_report_msg")
+  } else {
+    shinyjs::enable("send_report_msg")
+  }
+})
+
+# store gene list
+gene_list <- eventReactive(input$send_report_msg, {
+    c(stringr::str_split(string = input$gene_list, pattern = ", ", simplify = TRUE)) 
+
+})
+
+# user clicks generate report send message to sqs
+observeEvent(input$send_report_msg, {
+  gene_list() %>% 
+    purrr::walk(~ send_report_message(first_name = input$first_name,
+                                      last_name = input$last_name,
+                                      email_address = input$email_address,
+                                      input = list(
+                                        type = "gene", 
+                                        subtype = "gene", 
+                                        query = .x, 
+                                        content = .x
+                                      ),
+                                      private = TRUE, 
+                                      greeting = input$select_greeting))
+})
+
+# give message
+output$confirmation_message <- renderText({
+  glue::glue("{length(gene_list())} report(s) will be generated and emailed to {input$email_address}")
+})
+
+```
+

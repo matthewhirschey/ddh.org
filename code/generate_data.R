@@ -5,26 +5,85 @@
 
 library(here)
 source(here::here("code", "current_release.R"))
+source(here::here("code", "install_libraries.R"))
+# check DDH_PRIVATE to determine if we are generating public vs private data
+private = Sys.getenv("DDH_PRIVATE") == "Y"
 
 generate_data_step1 <- function() {
   # Requires 64G of memory
   message("DDH: Running step 1 - Gene summary and other files.")
-  source(here::here("code", "create_gene_summary.R"))
-  create_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)), gene_symbol = NULL)
-  source(here::here("code", "create_pathways.R"))
-  source(here::here("code", "find_threshold.R")) #run this first to generate the na_cutoff
+  #SUMMARY
+  source(here::here("code", "generate_gene_summary.R"))
+  generate_gene_summary(gene_names_url, entrez_key, here::here("data", paste0(release, "_", gene_summary_output_filename)), gene_symbol = NULL, regenerate = FALSE)
+  message("generate gene summary complete")
+  #PATHWAYS
+  source(here::here("code", "generate_pathways.R"))
+  message("generate pathways complete")
+  #GENE LOCATION & CHROMOSOME
+  source(here::here("code", "generate_gene_location.R"))
+  generate_gene_location(regenerate = FALSE)
+  message("generate gene location complete")
+  #THRESHOLD
+  source(here::here("code", "generate_threshold.R")) #run this first to generate the na_cutoff
+  generate_threshold()
+  message("generate threshold complete")
+  #DEPMAP
   source(here::here("code", "generate_depmap_data.R")) #script to generate ddh correlation matrix
-  source(here::here("code", "generate_depmap_stats.R")) #script to generate ddh stats
+  # source(here::here("code", "generate_GLS.R")) #script to generate ddh GLS pvalues
+  message("generate depmap data complete")
+  #SUBCELL
   source(here::here("code", "generate_subcell_data.R")) #script to generate subcell data
-  source(here::here("code", "generate_proteins_data.R")) #script to generate proteins data
+  message("generate subcell data complete")
+  #TISSUE
+  source(here::here("code", "generate_tissue_data.R")) #script to generate tissue data
+  message("generate tissue data complete")
+  #PROTEINS
+  if (private) {
+    source(here::here("code", "generate_proteins_data_private.R")) #script to generate proteins data
+  } else {
+    source(here::here("code", "generate_proteins_data.R")) #script to generate proteins data
+  }
+  ##SEQUENCE CLUSTERS
+  message("generating protein sequence clusters")
+  source(here::here("code", "generate_sequence_clusters.R"))
+  message("generating protein clusters enrichment")
+  source(here::here("code", "generate_protein_cluster_enrichment.R"))
+  message("generate proteins data complete")
+  ##PROTEIN DOMAINS
+  source(here::here("code", "generate_protein_domains.R"))
+  message("generate protein domain data complete")
+  ##PDB IDs
+  source(here::here("code", "generate_pdb_ids.R"))
+  message("generate PDB IDs complete")
+  #STATS
+  source(here::here("code", "generate_depmap_stats.R")) #script to generate ddh stats
+  message("generate stats complete")
+  
   message("DDH: Finished step 1.")
 }
 
 generate_data_step2 <- function() {
   # Requires 212G of memory
-  message("DDH: Running step 2 - pubmed data & drug names.")
-  source(here::here("code", "generate_drug_data.R")) #script to generate proteins data
+  message("DDH: Running step 2 - drug & pubmed data.")
+  #script to generate drug data
+  if (private) {
+    source(here::here("code", "generate_drug_data_private.R"))
+  } else {
+    source(here::here("code", "generate_drug_data.R"))
+  }
   source(here::here("code", "generate_pubmed_data.R")) #script to generate pubtator relationships
+  source(here::here("code", "generate_metabolites_data.R")) #generates metabolite data and collapses
+  #CELL LINE (needs drug data)
+  if (private) {
+    source(here::here("code", "generate_cell_line_data_private.R")) #script to generate cell line data
+  } else {
+    source(here::here("code", "generate_cell_line_data.R")) 
+  }
+  message("generate cell line complete")
+  #CELL LINE SIMILARITY
+  source(here::here("code", "generate_cell_line_similarity.R"))
+  message("generate cell line similarity complete")
+  
   message("DDH: Finished step 2.")
 }
 
@@ -32,6 +91,7 @@ generate_data_step3 <- function() {
   # Requires 32G of memory
   message("DDH: Running step 3 - ddh tables.")
   source(here::here("code", "generate_depmap_tables.R")) #third script to generate ddh tables
+  source(here::here("code", "generate_surprise.R"))
   message("DDH: Finished step 3.")
 }
 
@@ -78,12 +138,36 @@ generate_data_step4 <- function() {
   message("DDH: Finished step 4 - pathway data generation.")
 }
 
+generate_data_step5 <- function() {
+  # Requires 112G of memory
+  message("DDH: Running step 5 - starting DDH methods")
+    source(here::here("code", "generate_methods.R")) #data should be there, so just need to render
+  message("DDH: Finished step 5.")
+}
+
+generate_data_step6 <- function() {
+  # Requires 96G of memory <- NOT SURE ABOUT THIS;
+  message("DDH: Running step 6 - starting structure image generation")
+  source(here::here("code", "generate_structures.R"))
+  message("DDH: Finished step 6.")
+}
+
+generate_data_step7 <- function() {
+  # Requires 96G of memory <- NOT SURE ABOUT THIS; UPDATE + slurm/data-gen-step6.sh
+  message("DDH: Running step 7 - starting image generation")
+  source(here::here("code", "generate_images.R"))
+  message("DDH: Finished step 7.")
+}
+
 generate_data <- function() {
   message("Generating data for ", release, ".")
   generate_data_step1()
   generate_data_step2()
   generate_data_step3()
   generate_data_step4()
+  generate_data_step5()
+  generate_data_step6()
+  generate_data_step7()
   message("Done.")
 }
 
@@ -97,6 +181,9 @@ ddh_step_to_func <- list(
   "3"=generate_data_step3,
   "4.pos"=generate_data_step4_positive_subset,
   "4.neg"=generate_data_step4_negative_subset,
-  "4.merge"=generate_data_step4_merge_subsets
+  "4.merge"=generate_data_step4_merge_subsets, 
+  "5"=generate_data_step5,
+  "6"=generate_data_step6, 
+  "7"=generate_data_step7
 )
 ddh_step_to_func[[ddh_step]]()

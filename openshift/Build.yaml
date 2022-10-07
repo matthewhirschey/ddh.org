@@ -34,7 +34,9 @@ items:
       contextDir: "base-shiny"
       git:
         ref: master
-        uri: https://github.com/hirscheylab/depmap.git
+        uri: https://github.com/matthewhirschey/ddh.com.git
+      sourceSecret:
+        name: github-secret
       type: Git
     strategy:
       dockerStrategy:
@@ -42,6 +44,10 @@ items:
     triggers:
     - type: ImageChange
     - type: ConfigChange
+    - github:
+        secretReference:
+          name: ddh-build-webhook
+      type: GitHub
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
@@ -59,7 +65,9 @@ items:
     source:
       git:
         ref: master
-        uri: https://github.com/hirscheylab/depmap.git
+        uri: https://github.com/matthewhirschey/ddh.com.git
+      sourceSecret:
+        name: github-secret
       type: Git
     strategy:
       dockerStrategy:
@@ -70,5 +78,9 @@ items:
     triggers:
     - type: ImageChange
     - type: ConfigChange
+    - github:
+        secretReference:
+          name: ddh-build-webhook
+      type: GitHub
 kind: List
 metadata: {}

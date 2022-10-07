@@ -2,13 +2,6 @@
 ## To generate master_positive or master_negative TABLES call save_master_positive() or save_master_negative() with filepaths
 ## created via create_pathway_subset_file()
 
-#load libraries
-library(tidyverse)
-library(here)
-library(corrr)
-library(enrichR)
-library(optparse)
-
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
 dpu_pathways_positive_type <- "positive"
@@ -72,14 +65,14 @@ enrichr_loop <- function(gene_list, databases){
   if(is_empty(gene_list)){
     return(tibble(Adjusted.P.value=numeric()))
   } else {
-    flat_complete <- as_tibble()
+    flat_complete <- tibble::as_tibble()
     enriched <- enrichr_with_retry(gene_list, databases)
     enriched <- lapply(enriched, cast_enrichr_data)
-    flat_complete <- bind_rows(enriched, .id = "enrichr")
+    flat_complete <- dplyr::bind_rows(enriched, .id = "enrichr")
     flat_complete <- flat_complete %>% 
-      arrange(Adjusted.P.value) 
-    flat_complete$enrichr <- str_replace_all(flat_complete$enrichr, "\\_", " ")
-    flat_complete$Term <- str_replace_all(flat_complete$Term, "\\_", " ")
+      dplyr::arrange(Adjusted.P.value) 
+    flat_complete$enrichr <- stringr::str_replace_all(flat_complete$enrichr, "\\_", " ")
+    flat_complete$Term <- stringr::str_replace_all(flat_complete$Term, "\\_", " ")
     return(flat_complete)
   }
 }
@@ -110,43 +103,43 @@ read_input_data <- function() {
 
 generate_positive_data <- function(gene_group, achilles_cor, achilles_upper, gene_summary) {
   #setup containers
-  subset_positive <- tibble(
+  subset_positive <- tibble::tibble(
     fav_gene = character(), 
     data = list()
   )
-
+  
   for (fav_gene in gene_group) {
     message("Top pathway enrichment analyses for ", fav_gene)
     flat_top_complete <- achilles_cor %>%
       dplyr::select(1, fav_gene) %>%
-      arrange(desc(.[[2]])) %>% #use column index
-      filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(approved_symbol = rowname) %>%
-      left_join(gene_summary, by = "approved_symbol") %>%
-      select(approved_symbol, approved_name, fav_gene) %>%
-      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
-      pull("gene") %>%
+      dplyr::arrange(desc(.[[2]])) %>% #use column index
+      dplyr::filter(.[[2]] > achilles_upper) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      dplyr::rename(approved_symbol = rowname) %>%
+      dplyr::left_join(gene_summary, by = "approved_symbol") %>%
+      dplyr::select(approved_symbol, approved_name, fav_gene) %>%
+      dplyr::rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
+      dplyr::pull("gene") %>%
       c(fav_gene, .) %>%
       enrichr_loop(., focused_lib) %>%
-      arrange(Adjusted.P.value) %>%
-      slice(1:100)
-
+      dplyr::arrange(Adjusted.P.value) %>%
+      dplyr::slice(1:100)
+    
     positive <- flat_top_complete  %>%
-      mutate(fav_gene = fav_gene) %>%
-      group_by(fav_gene) %>%
-      nest()
-
+      dplyr::mutate(fav_gene = fav_gene) %>%
+      dplyr::group_by(fav_gene) %>%
+      tidyr::nest()
+    
     subset_positive <- subset_positive %>%
-      bind_rows(positive)
-
+      dplyr::bind_rows(positive)
+    
     Sys.sleep(sleep_seconds_between_requests)
   }
-
+  
   subset_positive
 }
 
 generate_negative_data <- function(gene_group, achilles_cor, achilles_lower, gene_summary) {
-  subset_negative <- tibble(
+  subset_negative <- tibble::tibble(
     fav_gene = character(), 
     data = list()
   )
@@ -155,28 +148,28 @@ generate_negative_data <- function(gene_group, achilles_cor, achilles_lower, gen
     message("Bottom pathway enrichment analyses for ", fav_gene)
     flat_bottom_complete <- achilles_cor %>%
       dplyr::select(1, fav_gene) %>%
-      arrange(.[[2]]) %>% #use column index
-      filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
-      rename(approved_symbol = rowname) %>%
-      left_join(gene_summary, by = "approved_symbol") %>%
-      select(approved_symbol, approved_name, fav_gene) %>%
-      rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
-      pull("gene") %>%
+      dplyr::arrange(.[[2]]) %>% #use column index
+      dplyr::filter(.[[2]] < achilles_lower) %>% #formerly top_n(20), but changed to mean +/- 3sd
+      dplyr::rename(approved_symbol = rowname) %>%
+      dplyr::left_join(gene_summary, by = "approved_symbol") %>%
+      dplyr::select(approved_symbol, approved_name, fav_gene) %>%
+      dplyr::rename(gene = approved_symbol, name = approved_name, r2 = fav_gene) %>%
+      dplyr::pull("gene") %>%
       enrichr_loop(., focused_lib) %>%
-      arrange(Adjusted.P.value) %>%
-      slice(1:100)
-
+      dplyr::arrange(Adjusted.P.value) %>%
+      dplyr::slice(1:100)
+    
     negative <- flat_bottom_complete %>%
-      mutate(fav_gene = fav_gene) %>%
-      group_by(fav_gene) %>%
-      nest()
-
+      dplyr::mutate(fav_gene = fav_gene) %>%
+      dplyr::group_by(fav_gene) %>%
+      tidyr::nest()
+    
     subset_negative <- subset_negative %>%
-      bind_rows(negative)
-
+      dplyr::bind_rows(negative)
+    
     Sys.sleep(sleep_seconds_between_requests)
   }
-
+  
   subset_negative
 }
 
@@ -201,7 +194,7 @@ create_pathway_subset_file <- function(pathways_type, subset_file_idx, num_subse
 }
 
 merge_pathways_rds_files <- function(subset_filepaths) {
-  merged_data <- tibble(
+  merged_data <- tibble::tibble(
     fav_gene = character(),
     data = list()
   )

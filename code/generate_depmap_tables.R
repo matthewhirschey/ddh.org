@@ -1,78 +1,102 @@
 ## THIS CODE GENERATES master_top AND master_bottom TABLES
-#~60'
-
-#load libraries
-library(tidyverse)
-library(here)
-library(corrr)
 
 #methods
 methods = FALSE
-
-#rm(list=ls()) 
-time_begin_tables <- Sys.time()
 
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
 
 #LOAD data 
 gene_summary <- readRDS(file = here::here("data", paste0(release, "_gene_summary.Rds")))
-achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
+achilles_cor_nest <- readRDS(file = here::here("data", paste0(release, "_achilles_cor_nest.Rds")))
 achilles_lower <- readRDS(file = here::here("data", paste0(release, "_achilles_lower.Rds")))
 achilles_upper <- readRDS(file = here::here("data", paste0(release, "_achilles_upper.Rds")))
 mean_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_mean_virtual_achilles.Rds")))
 sd_virtual_achilles <- readRDS(file = here::here("data", paste0(release, "_sd_virtual_achilles.Rds")))
 pubmed_concept_pairs <- readRDS(file = here::here("data", paste0(release, "_pubmed_concept_pairs.Rds")))
+# gls_regression_pvals <- readRDS(file = here::here("data", paste0(release, "_GLS_p_long.Rds")))
 
 #setup containers
-master_top_table <- tibble(
+master_top_table <- tibble::tibble(
   fav_gene = character(), 
   data = list()
 )
-master_bottom_table <- tibble(
+master_bottom_table <- tibble::tibble(
   fav_gene = character(), 
   data = list()
 )
 
 #table funs
 get_concept_table <- function(concept_table = pubmed_concept_pairs, query_gene) {
-  concept_tmp <- concept_table %>% 
-    filter(target_gene %in% query_gene) %>% 
-    unnest(nested)
+  concept_tmp <- 
+    concept_table %>% 
+    dplyr::filter(target_gene %in% query_gene) %>% 
+    tidyr::unnest(nested)
   return(concept_tmp)
 }
 
-make_dep_table <- function(dep_table = achilles_cor, 
-                              summary_table = gene_summary, 
-                              query_gene, 
-                              upper = achilles_upper, 
-                              lower = achilles_lower, 
-                              top = TRUE) {
+make_dep_table <- function(dep_table = achilles_cor_nest, 
+                           summary_table = gene_summary, 
+                           # gls_p = gls_regression_pvals,
+                           query_gene, 
+                           upper = achilles_upper, 
+                           lower = achilles_lower, 
+                           top = TRUE) {
   dep <- 
     dep_table %>% 
-    dplyr::select(1, query_gene) %>% 
-    {if (top == TRUE) filter(., .[[2]] > upper) else filter(., .[[2]] < lower)} %>% #mean +/- 3sd
-    arrange(desc(.[[2]])) %>% #use column index
-    left_join(gene_summary, by = c("rowname" = "approved_symbol")) %>% 
-    rename(rowname = 1) %>% 
-    select(1:3) 
+    dplyr::filter(fav_gene %in% query_gene) %>%
+    tidyr::unnest(data) %>% 
+    dplyr::ungroup() %>% 
+    # dplyr::inner_join(gls_p, by = c("fav_gene" = "gene1", "gene" = "gene2")) %>%
+    dplyr::select(-fav_gene)
+  
+  if (top){
+    dep_cor <-
+      dep %>%
+      filter(r2 > upper) # mean + 3sd
+    
+    # dep_gls <-
+    #   dep %>%
+    #   filter(pval < 0.05 & r2 > 0) # GLS top
+    
+    # dep <- bind_rows(dep_cor, dep_gls)
+    dep <- dep_cor
+  }
+  else {
+    dep_cor <-
+      dep %>%
+      filter(r2 < lower) # mean - 3sd
+    
+    # dep_gls <-
+    #   dep %>%
+    #   filter(pval < 0.05 & r2 < 0) # GLS bottom
+    
+    # dep <- bind_rows(dep_cor, dep_gls)
+    dep <- dep_cor
+  }
+  
+  dep <- 
+    dep %>%
+    dplyr::arrange(desc(.[[2]])) %>% #use column index
+    dplyr::left_join(summary_table, by = c("gene" = "approved_symbol")) %>% 
+    dplyr::rename(rowname = 1) %>% 
+    dplyr::select(1:5)
   return(dep)
 }
 
 #define list
-#sample <- sample(names(achilles_cor), size = 100) #comment this out
-r <- "rowname" #need to drop "rowname"
-full <- (names(achilles_cor))[!(names(achilles_cor)) %in% r] #f[!f %in% r]
+#sample <- achilles_cor_nest %>% dplyr::ungroup() %>% dplyr::slice_sample(n = 100) %>% pull(fav_gene) #comment this out
+full <- achilles_cor_nest %>% pull(fav_gene)
 gene_group <- full #(~60' on a laptop); change to sample for testing, or methods
 
 #methods
 make_graph_group <- function(graph_gene) {
   top10 <- make_dep_table(query_gene = graph_gene, top = TRUE) %>% 
-    top_n(10, wt = .[[2]]) %>% 
-    pull(var = 1)
+    dplyr::top_n(10, wt = .[[2]]) %>% 
+    dplyr::pull(var = 1)
   bottom10 <- make_dep_table(query_gene = graph_gene, top = FALSE) %>% 
-    top_n(-10, wt = .[[2]]) %>% 
-    pull(var = 1)
+    dplyr::top_n(-10, wt = .[[2]]) %>% 
+    dplyr::pull(var = 1)
   graph_list <- c(graph_gene, top10, bottom10)
   return(graph_list)
 }
@@ -96,88 +120,54 @@ for (fav_gene in gene_group) {
   dep_top <- make_dep_table(query_gene = fav_gene, top = TRUE)
   dep_top <- 
     dep_top %>% 
-    left_join(concept_tmp, by = c("rowname" = "target_gene_pair")) %>% 
-    rename(gene = rowname, 
+    dplyr::left_join(concept_tmp, by = c("rowname" = "target_gene_pair")) %>% 
+    dplyr::rename(gene = rowname, 
            name = approved_name, 
-           r2 = fav_gene,
-           concept_count = n) %>% 
-    mutate(r2 = round(r2, 2), 
+           concept_count = n#,
+           # GLSpvalue = pval
+           ) %>% 
+    dplyr::mutate(r2 = round(r2, 2), 
            z_score = round((r2 - mean_virtual_achilles)/sd_virtual_achilles, 1), 
            concept_count = replace_na(concept_count, 0), 
            concept_index = round((concept_count/max(concept_count))*100), 0) %>% 
-    select(gene, name, z_score, r2, concept_count, concept_index)
-              
-    top_table <- dep_top %>% 
-      mutate(fav_gene = fav_gene) %>% 
-      group_by(fav_gene) %>% 
-      nest()
-    
-    master_top_table <- master_top_table %>% 
-      bind_rows(top_table)
-
+    dplyr::select(gene, name, z_score, r2, concept_count, concept_index) # GLSpvalue
+  
+  top_table <- dep_top %>% 
+    dplyr::mutate(fav_gene = fav_gene) %>% 
+    dplyr::group_by(fav_gene) %>% 
+    tidyr::nest()
+  
+  master_top_table <- master_top_table %>% 
+    dplyr::bind_rows(top_table)
+  
   dep_bottom <- make_dep_table(query_gene = fav_gene, top = FALSE)
-    
+  
   dep_bottom <-
     dep_bottom %>% 
-    left_join(concept_tmp, by = c("rowname" = "target_gene_pair")) %>% 
-    rename(gene = rowname, 
+    dplyr::left_join(concept_tmp, by = c("rowname" = "target_gene_pair")) %>% 
+    dplyr::rename(gene = rowname, 
            name = approved_name, 
-           r2 = fav_gene,
-           concept_count = n) %>% 
-    mutate(r2 = round(r2, 2), 
+           concept_count = n#,
+           # GLSpvalue = pval
+           ) %>% 
+    dplyr::mutate(r2 = round(r2, 2), 
            z_score = round((r2 - mean_virtual_achilles)/sd_virtual_achilles, 1), 
            concept_count = replace_na(concept_count, 0), 
            concept_index = round((concept_count/max(concept_count))*100), 0) %>% 
-    select(gene, name, z_score, r2, concept_count, concept_index)
+    dplyr::select(gene, name, z_score, r2, concept_count, concept_index) # GLSpvalue
   
   bottom_table <- dep_bottom %>% 
-    mutate(fav_gene = fav_gene) %>% 
-    group_by(fav_gene) %>% 
-    nest()
+    dplyr::mutate(fav_gene = fav_gene) %>% 
+    dplyr::group_by(fav_gene) %>% 
+    tidyr::nest()
   
   master_bottom_table <- master_bottom_table %>% 
-    bind_rows(bottom_table)
+    dplyr::bind_rows(bottom_table)
 }
 
 #save
 saveRDS(master_top_table, file=here::here("data", paste0(release, "_master_top_table.Rds")))
 saveRDS(master_bottom_table, file=here::here("data", paste0(release, "_master_bottom_table.Rds")))
-
-#make surprise gene list
-find_good_candidate <- function(gene_symbol) {
-  #this gets the top 10 correlation values
-  top_10 <- master_top_table %>%
-    dplyr::filter(fav_gene %in% gene_symbol) %>%
-    tidyr::unnest(data) %>%
-    dplyr::arrange(desc(r2)) %>% 
-    dplyr::slice(1:10)
-  #this looks for 'positive controls' in the top 10...smoking guns
-  above <- top_10 %>% 
-    dplyr::filter(concept_index > 90) %>% 
-    pull(fav_gene)
-  #this looks for genes within the top 10 that are under-studied
-  below <- top_10 %>% 
-    dplyr::filter(concept_index < 10) %>% 
-    pull(fav_gene)
-  #if both are true, then it's a good candidate for further study
-  if(length(above) > 0 && length(below) > 0){
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-}
-
-#TESTING
-#find_good_candidate("SSNA1")
-#genes <- c("TP53", "TP53BP1")
-#map_lgl(genes, ~ find_good_candidate(.))
-
-surprise_genes <- master_top_table %>% 
-  mutate(good = purrr::map_lgl(fav_gene, ~ find_good_candidate(.))) %>% 
-  dplyr::filter(good == TRUE) %>% 
-  pull(fav_gene)
-
-saveRDS(surprise_genes, here::here("data", paste0(release, "_surprise_genes.Rds")))
 
 #Censor
 num_genes <- nrow(master_top_table)
@@ -190,10 +180,7 @@ for (i in seq_along(genes)) {
   num_sim[i] <- nrow(master_top_table[[2]][[i]])
 }
 
-censor_genes <- tibble(genes, num_sim)
+censor_genes <- tibble::tibble(genes, num_sim)
 
 #save
 saveRDS(censor_genes, here::here("data", paste0(release, "_censor_genes.Rds")))
-
-#how long
-time_end_tables <- Sys.time()

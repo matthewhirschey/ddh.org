@@ -4,5 +4,4 @@
 #SBATCH --output=logs/ddh-4-merge-%j.out
 
 source config.sh
-
 DDH_STEP="4.merge" slurm/rscript.sh code/generate_data.R

@@ -1,45 +1,8 @@
-FROM rocker/shiny-verse:3.6.3
-LABEL maintainer="Dan Leehr <dan.leehr@duke.edu>"
+FROM rocker/shiny-verse:4.2.0
+LABEL maintainer="John Bradley <john.bradley@duke.edu>"
 
-# Install texlive-xetex for PDF generation
-RUN apt-get update && apt-get install -y texlive-xetex
-
-RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE \
- ggplot2 \
- tidyselect \
- here \
- corrr  \
- lubridate \
- plotly \
- visNetwork \
- feather \
- tidygraph \
- cowplot \
- digest \
- patchwork \
- viridis \
- pander \
- DT \
- ggraph \
- future \
- shinyWidgets \
- promises \
- shiny \
- showtext \
- dbplyr \
- dplyr \
- haven \
- jsonlite \
- modelr \
- tidyr \
- ggdist \
- htmltools \
- gt
-
-# install rtweet for twitter bot
-RUN install2.r --repos http://archive.linux.duke.edu/cran/ --deps TRUE rtweet
-
-RUN Rscript -e 'devtools::install_github("jespermaag/gganatogram")'
+# Install requirements for R libraries
+RUN apt-get update && apt-get install -y libglpk-dev libmagick++-dev libavfilter-dev libpoppler-cpp-dev python3-dev python3.8-venv libjpeg-dev tcl8.6-dev
 
 # Install and register "Roboto Slab" and "Nunito Sans" fonts
 RUN mkdir /usr/share/fonts/googlefonts \
@@ -62,3 +25,8 @@ RUN chmod a+rx /usr/bin/shiny-server.sh
 # Make sure the directory for individual app logs exists and is usable
 RUN chmod -R a+rwX /var/log/shiny-server
 RUN chmod -R a+rwX /var/lib/shiny-server
+
+# Load methods and pre-render pages
+RUN R -e 'source("render_pages.R")'
+
+CMD /usr/bin/shiny-server.sh

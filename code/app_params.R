@@ -1,10 +1,11 @@
-#SET PARAMETERS-----
-release <- "21Q1"
+#DDH PARAMS-----
+# Boolean to set whether private (ddh.com) or public (ddh.org)
+privateMode <- TRUE
 
-# defines the directory used by the app to read data files from either "data" or "tests/data"
-#app_data_dir <- "tests/data"
-app_data_dir <- "data"
+# Boolean to set whether test data or all data
+testMode <- TRUE
 
-# Boolean to set whether public or private
-private <- FALSE
-#private <- TRUE
+##############################################################################################
+## DO NOT EDIT MANUALLY! This path is automatically generated based on "testMode" parameter ##
+##############################################################################################
+app_data_dir <- ifelse(testMode, here::here("tests", "data"), here::here("data"))

@@ -33,7 +33,34 @@ a{
     border-width: 0px 0px 2px 0px;
 }
 
-/* fix for searchInput to show all of placeholder text */
-.search-text {
-  width: 100%;
+/* align navbar form (search input) vertically with main_title and horizontally right */
+.navbar-form-panel {
+  float: right;
+  margin-top: 7px;
+  margin-bottom: 7px;
+}
+
+/* aligned logout button vertically with main_title */
+.logout-image {
+  margin-top: 15px;
+}
+
+/* Adjust search panel to live in the top right corner */
+.ddh-nav-form {
+    margin-top: 8px;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+/* hide navigation search form on mobile */
+@media (max-width: 767px) {
+   .ddh-nav-form {
+      display: none;
+   }
+}
+
+/* prevent navigation from moving to the top row and clashing with ddh-nav-form  */
+.navbar-header {
+  float: none;
 }

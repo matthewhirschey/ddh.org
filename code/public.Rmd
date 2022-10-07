@@ -1,0 +1,33 @@
+---
+title: "Public Reports"
+output: html_document
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(ddh)
+library(gt)
+
+ddh::download_ddh_data(app_data_dir = here::here("data"), object_name = "public_reports")
+ddh::download_ddh_data(app_data_dir = here::here("data"), object_name = "gene_summary")
+ddh::load_ddh_data(app_data_dir = here::here("data"), object_name = "public_reports")
+ddh::load_ddh_data(app_data_dir = here::here("data"), object_name = "gene_summary")
+
+summary_small <- 
+  gene_summary %>% 
+  dplyr::select(approved_symbol, approved_name, aka)
+```
+
+This is a list of `r length(public_reports)` gene reports whose beta information are fully available. To get to the report, click on the gene name in table and navigate to the report page. Enter your email and the full report will be sent to you.  
+
+```{r public_report_table, echo = FALSE}
+tibble::tibble(
+    "Gene" = public_reports, 
+  ) %>% 
+  dplyr::left_join(summary_small, by = c("Gene" = "approved_symbol")) %>% 
+  dplyr::mutate(Gene = purrr::map_chr(Gene, internal_link)) %>%  #to convert the page into a gene query
+  gt::gt() %>%
+  gt::cols_label(approved_name = "Approved Name") %>% 
+  gt::fmt_markdown(columns = Gene) %>% #converts to html link
+  gt::tab_options(table.width = gt::pct(100))
+```

@@ -1,33 +1,24 @@
-#load libraries
-library(tidyverse)
-library(here)
-library(corrr)
-library(moderndive)
-
-#rm(list=ls()) 
-time_begin_stats <- Sys.time()
-
 #read current release information to set parameters for processing
 source(here::here("code", "current_release.R"))
 
+#ACHILLES STATS-----
 #LOAD data 
-achilles_cor <- readRDS(file = here::here("data", paste0(release, "_achilles_cor.Rds")))
+achilles_cor_nest <- readRDS(file = here::here("data", paste0(release, "_achilles_cor_nest.Rds")))
 
-#make some long files
-achilles_cor_long <- achilles_cor %>% 
-  tidyr::pivot_longer(cols = where(is.numeric), names_to = "gene", values_to = "r")
-
-#Permutation tests
-virtual_achilles <- achilles_cor_long %>% 
-  dplyr::filter(!is.na(r)) %>%   
+#make some long files & Permutation tests
+virtual_achilles <- 
+  achilles_cor_nest %>%
+  tidyr::unnest(cols = c("data")) %>%
+  dplyr::ungroup() %>% 
+  dplyr::filter(!is.na(r2)) %>%   
   moderndive::rep_sample_n(size = 20000, reps = 1000) %>%
   dplyr::group_by(replicate) %>% 
-  dplyr::summarize(mean = mean(r), max = max(r), min = min(r), sd = sd(r))
+  dplyr::summarize(mean = mean(r2), max = max(r2), min = min(r2), sd = sd(r2))
 
 mean_virtual_achilles <- mean(virtual_achilles$mean)
 sd_virtual_achilles <- mean(virtual_achilles$sd)
 
-sd_threshold <- 3
+sd_threshold <- 2
 
 achilles_upper <- mean_virtual_achilles + sd_threshold*sd_virtual_achilles
 achilles_lower <- mean_virtual_achilles - sd_threshold*sd_virtual_achilles
@@ -39,33 +30,61 @@ saveRDS(achilles_upper, file = here::here("data", paste0(release, "_achilles_upp
 saveRDS(mean_virtual_achilles, file = here::here("data", paste0(release, "_mean_virtual_achilles.Rds")))
 saveRDS(sd_virtual_achilles, file = here::here("data", paste0(release, "_sd_virtual_achilles.Rds")))
 
+#GENE EXPRESSION STATS-----
 #LOAD expression data 
-expression <- readRDS(file=here::here("data", paste0(release, "_expression.Rds")))
+expression_long <- readRDS(file=here::here("data", paste0(release, "_expression_long.Rds")))
 
-#make some long files
-expression_long <- expression %>% 
-  tidyr::pivot_longer(cols = where(is.numeric), names_to = "gene_symbol", values_to = "cell_exp")
-
-#Permutation tests
-virtual_expression <- expression_long %>% 
-  dplyr::filter(!is.na(cell_exp)) %>%   
+#Permutation tests for gene expression
+virtual_expression <- 
+  expression_long %>% 
+  dplyr::select(X1, gene, gene_expression) %>% 
+  dplyr::filter(!is.na(gene_expression)) %>%   
   moderndive::rep_sample_n(size = 20000, reps = 1000) %>%
   dplyr::group_by(replicate) %>% 
-  dplyr::summarize(mean = mean(cell_exp), max = max(cell_exp), min = min(cell_exp), sd = sd(cell_exp))
+  dplyr::summarize(mean = mean(gene_expression), 
+                   max = max(gene_expression), 
+                   min = min(gene_expression), 
+                   sd = sd(gene_expression))
 
-mean_virtual_expression <- mean(virtual_expression$mean)
-sd_virtual_expression <- mean(virtual_expression$sd)
+mean_virtual_gene_expression <- mean(virtual_expression$mean)
+sd_virtual_gene_expression <- mean(virtual_expression$sd)
 
 sd_threshold <- 3
 
-expression_upper <- mean_virtual_expression + sd_threshold*sd_virtual_expression
-expression_lower <- mean_virtual_expression - sd_threshold*sd_virtual_expression
+gene_expression_upper <- mean_virtual_gene_expression + sd_threshold*sd_virtual_gene_expression
+gene_expression_lower <- mean_virtual_gene_expression - sd_threshold*sd_virtual_gene_expression
 
 #save
-saveRDS(expression_upper, file = here::here("data", paste0(release, "_expression_upper.Rds")))
-saveRDS(expression_lower, file = here::here("data", paste0(release, "_expression_lower.Rds")))
-saveRDS(mean_virtual_expression, file = here::here("data", paste0(release, "_mean_virtual_expression.Rds")))
-saveRDS(sd_virtual_expression, file = here::here("data", paste0(release, "_sd_virtual_expression.Rds")))
+saveRDS(gene_expression_upper, file = here::here("data", paste0(release, "_gene_expression_upper.Rds")))
+saveRDS(gene_expression_lower, file = here::here("data", paste0(release, "_gene_expression_lower.Rds")))
+saveRDS(mean_virtual_gene_expression, file = here::here("data", paste0(release, "_mean_virtual_gene_expression.Rds")))
+saveRDS(sd_virtual_gene_expression, file = here::here("data", paste0(release, "_sd_virtual_gene_expression.Rds")))
 
-#how long
-time_end_stats <- Sys.time()
+#PROTEIN EXPRESSION STATS-----
+#LOAD expression data 
+#expression_long already loaded
+
+#Permutation tests for protein expression
+virtual_protein_expression <- expression_long %>% 
+  dplyr::select(X1, gene, protein_expression) %>% 
+  dplyr::filter(!is.na(protein_expression)) %>%   
+  moderndive::rep_sample_n(size = 20000, reps = 1000) %>%
+  dplyr::group_by(replicate) %>% 
+  dplyr::summarize(mean = mean(protein_expression), 
+                   max = max(protein_expression), 
+                   min = min(protein_expression), 
+                   sd = sd(protein_expression))
+
+mean_virtual_protein_expression <- mean(virtual_protein_expression$mean)
+sd_virtual_protein_expression <- mean(virtual_protein_expression$sd)
+
+#sd_threshold already set
+
+protein_expression_upper <- mean_virtual_protein_expression + sd_threshold*sd_virtual_protein_expression
+protein_expression_lower <- mean_virtual_protein_expression - sd_threshold*sd_virtual_protein_expression
+
+#save
+saveRDS(protein_expression_upper, file = here::here("data", paste0(release, "_protein_expression_upper.Rds")))
+saveRDS(protein_expression_lower, file = here::here("data", paste0(release, "_protein_expression_lower.Rds")))
+saveRDS(mean_virtual_protein_expression, file = here::here("data", paste0(release, "_mean_virtual_protein_expression.Rds")))
+saveRDS(sd_virtual_protein_expression, file = here::here("data", paste0(release, "_sd_virtual_protein_expression.Rds")))

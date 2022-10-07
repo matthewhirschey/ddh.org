@@ -1,0 +1,31 @@
+---
+title: ""
+output: html_notebook
+---
+
+```{r setup}
+knitr::opts_chunk$set(
+	message = FALSE,
+	warning = FALSE,
+	include = FALSE
+)
+library(tidyverse)
+library(here)
+```
+
+![](`r here::here("code", "www", "ddh_logo.png")`)
+
+### Welcome to Data-Driven Hypothesis
+Data-driven hypothesis is a resource for predicting functional relationships for thousands of genes across the human genome. The overall goal is to make hypotheses backed by data, which you can then bring to the lab to test. To get started:  
+  
+1. Look for an email from support@datadrivenhypothesis.com  
+2. Click on the link in that email to create a new password for your account. The login is the same email you used to sign up
+3. Head over to the [main page](https://www.datadriventhypothesis.com) to login with your new credentials  
+4. To get started, either query your favorite gene or click 'get lucky' for a random gene  
+5. Curious to learn more? Dive in to the [methods](https://www.datadriventhypothesis.com/methods.html) for vignettes, walk-throughs, and details about the data analysis 
+  
+If you have questions, please email support@datadriventhypothesis.com at any time.  
+  
+  
+Thanks for your support, and we're eager to see what you can discover!  
+

@@ -1,0 +1,95 @@
+---
+output: html_fragment
+---
+
+```{r setup, include=FALSE}
+###knit this document to generate methods.html, which then is served by the Shiny app; html fragments only contain <body></body> content, and are designed to be served in other pages###
+##upon each release, run 
+#generate_methods.R, 
+
+#then knit
+knitr::opts_chunk$set(echo = FALSE)
+
+#LOAD LIBRARIES-----
+source(here::here("code", "install_libraries.R"))
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#read current release information 
+source(here::here("code", "current_release.R"))
+
+#Load functions
+source(here::here("code", "fun_helper.R"))
+source(here::here("code", "fun_tables.R"))
+# source(here::here("code", "fun_plots.R"))
+source(here::here("code", "fun_graphs.R"))
+
+##LOAD DATA
+top_100_drug_correlations <- readRDS(file = here::here("data", "top_100_drug_correlations.Rds"))
+prism_names <- readRDS(file = here::here("data", "prism_names.Rds"))
+prism_meta <- readRDS(file = here::here("data", "prism_meta.Rds"))
+gene_summary <- readRDS(here::here("data", "gene_summary.Rds"))
+master_bottom_table <- readRDS(file=here::here("data", "master_bottom_table.Rds"))
+master_top_table <- readRDS(file=here::here("data", "master_top_table.Rds"))
+```
+
+```{r eval=FALSE}
+HTML('<img src="https://images.squarespace-cdn.com/content/5e78ee0d0b3c730b1f159d76/1585325648811-W5GCS4A3JRR6MAVSSXDW/prism_logo_tagline_bottom.png" width="100%">')
+```
+
+  
+## Why this project?
+Identifying the key functions of human genes is a major biomedical research goal. While some genes are very well-studied, most human genes we know little about. Mapping a broad set of gene functions *en masse* is currently not possible, and therefore most scientific research proceeds with a one-gene-at-a-time approach.  While this reductionist approach has guided the scientific methods for hundreds of years, the volume, complexity, and sophistication of modern science necessitate alternative approaches.  
+
+```{r top100}
+drug_linkr_markdown <- function(query) {
+    query_link <- paste0('[', 
+                         query, 
+                         '](', 
+                         '?show=compound&query_type=compound&compound=', #http://www.datadrivenhypothesis.com/
+                         query,
+                         ')')
+    return(query_link)
+}
+
+gene_linkr_markdown <- function(query) {
+    query_link <- paste0('[', 
+                         query, 
+                         '](', 
+                         '?show=gene&query_type=gene&symbol=', #http://www.datadrivenhypothesis.com/
+                         query,
+                         ')')
+    return(query_link)
+}
+
+top_100_drug_correlations %>% 
+  dplyr::mutate(r2 = round(r2, digits = 2), 
+                gene = map_chr(gene, gene_linkr_markdown),
+                drug = map_chr(drug, drug_linkr_markdown)
+                ) %>% 
+  gt() %>% 
+  fmt_markdown(columns = c("drug", "gene")) %>% 
+  cols_label(
+    drug = "Drug",
+    gene = "Gene",
+    r2 = md("R<sup>2</sup>")
+  ) %>% 
+  tab_header(
+    title = md("**Top Drug-Gene Correlations**"),
+    subtitle = md("Ranked correlations based on similar cell dependencies")
+  ) %>% 
+  opt_row_striping
+```
+
+#Graph
+```{r message=FALSE}
+top100 <-
+  top_100_drug_correlations %>% 
+  pull(gene) %>% 
+  unique(.)
+
+graph <- 
+  make_graph(input = list(type = "gene_list", gene_symbols = top100), deg = 3, corrType = "Positive")
+graph
+```
+

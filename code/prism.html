@@ -1,0 +1,1067 @@
+
+
+
+<div id="why-this-project" class="section level2">
+<h2>Why this project?</h2>
+<p>Identifying the key functions of human genes is a major biomedical research goal. While some genes are very well-studied, most human genes we know little about. Mapping a broad set of gene functions <em>en masse</em> is currently not possible, and therefore most scientific research proceeds with a one-gene-at-a-time approach. While this reductionist approach has guided the scientific methods for hundreds of years, the volume, complexity, and sophistication of modern science necessitate alternative approaches.</p>
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#zoikuezhsy .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#zoikuezhsy .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#zoikuezhsy .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#zoikuezhsy .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#zoikuezhsy .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#zoikuezhsy .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#zoikuezhsy .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#zoikuezhsy .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#zoikuezhsy .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#zoikuezhsy .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#zoikuezhsy .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#zoikuezhsy .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#zoikuezhsy .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#zoikuezhsy .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#zoikuezhsy .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#zoikuezhsy .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#zoikuezhsy .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#zoikuezhsy .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#zoikuezhsy .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#zoikuezhsy .gt_left {
+  text-align: left;
+}
+
+#zoikuezhsy .gt_center {
+  text-align: center;
+}
+
+#zoikuezhsy .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#zoikuezhsy .gt_font_normal {
+  font-weight: normal;
+}
+
+#zoikuezhsy .gt_font_bold {
+  font-weight: bold;
+}
+
+#zoikuezhsy .gt_font_italic {
+  font-style: italic;
+}
+
+#zoikuezhsy .gt_super {
+  font-size: 65%;
+}
+
+#zoikuezhsy .gt_footnote_marks {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="zoikuezhsy" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="3" class="gt_heading gt_title gt_font_normal" style><strong>Top Drug-Gene Correlations</strong></th>
+    </tr>
+    <tr>
+      <th colspan="3" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style>Ranked correlations based on similar cell dependencies</th>
+    </tr>
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Drug</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Gene</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1">R<sup>2</sup></th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MDM4">MDM4</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.90</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=PPM1D">PPM1D</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.87</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=RSV604">RSV604</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=RD3">RD3</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.85</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AMG-232">AMG-232</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MDM4">MDM4</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.85</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=phenacaine">phenacaine</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ALG3">ALG3</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.84</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MDM2">MDM2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.84</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AMG-232">AMG-232</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=PPM1D">PPM1D</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.83</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=PGBD2">PGBD2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.81</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=pralatrexate">pralatrexate</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=HOMER2">HOMER2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.81</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=fesoterodine">fesoterodine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=UGT2A3">UGT2A3</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.81</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=MK-0354">MK-0354</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CSNK1E">CSNK1E</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.81</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=TG-003">TG-003</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=KLHL24">KLHL24</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.81</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=MPI-0479605">MPI-0479605</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TADA2A">TADA2A</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=setipiprant">setipiprant</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=RAPGEF2">RAPGEF2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=anandamide">anandamide</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FAM47B">FAM47B</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=7-methylxanthine">7-methylxanthine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=NLRP5">NLRP5</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=BAY-K-8644-(+/-)">BAY-K-8644-(+/-)</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FAM161A">FAM161A</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=neo-gilurytmal">neo-gilurytmal</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GHSR">GHSR</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=letermovir">letermovir</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TREM1">TREM1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.80</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=vemurafenib">vemurafenib</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=UQCC1">UQCC1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.79</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=CP-724714">CP-724714</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TNN">TNN</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.79</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=CGM097">CGM097</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MDM4">MDM4</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.79</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=5-methylfurmethiodide">5-methylfurmethiodide</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=OR13C5">OR13C5</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AM-281">AM-281</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TAZ">TAZ</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=miglitol">miglitol</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GGTLC3">GGTLC3</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=isopropamide-iodide">isopropamide-iodide</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CCDC9">CCDC9</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=tolamolol">tolamolol</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=SPRR2F">SPRR2F</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=docosanol">docosanol</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MFSD2B">MFSD2B</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ZFP36">ZFP36</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FMO1">FMO1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=CGM097">CGM097</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=PPM1D">PPM1D</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=indoximod">indoximod</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FANCF">FANCF</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=picolamine">picolamine</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=EDF1">EDF1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=arctigenin">arctigenin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GID4">GID4</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=PK-11195">PK-11195</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CPA2">CPA2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=CYC116">CYC116</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=COQ3">COQ3</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=carbadox">carbadox</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DSG4">DSG4</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AMG-232">AMG-232</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MDM2">MDM2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.78</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=voreloxin">voreloxin</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FEN1">FEN1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=oxazepam">oxazepam</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GAREM1">GAREM1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=ramatroban">ramatroban</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FRRS1L">FRRS1L</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=picolinic-acid">picolinic-acid</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=SLC25A21">SLC25A21</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=picolamine">picolamine</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=EIF4E2">EIF4E2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AMG-232">AMG-232</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CEP170">CEP170</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=PF-05190457">PF-05190457</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ATP2A1">ATP2A1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=CGM097">CGM097</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MDM2">MDM2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AMG-232">AMG-232</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GRINA">GRINA</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=zotepine">zotepine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=KIAA0319L">KIAA0319L</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=estradiol-valerate">estradiol-valerate</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MAMDC2">MAMDC2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=diclofenac">diclofenac</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=NRAS">NRAS</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=carboxyamidotriazole">carboxyamidotriazole</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=C1orf226">C1orf226</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=galeterone">galeterone</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=COL28A1">COL28A1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=SB-590885">SB-590885</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=OR10H1">OR10H1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ZNF692">ZNF692</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AZD1446">AZD1446</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=EPHX4">EPHX4</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=olmesartan">olmesartan</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=AWAT1">AWAT1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=amibegron">amibegron</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=BCL2L15">BCL2L15</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=valdecoxib">valdecoxib</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=IDH1">IDH1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=genipin">genipin</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=OR4K15">OR4K15</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=manidipine">manidipine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=HEBP2">HEBP2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=valganciclovir">valganciclovir</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GPR152">GPR152</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.77</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=tolazoline">tolazoline</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ADAM15">ADAM15</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=dexloxiglumide">dexloxiglumide</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ADRB1">ADRB1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=toceranib">toceranib</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=HMGCS2">HMGCS2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=sertaconazole">sertaconazole</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=MELTF">MELTF</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=OR10T2">OR10T2</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=TG-003">TG-003</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=LY6G6C">LY6G6C</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=perchlozone">perchlozone</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=NFATC3">NFATC3</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=pyrithione-zinc">pyrithione-zinc</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TYK2">TYK2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=thiamet-g">thiamet-g</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=STATH">STATH</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=OG-L002">OG-L002</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DCT">DCT</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=methoxyamine">methoxyamine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ANGPT4">ANGPT4</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=olmesartan">olmesartan</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DSG1">DSG1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=neostigmine">neostigmine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=C6orf203">C6orf203</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=nilvadipine">nilvadipine</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CAMK4">CAMK4</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=dihomo-gamma-linolenic-acid">dihomo-gamma-linolenic-acid</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FTSJ1">FTSJ1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=carbadox">carbadox</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=REG1B">REG1B</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=ipragliflozin-l-proline">ipragliflozin-l-proline</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=SEPT9">SEPT9</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=thioctic-acid">thioctic-acid</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DYNLT1">DYNLT1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=AMG-232">AMG-232</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=FMO1">FMO1</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.76</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=TRV130">TRV130</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=NRN1">NRN1</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=oxazepam">oxazepam</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TMEM150C">TMEM150C</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=sertaconazole">sertaconazole</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=GRHL2">GRHL2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=oxazepam">oxazepam</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=PPM1L">PPM1L</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=cutamesine">cutamesine</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=USP40">USP40</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=picolamine">picolamine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=SLC35A3">SLC35A3</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=10-DEBC">10-DEBC</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DCAF15">DCAF15</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=procysteine">procysteine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DENND5B">DENND5B</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=TG-003">TG-003</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=OR9Q2">OR9Q2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=REV-5901">REV-5901</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=LY6G6C">LY6G6C</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=naftidrofuryl">naftidrofuryl</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=KRT74">KRT74</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=REV-5901">REV-5901</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ATP10D">ATP10D</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=zoxazolamine">zoxazolamine</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CCDC63">CCDC63</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=SKLB1002">SKLB1002</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=ZNF391">ZNF391</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=oxazepam">oxazepam</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=TRIM59">TRIM59</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=SKLB1002">SKLB1002</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CNST">CNST</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=niacin">niacin</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=SPATA2L">SPATA2L</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=idasanutlin">idasanutlin</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=CEP170">CEP170</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=eliglustat">eliglustat</a></p>
+</div></td>
+      <td class="gt_row gt_left"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=EVC2">EVC2</a></p>
+</div></td>
+      <td class="gt_row gt_right">0.75</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=compound&amp;query_type=compound&amp;compound=picolamine">picolamine</a></p>
+</div></td>
+      <td class="gt_row gt_left gt_striped"><div class="gt_from_md"><p><a href="?show=gene&amp;query_type=gene&amp;symbol=DPM3">DPM3</a></p>
+</div></td>
+      <td class="gt_row gt_right gt_striped">0.75</td>
+    </tr>
+  </tbody>
+  
+  
+</table></div>
+<p>#Graph</p>
+<div id="htmlwidget-a19e00c36b160c659fc9" style="width:100%;height:90vh;" class="visNetwork html-widget"></div>
+<script type="application/json" data-for="htmlwidget-a19e00c36b160c659fc9">{"x":{"nodes":{"id":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119],"name":["MDM4","PPM1D","RD3","ALG3","MDM2","PGBD2","HOMER2","UGT2A3","CSNK1E","KLHL24","TADA2A","RAPGEF2","NLRP5","FAM161A","GHSR","TREM1","UQCC1","TNN","TAZ","CCDC9","SPRR2F","MFSD2B","ZFP36","FMO1","FANCF","EDF1","GID4","CPA2","COQ3","DSG4","FEN1","GAREM1","FRRS1L","SLC25A21","EIF4E2","CEP170","ATP2A1","GRINA","KIAA0319L","MAMDC2","NRAS","C1orf226","COL28A1","OR10H1","ZNF692","EPHX4","AWAT1","BCL2L15","IDH1","HEBP2","GPR152","ADAM15","ADRB1","HMGCS2","MELTF","LY6G6C","NFATC3","TYK2","DCT","ANGPT4","DSG1","CAMK4","FTSJ1","DYNLT1","NRN1","TMEM150C","GRHL2","PPM1L","USP40","SLC35A3","DCAF15","DENND5B","KRT74","ATP10D","CCDC63","ZNF391","TRIM59","CNST","SPATA2L","EVC2","DPM3","WDR89","DDX31","PPM1G","ALG8","ALG6","OR2L5","MROH9","CYP4A11","CCL14","KRT24","PRDM14","DRD5","UNC45B","OR1J2","OR1J4","TMCO5A","OR52A1","OPALIN","C12orf40","LILRA4","SLCO6A1","SLC22A7","SCGB3A1","GYS2","CD200R1L","ADAM18","TEX44","PAX4","TAS2R1","OR1K1","APOA4","HAO2","TEX55","PPP1R17","SLC36A3","CNPY1","HTR3C","IFNA8","C8orf74"],"degree":[12,12,11,11,12,10,10,10,10,10,10,10,11,10,10,10,10,10,10,10,10,10,10,11,10,10,10,10,10,11,10,10,10,10,10,10,10,10,10,10,10,10,10,11,10,10,12,10,10,10,10,10,10,10,10,10,10,10,10,10,11,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,3,3,3,3,3,6,4,3,3,4,4,3,3,3,3,3,3,5,3,3,3,3,3,4,4,3,4,4,3,4,3,3,3,3,3,5,3,3,3],"group":["Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Query","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive","Positive"],"value":[5,5,1,3,5,1,0,2,2,5,1,0,3,3,0,5,0,1,0,0,0,2,0,2,0,1,0,2,0,3,0,0,3,2,2,3,1,1,2,1,3,1,3,2,3,1,5,2,1,3,0,0,1,5,0,2,3,0,2,2,6,4,1,1,4,0,0,1,4,3,3,2,3,1,2,1,2,1,0,4,3,3,3,3,3,3,6,4,3,3,4,4,3,3,3,3,3,3,5,3,3,3,3,3,4,4,3,4,4,3,4,3,3,3,3,3,5,3,3,3],"title":["<center><p>MDM4<br>Mdm4 regulator of p53<\/p>","<center><p>PPM1D<br>Protein phosphatase, mg2+/mn2+ dependent 1d<\/p>","<center><p>RD3<br>Rd3 regulator of gucy2d<\/p>","<center><p>ALG3<br>Alg3 alpha-1,3- mannosyltransferase<\/p>","<center><p>MDM2<br>Mdm2 proto-oncogene<\/p>","<center><p>PGBD2<br>Piggybac transposable element derived 2<\/p>","<center><p>HOMER2<br>Homer scaffold protein 2<\/p>","<center><p>UGT2A3<br>Udp glucuronosyltransferase family 2 member a3<\/p>","<center><p>CSNK1E<br>Casein kinase 1 epsilon<\/p>","<center><p>KLHL24<br>Kelch like family member 24<\/p>","<center><p>TADA2A<br>Transcriptional adaptor 2a<\/p>","<center><p>RAPGEF2<br>Rap guanine nucleotide exchange factor 2<\/p>","<center><p>NLRP5<br>Nlr family pyrin domain containing 5<\/p>","<center><p>FAM161A<br>Fam161 centrosomal protein a<\/p>","<center><p>GHSR<br>Growth hormone secretagogue receptor<\/p>","<center><p>TREM1<br>Triggering receptor expressed on myeloid cells 1<\/p>","<center><p>UQCC1<br>Ubiquinol-cytochrome c reductase complex assembly factor 1<\/p>","<center><p>TNN<br>Tenascin n<\/p>","<center><p>TAZ<br>Tafazzin<\/p>","<center><p>CCDC9<br>Coiled-coil domain containing 9<\/p>","<center><p>SPRR2F<br>Small proline rich protein 2f<\/p>","<center><p>MFSD2B<br>Major facilitator superfamily domain containing 2b<\/p>","<center><p>ZFP36<br>Zfp36 ring finger protein<\/p>","<center><p>FMO1<br>Flavin containing dimethylaniline monoxygenase 1<\/p>","<center><p>FANCF<br>Fa complementation group f<\/p>","<center><p>EDF1<br>Endothelial differentiation related factor 1<\/p>","<center><p>GID4<br>Gid complex subunit 4 homolog<\/p>","<center><p>CPA2<br>Carboxypeptidase a2<\/p>","<center><p>COQ3<br>Coenzyme q3, methyltransferase<\/p>","<center><p>DSG4<br>Desmoglein 4<\/p>","<center><p>FEN1<br>Flap structure-specific endonuclease 1<\/p>","<center><p>GAREM1<br>Grb2 associated regulator of mapk1 subtype 1<\/p>","<center><p>FRRS1L<br>Ferric chelate reductase 1 like<\/p>","<center><p>SLC25A21<br>Solute carrier family 25 member 21<\/p>","<center><p>EIF4E2<br>Eukaryotic translation initiation factor 4e family member 2<\/p>","<center><p>CEP170<br>Centrosomal protein 170<\/p>","<center><p>ATP2A1<br>Atpase sarcoplasmic/endoplasmic reticulum ca2+ transporting 1<\/p>","<center><p>GRINA<br>Glutamate ionotropic receptor nmda type subunit associated protein 1<\/p>","<center><p>KIAA0319L<br>Kiaa0319 like<\/p>","<center><p>MAMDC2<br>Mam domain containing 2<\/p>","<center><p>NRAS<br>Nras proto-oncogene, gtpase<\/p>","<center><p>C1orf226<br>Chromosome 1 open reading frame 226<\/p>","<center><p>COL28A1<br>Collagen type xxviii alpha 1 chain<\/p>","<center><p>OR10H1<br>Olfactory receptor family 10 subfamily h member 1<\/p>","<center><p>ZNF692<br>Zinc finger protein 692<\/p>","<center><p>EPHX4<br>Epoxide hydrolase 4<\/p>","<center><p>AWAT1<br>Acyl-coa wax alcohol acyltransferase 1<\/p>","<center><p>BCL2L15<br>Bcl2 like 15<\/p>","<center><p>IDH1<br>Isocitrate dehydrogenase (nadp(+)) 1<\/p>","<center><p>HEBP2<br>Heme binding protein 2<\/p>","<center><p>GPR152<br>G protein-coupled receptor 152<\/p>","<center><p>ADAM15<br>Adam metallopeptidase domain 15<\/p>","<center><p>ADRB1<br>Adrenoceptor beta 1<\/p>","<center><p>HMGCS2<br>3-Hydroxy-3-methylglutaryl-coa synthase 2<\/p>","<center><p>MELTF<br>Melanotransferrin<\/p>","<center><p>LY6G6C<br>Lymphocyte antigen 6 family member g6c<\/p>","<center><p>NFATC3<br>Nuclear factor of activated t cells 3<\/p>","<center><p>TYK2<br>Tyrosine kinase 2<\/p>","<center><p>DCT<br>Dopachrome tautomerase<\/p>","<center><p>ANGPT4<br>Angiopoietin 4<\/p>","<center><p>DSG1<br>Desmoglein 1<\/p>","<center><p>CAMK4<br>Calcium/calmodulin dependent protein kinase iv<\/p>","<center><p>FTSJ1<br>Ftsj rna 2'-o-methyltransferase 1<\/p>","<center><p>DYNLT1<br>Dynein light chain tctex-type 1<\/p>","<center><p>NRN1<br>Neuritin 1<\/p>","<center><p>TMEM150C<br>Transmembrane protein 150c<\/p>","<center><p>GRHL2<br>Grainyhead like transcription factor 2<\/p>","<center><p>PPM1L<br>Protein phosphatase, mg2+/mn2+ dependent 1l<\/p>","<center><p>USP40<br>Ubiquitin specific peptidase 40<\/p>","<center><p>SLC35A3<br>Solute carrier family 35 member a3<\/p>","<center><p>DCAF15<br>Ddb1 and cul4 associated factor 15<\/p>","<center><p>DENND5B<br>Denn domain containing 5b<\/p>","<center><p>KRT74<br>Keratin 74<\/p>","<center><p>ATP10D<br>Atpase phospholipid transporting 10d (putative)<\/p>","<center><p>CCDC63<br>Coiled-coil domain containing 63<\/p>","<center><p>ZNF391<br>Zinc finger protein 391<\/p>","<center><p>TRIM59<br>Tripartite motif containing 59<\/p>","<center><p>CNST<br>Consortin, connexin sorting protein<\/p>","<center><p>SPATA2L<br>Spermatogenesis associated 2 like<\/p>","<center><p>EVC2<br>Evc ciliary complex subunit 2<\/p>","<center><p>DPM3<br>Dolichyl-phosphate mannosyltransferase subunit 3, regulatory<\/p>","<center><p>WDR89<br>Wd repeat domain 89<\/p>","<center><p>DDX31<br>Dead-box helicase 31<\/p>","<center><p>PPM1G<br>Protein phosphatase, mg2+/mn2+ dependent 1g<\/p>","<center><p>ALG8<br>Alg8 alpha-1,3-glucosyltransferase<\/p>","<center><p>ALG6<br>Alg6 alpha-1,3-glucosyltransferase<\/p>","<center><p>OR2L5<br>Olfactory receptor family 2 subfamily l member 5<\/p>","<center><p>MROH9<br>Maestro heat like repeat family member 9<\/p>","<center><p>CYP4A11<br>Cytochrome p450 family 4 subfamily a member 11<\/p>","<center><p>CCL14<br>C-c motif chemokine ligand 14<\/p>","<center><p>KRT24<br>Keratin 24<\/p>","<center><p>PRDM14<br>Pr/set domain 14<\/p>","<center><p>DRD5<br>Dopamine receptor d5<\/p>","<center><p>UNC45B<br>Unc-45 myosin chaperone b<\/p>","<center><p>OR1J2<br>Olfactory receptor family 1 subfamily j member 2<\/p>","<center><p>OR1J4<br>Olfactory receptor family 1 subfamily j member 4<\/p>","<center><p>TMCO5A<br>Transmembrane and coiled-coil domains 5a<\/p>","<center><p>OR52A1<br>Olfactory receptor family 52 subfamily a member 1<\/p>","<center><p>OPALIN<br>Oligodendrocytic myelin paranodal and inner loop protein<\/p>","<center><p>C12orf40<br>Chromosome 12 open reading frame 40<\/p>","<center><p>LILRA4<br>Leukocyte immunoglobulin like receptor a4<\/p>","<center><p>SLCO6A1<br>Solute carrier organic anion transporter family member 6a1<\/p>","<center><p>SLC22A7<br>Solute carrier family 22 member 7<\/p>","<center><p>SCGB3A1<br>Secretoglobin family 3a member 1<\/p>","<center><p>GYS2<br>Glycogen synthase 2<\/p>","<center><p>CD200R1L<br>Cd200 receptor 1 like<\/p>","<center><p>ADAM18<br>Adam metallopeptidase domain 18<\/p>","<center><p>TEX44<br>Testis expressed 44<\/p>","<center><p>PAX4<br>Paired box 4<\/p>","<center><p>TAS2R1<br>Taste 2 receptor member 1<\/p>","<center><p>OR1K1<br>Olfactory receptor family 1 subfamily k member 1<\/p>","<center><p>APOA4<br>Apolipoprotein a4<\/p>","<center><p>HAO2<br>Hydroxyacid oxidase 2<\/p>","<center><p>TEX55<br>Testis expressed 55<\/p>","<center><p>PPP1R17<br>Protein phosphatase 1 regulatory subunit 17<\/p>","<center><p>SLC36A3<br>Solute carrier family 36 member 3<\/p>","<center><p>CNPY1<br>Canopy fgf signaling regulator 1<\/p>","<center><p>HTR3C<br>5-Hydroxytryptamine receptor 3c<\/p>","<center><p>IFNA8<br>Interferon alpha 8<\/p>","<center><p>C8orf74<br>Chromosome 8 open reading frame 74<\/p>"],"label":["MDM4","PPM1D","RD3","ALG3","MDM2","PGBD2","HOMER2","UGT2A3","CSNK1E","KLHL24","TADA2A","RAPGEF2","NLRP5","FAM161A","GHSR","TREM1","UQCC1","TNN","TAZ","CCDC9","SPRR2F","MFSD2B","ZFP36","FMO1","FANCF","EDF1","GID4","CPA2","COQ3","DSG4","FEN1","GAREM1","FRRS1L","SLC25A21","EIF4E2","CEP170","ATP2A1","GRINA","KIAA0319L","MAMDC2","NRAS","C1orf226","COL28A1","OR10H1","ZNF692","EPHX4","AWAT1","BCL2L15","IDH1","HEBP2","GPR152","ADAM15","ADRB1","HMGCS2","MELTF","LY6G6C","NFATC3","TYK2","DCT","ANGPT4","DSG1","CAMK4","FTSJ1","DYNLT1","NRN1","TMEM150C","GRHL2","PPM1L","USP40","SLC35A3","DCAF15","DENND5B","KRT74","ATP10D","CCDC63","ZNF391","TRIM59","CNST","SPATA2L","EVC2","DPM3","WDR89","DDX31","PPM1G","ALG8","ALG6","OR2L5","MROH9","CYP4A11","CCL14","KRT24","PRDM14","DRD5","UNC45B","OR1J2","OR1J4","TMCO5A","OR52A1","OPALIN","C12orf40","LILRA4","SLCO6A1","SLC22A7","SCGB3A1","GYS2","CD200R1L","ADAM18","TEX44","PAX4","TAS2R1","OR1K1","APOA4","HAO2","TEX55","PPP1R17","SLC36A3","CNPY1","HTR3C","IFNA8","C8orf74"]},"edges":{"from":[0,0,0,0,0,1,1,1,1,1,2,3,3,3,4,4,4,4,4,5,7,7,8,8,9,9,9,9,9,10,12,12,13,13,13,15,15,15,15,15,17,21,21,23,23,25,27,27,29,29,29,32,32,32,33,33,34,34,35,35,35,36,37,38,38,39,40,40,40,41,42,42,42,43,44,44,44,45,46,46,46,47,47,48,49,49,49,52,53,53,53,53,53,55,55,56,56,56,58,58,59,59,60,60,60,60,60,60,61,61,61,61,62,63,64,64,64,64,67,68,68,68,68,69,69,69,70,70,70,71,71,72,72,72,73,74,74,75,76,76,77,79,79,79,79,80,80,80],"to":[1,4,81,82,83,4,0,83,81,82,23,80,84,85,1,0,83,82,81,86,87,88,89,90,91,92,93,94,87,93,89,95,96,87,97,98,88,46,99,100,87,101,102,103,2,104,105,101,106,60,96,107,96,89,98,105,97,108,98,99,109,108,108,110,111,103,112,91,113,105,99,114,115,116,97,95,86,105,92,108,102,113,112,90,116,117,115,86,110,116,94,103,107,102,100,98,12,113,86,115,91,118,94,106,29,107,110,119,119,109,90,111,46,90,118,104,111,116,101,118,107,106,110,85,112,84,117,43,91,114,104,93,117,116,109,95,86,114,88,100,86,92,98,104,119,3,84,85],"r2":[0.62,0.59,0.41,0.38,0.38,0.69,0.62,0.43,0.43,0.36,0.44,0.49,0.36,0.35,0.69,0.59,0.42,0.39,0.39,0.44,0.4,0.37,0.34,0.26,0.25,0.25,0.24,0.24,0.24,0.25,0.52,0.45,0.25,0.24,0.24,0.36,0.3,0.3,0.3,0.3,0.29,0.29,0.23,0.48,0.44,0.24,0.31,0.28,0.42,0.39,0.38,0.37,0.34,0.33,0.29,0.26,0.33,0.25,0.29,0.26,0.24,0.29,0.29,0.31,0.26,0.32,0.25,0.24,0.21,0.27,0.3,0.26,0.26,0.36,0.29,0.29,0.29,0.24,0.61,0.46,0.45,0.31,0.29,0.31,0.35,0.24,0.23,0.27,0.34,0.31,0.28,0.26,0.26,0.3,0.29,0.29,0.26,0.24,0.31,0.26,0.31,0.28,0.44,0.42,0.39,0.37,0.34,0.34,0.26,0.24,0.24,0.23,0.3,0.25,0.26,0.26,0.25,0.23,0.24,0.36,0.35,0.34,0.28,0.32,0.29,0.29,0.2,0.2,0.2,0.29,0.25,0.43,0.4,0.4,0.21,0.48,0.42,0.26,0.3,0.27,0.28,0.44,0.43,0.34,0.26,0.49,0.38,0.36],"origin":["pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos","pos"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","scaling":{"min":10,"max":20}},"manipulation":{"enabled":false},"groups":{"Query":{"color":{"background":"#2EC09CCC","border":"rgba(204, 204, 204, 0.8)","highlight":"#2EC09CCC","hover":"#2EC09CCC"},"shape":"dot","borderWidth":2},"Positive":{"color":{"background":"rgba(173, 103, 125, 0.8)","border":"rgba(204, 204, 204, 0.8)","highlight":"rgba(173, 103, 125, 0.8)","hover":"rgba(173, 103, 125, 0.8)"},"shape":"dot","borderWidth":2},"useDefaultGroups":true,"Connected":{"color":{"background":"rgba(255, 255, 255, 0.8)","border":"rgba(204, 204, 204, 0.8)","highlight":"rgba(255, 255, 255, 0.8)","hover":"rgba(255, 255, 255, 0.8)"},"shape":"dot","borderWidth":2}},"edges":{"color":"rgba(84, 84, 84, 1)","smooth":false},"physics":{"timestep":0.25,"stabilization":{"iterations":150},"barnesHut":{"damping":0.11,"centralGravity":0.5}}},"groups":["Query","Positive"],"width":"100%","height":"90vh","idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":false,"degree":1,"algorithm":"all","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"events":{"stabilizationIterationsDone":"function() {}"}},"evals":["events.stabilizationIterationsDone"],"jsHooks":[]}</script>
+</div>

@@ -5,7 +5,7 @@ items:
     redirect.conf: |
       Options +FollowSymLinks
       RewriteEngine on
-      RewriteRule (.*) https://www.datadrivenhypothesis.org/ [R=301,L]
+      RewriteRule (.*) https://www.datadrivenhypothesis.com/ [R=301,L]
   kind: ConfigMap
   metadata:
     name: redirect-conf
@@ -108,7 +108,7 @@ items:
       app: ddh-httpd-redirect
     name: ddh-httpd-redirect-route
   spec:
-    host: datadrivenhypothesis.org
+    host: datadrivenhypothesis.com
     path: /
     to:
       kind: Service

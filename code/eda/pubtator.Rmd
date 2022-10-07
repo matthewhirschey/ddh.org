@@ -11,6 +11,8 @@ library(tictoc)
 library(widyr)
 #rm(list = ls())
 ```
+PubTator is a ML-model to extract "concepts" from 30M abstracts and 3M full-length papers
+**Look in NLP project for more code**
 
 #import
 ```{r}
@@ -29,6 +31,39 @@ raw <- readRDS(here::here("data", "pubtator", "raw.Rds"))
 #clean
 #raw <- raw %>% separate(concept_id, into = c("concept_id"), sep = "[^[:digit:]]") #drop garbage
 raw$concept_id <- as.numeric(raw$concept_id)
+
+
+#get some sample data
+disease2pubmedurl_sample <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/disease2pubtatorcentral.sample"
+disease2pubtator_sample <- read_tsv(disease2pubmedurl_sample, col_names = c("pmid", "type", "concept_id", "mentions", "resource"))
+
+chemical2pubmedurl_sample <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/chemical2pubtatorcentral.sample"
+chemical2pubtator_sample <- read_tsv(chemical2pubmedurl_sample, col_names = c("pmid", "type", "concept_id", "mentions", "resource"))
+
+# not helpful
+# species2pubmedurl_sample <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/species2pubtatorcentral.sample"
+# species2pubtator_sample <- read_tsv(species2pubmedurl_sample, col_names = c("pmid", "type", "concept_id", "mentions", "resource"))
+
+# could be interesting for some EDA
+mutation2pubmedurl_sample <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/mutation2pubtatorcentral.sample"
+mutation2pubtator_sample <- read_tsv(mutation2pubmedurl_sample, col_names = c("pmid", "type", "concept_id", "mentions", "resource"))
+
+# uses cellosaurus for cell line ids e.g. CVCL_0030 is HeLa
+# get cellosaurus data here: https://ftp.expasy.org/databases/cellosaurus/
+cellline2pubmedurl_sample <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/cellline2pubtatorcentral.sample"
+cellline2pubtator_sample <- read_tsv(cellline2pubmedurl_sample, col_names = c("pmid", "type", "concept_id", "mentions", "resource"))
+
+# ALL DATA; need to filter on type 4GB file
+# 1 Chemical 1.13GB
+# 2 Disease 1.47 GB
+# 3 Species 434 MB
+# 4 Gene 563 MB
+# 5 Mutation 4.3 MB  
+# 6 CellLine 19.8 MB    
+bioconcepts2pubmedurl_sample <- "ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTatorCentral/bioconcepts2pubtatorcentral.sample"
+bioconcepts2pubtator_sample <- read_tsv(bioconcepts2pubmedurl_sample, col_names = c("pmid", "type", "concept_id", "mentions", "resource"))
+
+
 ```
 
 #import from url
@@ -54,7 +89,8 @@ gene2pubtator_count %>%
   arrange(desc(concept_count))
 
 gene_summary %>% 
-  mutate(pubmed_count_rank = dplyr::percent_rank(pubmed_count)
+  mutate(pubmed_count_rank = dplyr::percent_rank(pubmed_count))
+
 ```
 
 

@@ -1,4 +1,5 @@
 library(here)
+library(tidyverse)
 source(here::here("code/fun_tables.R"))
 
 test_that("sort_dedup_and_limit removes lower ranked duplicate items", {
