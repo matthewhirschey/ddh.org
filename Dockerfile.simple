@@ -1,0 +1,4 @@
+FROM rocker/shiny-verse:4.2.0
+EXPOSE 3838
+RUN R -e 'devtools::install_github("matthewhirschey/ddh")'
+CMD R -e 'ddh::download_ddh_data(app_data_dir = "/var/efs", test = FALSE, overwrite = FALSE)'
