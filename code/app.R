@@ -8,9 +8,9 @@ source(here::here("code", "install_libraries.R"))
 source(here::here("code", "private.R"))
 
 #DOWNLOAD/LOAD DATA-----
-ddh::download_ddh_data(app_data_dir = app_data_dir,
-                       test = testMode,
-                       overwrite = FALSE)
+#ddh::download_ddh_data(app_data_dir = app_data_dir,
+#                       test = testMode,
+#                       overwrite = FALSE)
 
 ddh::load_ddh_data(app_data_dir = app_data_dir)
 
